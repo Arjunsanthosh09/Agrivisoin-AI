@@ -1,0 +1,661 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>AgriVision AI – Crop Disease Detection & Smart Crop Recommendation</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;800&family=DM+Sans:wght@300;400;500;600&family=Noto+Sans+Malayalam:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --green-deep: #1a4d2e;
+      --green-mid: #2e7d32;
+      --green-light: #4caf50;
+      --green-pale: #e8f5e9;
+      --green-xpale: #f4fbf5;
+      --white: #ffffff;
+      --gray: #6b7280;
+      --text: #1c1c1c;
+      --border: #d4edda;
+      --stage1: #4caf50;
+      --stage2: #f59e0b;
+      --stage3: #e53935;
+    }
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body { font-family: 'DM Sans', sans-serif; background: var(--white); color: var(--text); overflow-x: hidden; }
+    body.lang-ml { font-family: 'Noto Sans Malayalam', sans-serif; }
+    body.lang-ml h1, body.lang-ml h2, body.lang-ml h3, body.lang-ml h4, body.lang-ml .logo {
+      font-family: 'Noto Sans Malayalam', sans-serif !important;
+    }
+
+    /* ── LANGUAGE TOGGLE ── */
+    .lang-toggle {
+      display: flex; align-items: center; gap: 4px;
+      background: var(--green-pale); border: 1px solid var(--border);
+      border-radius: 100px; padding: 4px; flex-shrink: 0;
+    }
+    .lang-btn {
+      padding: 5px 12px; border-radius: 100px; border: none;
+      cursor: pointer; font-size: 0.8rem; font-weight: 600;
+      transition: all 0.25s; background: transparent; color: var(--gray);
+      font-family: inherit;
+    }
+    .lang-btn.active { background: var(--green-mid); color: white; }
+    .lang-btn:hover:not(.active) { background: var(--border); color: var(--green-deep); }
+
+    /* ── NAVBAR ── */
+    nav {
+      position: sticky; top: 0; z-index: 999;
+      background: rgba(255,255,255,0.97); backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+      padding: 0 5%; height: 68px;
+      display: flex; align-items: center; justify-content: space-between; gap: 16px;
+    }
+    .logo { font-family: 'Playfair Display', serif; font-size: 1.35rem; color: var(--green-deep); text-decoration: none; flex-shrink: 0; }
+    .logo span { color: var(--green-light); }
+    .nav-center { display: flex; align-items: center; gap: 28px; list-style: none; }
+    .nav-center a { text-decoration: none; color: #444; font-weight: 500; font-size: 0.88rem; transition: color 0.2s; }
+    .nav-center a:hover { color: var(--green-mid); }
+    .nav-right { display: flex; align-items: center; gap: 12px; }
+    .nav-cta { background: var(--green-mid); color: white; padding: 10px 20px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 0.88rem; transition: background 0.2s; white-space: nowrap; }
+    .nav-cta:hover { background: var(--green-deep); }
+
+    /* Hamburger */
+    .hamburger { display: none; flex-direction: column; gap: 5px; cursor: pointer; padding: 6px; border: none; background: transparent; z-index: 1001; }
+    .hamburger span { display: block; width: 24px; height: 2px; background: var(--green-deep); border-radius: 2px; transition: all 0.3s; }
+    .hamburger.open span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
+    .hamburger.open span:nth-child(2) { opacity: 0; transform: scaleX(0); }
+    .hamburger.open span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
+
+    /* Mobile menu */
+    .mobile-menu { display: none; position: fixed; inset: 0; background: white; z-index: 1000; flex-direction: column; align-items: center; justify-content: center; gap: 32px; }
+    .mobile-menu.open { display: flex; }
+    .mobile-menu a { text-decoration: none; color: var(--green-deep); font-size: 1.4rem; font-weight: 700; font-family: 'Playfair Display', serif; }
+    body.lang-ml .mobile-menu a { font-family: 'Noto Sans Malayalam', sans-serif; }
+    .mobile-menu a:hover { color: var(--green-mid); }
+    .mobile-menu .m-cta { background: var(--green-mid); color: white !important; padding: 14px 38px; border-radius: 10px; font-size: 1rem; font-family: 'DM Sans', sans-serif; font-weight: 600; }
+    body.lang-ml .mobile-menu .m-cta { font-family: 'Noto Sans Malayalam', sans-serif; }
+    .mobile-lang { display: flex; gap: 8px; }
+
+    /* ── HERO ── */
+    .hero { min-height: 90vh; display: grid; grid-template-columns: 1fr 1fr; align-items: center; gap: 50px; padding: 70px 5% 60px; background: linear-gradient(135deg,#fff 55%,var(--green-pale) 100%); position: relative; overflow: hidden; }
+    .badge { display: inline-flex; align-items: center; gap: 6px; background: var(--green-pale); border: 1px solid var(--border); color: var(--green-mid); font-size: 0.75rem; font-weight: 600; padding: 6px 14px; border-radius: 100px; margin-bottom: 20px; letter-spacing: 0.5px; }
+    .badge::before { content: '●'; font-size: 0.45rem; animation: pulse 2s infinite; }
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
+    .hero h1 { font-family: 'Playfair Display', serif; font-size: clamp(1.9rem, 4vw, 3.3rem); line-height: 1.15; color: var(--green-deep); margin-bottom: 18px; }
+    body.lang-ml .hero h1 { font-family: 'Noto Sans Malayalam', sans-serif; line-height: 1.45; font-size: clamp(1.6rem, 3.2vw, 2.6rem); }
+    .hero h1 em { font-style: normal; color: var(--green-light); }
+    .hero-desc { font-size: 1rem; color: var(--gray); line-height: 1.75; margin-bottom: 32px; }
+    body.lang-ml .hero-desc { line-height: 1.9; }
+    .hero-btns { display: flex; gap: 12px; flex-wrap: wrap; }
+    .btn-primary { background: var(--green-mid); color: white; padding: 13px 28px; border-radius: 10px; text-decoration: none; font-weight: 600; font-size: 0.92rem; box-shadow: 0 4px 18px rgba(46,125,50,0.25); transition: background 0.2s, transform 0.2s; }
+    .btn-primary:hover { background: var(--green-deep); transform: translateY(-2px); }
+    .btn-outline { border: 2px solid var(--green-mid); color: var(--green-mid); padding: 11px 26px; border-radius: 10px; text-decoration: none; font-weight: 600; font-size: 0.92rem; transition: background 0.2s, color 0.2s; }
+    .btn-outline:hover { background: var(--green-mid); color: white; }
+
+    /* Dashboard card */
+    .hero-visual { position: relative; display: flex; justify-content: center; align-items: center; }
+    .hero-card-main { background: white; border-radius: 22px; padding: 26px; box-shadow: 0 20px 55px rgba(0,0,0,0.1); width: 100%; max-width: 350px; position: relative; z-index: 2; overflow: hidden; }
+    .hero-card-main h4 { font-size: 0.76rem; color: var(--gray); margin-bottom: 14px; font-weight: 500; }
+
+    /* Animated leaf-scan visual */
+    .scan-box { position: relative; width: 100%; height: 108px; background: linear-gradient(160deg,#eafaec,#dff3e2); border-radius: 14px; margin-bottom: 16px; display: flex; align-items: center; justify-content: center; overflow: hidden; border: 1px solid var(--border); }
+    .scan-box svg { width: 78px; height: 78px; position: relative; z-index: 1; }
+    .scan-line { position: absolute; left: 0; right: 0; height: 26px; background: linear-gradient(180deg, rgba(76,175,80,0) 0%, rgba(76,175,80,0.55) 50%, rgba(76,175,80,0) 100%); top: -30px; animation: scanMove 2.6s linear infinite; z-index: 2; }
+    @keyframes scanMove { 0% { top: -30px; } 100% { top: 112px; } }
+    .disease-dot { position: absolute; width: 8px; height: 8px; border-radius: 50%; background: #e53935; box-shadow: 0 0 0 rgba(229,57,53,0.5); animation: dotPulse 1.8s ease-in-out infinite; }
+    .dd1 { top: 34px; left: 41%; animation-delay: 0s; }
+    .dd2 { top: 55px; left: 55%; animation-delay: 0.6s; }
+    .dd3 { top: 46px; left: 34%; animation-delay: 1.2s; }
+    @keyframes dotPulse { 0%,100% { box-shadow: 0 0 0 0 rgba(229,57,53,0.5); } 50% { box-shadow: 0 0 0 7px rgba(229,57,53,0); } }
+
+    .diag-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; font-size: 0.78rem; }
+    .diag-row .k { color: var(--gray); }
+    .diag-row .v { font-weight: 700; color: var(--green-deep); }
+    .diag-row .v.conf { color: var(--green-mid); }
+
+    /* Stage meter */
+    .stage-meter { display: flex; gap: 6px; margin: 12px 0 6px; }
+    .stage-box { flex: 1; text-align: center; padding: 8px 4px; border-radius: 8px; background: var(--green-pale); border: 1px solid var(--border); font-size: 0.66rem; font-weight: 700; color: var(--gray); transition: all 0.3s; }
+    .stage-box.active { background: var(--stage2); color: white; border-color: var(--stage2); transform: scale(1.06); box-shadow: 0 6px 16px rgba(245,158,11,0.35); animation: stagePulse 1.8s ease-in-out infinite; }
+    @keyframes stagePulse { 0%,100% { box-shadow: 0 6px 16px rgba(245,158,11,0.35); } 50% { box-shadow: 0 6px 22px rgba(245,158,11,0.6); } }
+
+    .risk-badge { margin-top: 14px; background: #fff3e0; border: 1px solid #ffcc80; color: #e65100; border-radius: 8px; padding: 9px 12px; font-size: 0.73rem; font-weight: 600; display: flex; align-items: center; gap: 7px; }
+    .floating-pill { position: absolute; background: white; border-radius: 14px; padding: 10px 16px; box-shadow: 0 8px 28px rgba(0,0,0,0.1); font-size: 0.74rem; font-weight: 600; color: var(--green-deep); white-space: nowrap; z-index: 3; animation: floatPill 3.4s ease-in-out infinite; }
+    .pill-1 { top: -16px; right: -16px; animation-delay: 0s; }
+    .pill-2 { bottom: 20px; left: -20px; animation-delay: 1.2s; }
+    @keyframes floatPill { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
+
+    /* ── STATS STRIP ── */
+    .stats-strip { background: var(--green-deep); color: white; display: grid; grid-template-columns: repeat(4,1fr); text-align: center; padding: 44px 5%; gap: 16px; }
+    .strip-item .num { font-family: 'Playfair Display', serif; font-size: clamp(1.7rem,3vw,2.6rem); font-weight: 800; color: #a5d6a7; margin-bottom: 6px; }
+    .strip-item .desc { font-size: 0.82rem; opacity: 0.8; line-height: 1.5; }
+    body.lang-ml .strip-item .desc { line-height: 1.8; }
+
+    /* ── SHARED ── */
+    section { padding: 80px 5%; }
+    .section-label { font-size: 0.72rem; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; color: var(--green-mid); margin-bottom: 10px; }
+    .section-title { font-family: 'Playfair Display', serif; font-size: clamp(1.65rem,3vw,2.4rem); color: var(--green-deep); line-height: 1.2; margin-bottom: 14px; }
+    body.lang-ml .section-title { font-family: 'Noto Sans Malayalam', sans-serif; line-height: 1.5; }
+    .section-sub { font-size: 0.97rem; color: var(--gray); line-height: 1.8; max-width: 560px; }
+    body.lang-ml .section-sub { line-height: 2; }
+
+    /* ── PURPOSE ── */
+    .purpose { background: var(--green-xpale); display: grid; grid-template-columns: 1fr 1fr; gap: 70px; align-items: center; }
+    .purpose-points { margin-top: 30px; display: flex; flex-direction: column; gap: 20px; }
+    .purpose-point { display: flex; gap: 14px; align-items: flex-start; }
+    .pp-icon { width: 44px; height: 44px; background: var(--green-pale); border: 2px solid var(--border); border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.1rem; flex-shrink: 0; }
+    .pp-text h4 { font-weight: 600; color: var(--green-deep); margin-bottom: 4px; font-size: 0.95rem; }
+    .pp-text p { font-size: 0.85rem; color: var(--gray); line-height: 1.6; }
+    body.lang-ml .pp-text p { line-height: 1.9; }
+
+    /* Animated growth-stage diagram (replaces static big icon) */
+    .growth-wrap { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 26px; }
+    .growth-stages { position: relative; width: 100%; max-width: 340px; display: flex; justify-content: space-between; align-items: center; }
+    .growth-track { position: absolute; top: 30px; left: 30px; right: 30px; height: 3px; background: var(--border); border-radius: 3px; z-index: 0; }
+    .growth-node { position: relative; z-index: 1; display: flex; flex-direction: column; align-items: center; gap: 10px; }
+    .growth-circle { width: 60px; height: 60px; border-radius: 50%; background: white; border: 3px solid var(--border); display: flex; align-items: center; justify-content: center; font-size: 1.6rem; }
+    .growth-node[data-stage="1"] .growth-circle { border-color: var(--stage1); animation: glow1 3.6s ease-in-out infinite; }
+    .growth-node[data-stage="2"] .growth-circle { border-color: var(--stage2); animation: glow2 3.6s ease-in-out infinite; animation-delay: 1.2s; }
+    .growth-node[data-stage="3"] .growth-circle { border-color: var(--stage3); animation: glow3 3.6s ease-in-out infinite; animation-delay: 2.4s; }
+    @keyframes glow1 { 0%,20%,100% { box-shadow: 0 0 0 0 rgba(76,175,80,0);} 10% { box-shadow: 0 0 0 9px rgba(76,175,80,0.18);} }
+    @keyframes glow2 { 0%,20%,100% { box-shadow: 0 0 0 0 rgba(245,158,11,0);} 10% { box-shadow: 0 0 0 9px rgba(245,158,11,0.18);} }
+    @keyframes glow3 { 0%,20%,100% { box-shadow: 0 0 0 0 rgba(229,57,53,0);} 10% { box-shadow: 0 0 0 9px rgba(229,57,53,0.18);} }
+    .growth-node .g-label { font-size: 0.72rem; font-weight: 700; color: var(--green-deep); text-align: center; }
+    .growth-node .g-sub { font-size: 0.64rem; color: var(--gray); text-align: center; }
+    .growth-caption { font-size: 0.82rem; color: var(--gray); text-align: center; max-width: 320px; line-height: 1.6; }
+
+    /* ── FEATURES ── */
+    .features { background: white; }
+    .features-header { text-align: center; margin-bottom: 54px; }
+    .features-header .section-sub { margin: 0 auto; }
+    .features-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 24px; }
+    .feat-card { background: var(--green-xpale); border: 1px solid var(--border); border-radius: 18px; padding: 30px 24px; transition: transform 0.3s, box-shadow 0.3s; }
+    .feat-card:hover { transform: translateY(-7px); box-shadow: 0 18px 44px rgba(46,125,50,0.1); }
+    .feat-card:hover .feat-icon { animation: iconBounce 0.6s ease; }
+    @keyframes iconBounce { 0%,100% { transform: translateY(0) scale(1); } 40% { transform: translateY(-6px) scale(1.15); } }
+    .feat-icon { font-size: 2rem; margin-bottom: 14px; display: block; }
+    .feat-card h3 { color: var(--green-deep); font-size: 1rem; font-weight: 700; margin-bottom: 9px; }
+    .feat-card p { color: var(--gray); font-size: 0.85rem; line-height: 1.65; }
+    body.lang-ml .feat-card p { line-height: 1.9; }
+    .feat-tag { display: inline-block; margin-top: 14px; background: white; border: 1px solid var(--border); border-radius: 100px; padding: 3px 11px; font-size: 0.7rem; font-weight: 600; color: var(--green-mid); }
+
+    /* ── HOW IT WORKS ── */
+    .how { background: var(--green-xpale); }
+    .how-header { text-align: center; margin-bottom: 60px; }
+    .how-header .section-sub { margin: 0 auto; }
+    .how-steps { display: grid; grid-template-columns: repeat(4,1fr); gap: 20px; position: relative; }
+    .how-steps::before { content: ''; position: absolute; top: 34px; left: 12%; right: 12%; height: 2px; background: repeating-linear-gradient(90deg,var(--green-mid) 0 8px,transparent 8px 16px); }
+    .step { text-align: center; }
+    .step-num { width: 68px; height: 68px; background: white; border: 3px solid var(--green-mid); border-radius: 50%; margin: 0 auto 20px; display: flex; align-items: center; justify-content: center; font-family: 'Playfair Display', serif; font-size: 1.4rem; font-weight: 800; color: var(--green-mid); position: relative; z-index: 1; }
+    .step h4 { color: var(--green-deep); font-weight: 700; margin-bottom: 7px; font-size: 0.92rem; }
+    .step p { color: var(--gray); font-size: 0.82rem; line-height: 1.6; }
+    body.lang-ml .step p { line-height: 1.9; }
+
+    /* ── WHO WE SERVE ── */
+    .audience { background: white; }
+    .audience-header { text-align: center; margin-bottom: 50px; }
+    .audience-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 24px; }
+    .aud-card { border: 1px solid var(--border); border-radius: 18px; padding: 32px 24px; text-align: center; transition: all 0.3s; }
+    .aud-card:hover { border-color: var(--green-mid); background: var(--green-xpale); }
+    .aud-icon { font-size: 2.8rem; margin-bottom: 14px; display: block; }
+    .aud-card h3 { color: var(--green-deep); font-weight: 700; margin-bottom: 9px; font-size: 1rem; }
+    .aud-card p { color: var(--gray); font-size: 0.85rem; line-height: 1.65; }
+    body.lang-ml .aud-card p { line-height: 1.9; }
+
+    /* ── ABOUT ── */
+    .about { background: var(--green-deep); color: white; display: grid; grid-template-columns: 1fr 1fr; gap: 70px; align-items: center; }
+    .about .section-label { color: #a5d6a7; }
+    .about .section-title { color: white; }
+    .about .section-sub { color: rgba(255,255,255,0.7); max-width: 100%; }
+    .about-values { margin-top: 30px; display: flex; flex-direction: column; gap: 14px; }
+    .value-item { display: flex; align-items: center; gap: 12px; font-size: 0.88rem; color: rgba(255,255,255,0.85); }
+    .value-item::before { content: '✓'; width: 26px; height: 26px; background: rgba(76,175,80,0.3); border: 1px solid rgba(76,175,80,0.5); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.72rem; color: #a5d6a7; flex-shrink: 0; }
+    .about-visual { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.12); border-radius: 22px; padding: 36px 28px; }
+    .about-visual h4 { color: #a5d6a7; font-size: 0.75rem; letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 24px; }
+    .about-metric { margin-bottom: 24px; }
+    .about-metric-top { display: flex; justify-content: space-between; margin-bottom: 7px; }
+    .about-metric-top span { font-size: 0.82rem; color: rgba(255,255,255,0.8); }
+    .about-metric-top strong { color: #a5d6a7; font-weight: 700; }
+    .about-track { height: 5px; background: rgba(255,255,255,0.1); border-radius: 6px; overflow: hidden; }
+    .about-fill { height: 100%; background: linear-gradient(90deg,#4caf50,#a5d6a7); border-radius: 6px; width: 0; transition: width 1.4s ease; }
+
+    /* ── TESTIMONIALS ── */
+    .testimonials { background: var(--green-xpale); }
+    .test-header { text-align: center; margin-bottom: 50px; }
+    .test-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 24px; }
+    .test-card { background: white; border: 1px solid var(--border); border-radius: 18px; padding: 28px 24px; text-align: left; }
+    .test-stars { color: #f59e0b; margin-bottom: 12px; font-size: 0.88rem; letter-spacing: 2px; }
+    .test-text { color: #444; font-size: 0.85rem; line-height: 1.7; margin-bottom: 18px; font-style: italic; }
+    body.lang-ml .test-text { line-height: 1.95; }
+    .test-author { display: flex; align-items: center; gap: 12px; }
+    .test-avatar { width: 42px; height: 42px; border-radius: 50%; background: var(--green-pale); border: 2px solid var(--border); display: flex; align-items: center; justify-content: center; font-size: 1.1rem; }
+    .test-info .name { font-weight: 700; color: var(--green-deep); font-size: 0.85rem; }
+    .test-info .role { font-size: 0.72rem; color: var(--gray); }
+
+    /* ── CTA ── */
+    .cta { background: linear-gradient(135deg,var(--green-mid),var(--green-deep)); text-align: center; padding: 90px 5%; color: white; position: relative; overflow: hidden; }
+    .cta::before { content: '🌾'; position: absolute; font-size: 20rem; opacity: 0.05; left: -50px; bottom: -50px; pointer-events: none; }
+    .cta::after { content: '🌿'; position: absolute; font-size: 14rem; opacity: 0.06; right: -20px; top: -20px; pointer-events: none; }
+    .falling-leaves { position: absolute; inset: 0; overflow: hidden; pointer-events: none; z-index: 0; }
+    .falling-leaves span { position: absolute; top: -40px; font-size: 1.4rem; opacity: 0.5; animation: leafFall linear infinite; }
+    @keyframes leafFall { 0% { transform: translateY(-10%) translateX(0) rotate(0deg); opacity: 0; } 10% { opacity: 0.55; } 90% { opacity: 0.4; } 100% { transform: translateY(110vh) translateX(40px) rotate(340deg); opacity: 0; } }
+    .cta-content { position: relative; z-index: 1; }
+    .cta h2 { font-family: 'Playfair Display', serif; font-size: clamp(1.7rem,4vw,2.8rem); margin-bottom: 16px; }
+    body.lang-ml .cta h2 { font-family: 'Noto Sans Malayalam', sans-serif; line-height: 1.5; }
+    .cta p { font-size: 0.97rem; opacity: 0.8; margin-bottom: 36px; max-width: 480px; margin-left: auto; margin-right: auto; line-height: 1.7; }
+    body.lang-ml .cta p { line-height: 2; }
+    .cta-btns { display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; }
+    .btn-white { background: white; color: var(--green-mid); padding: 13px 30px; border-radius: 10px; text-decoration: none; font-weight: 700; font-size: 0.92rem; transition: transform 0.2s, box-shadow 0.2s; }
+    .btn-white:hover { transform: translateY(-2px); box-shadow: 0 10px 28px rgba(0,0,0,0.18); }
+    .btn-ghost { border: 2px solid rgba(255,255,255,0.5); color: white; padding: 11px 28px; border-radius: 10px; text-decoration: none; font-weight: 600; font-size: 0.92rem; transition: background 0.2s; }
+    .btn-ghost:hover { background: rgba(255,255,255,0.1); border-color: white; }
+
+    /* ── FOOTER ── */
+    footer { background: var(--green-deep); color: white; padding: 56px 5% 28px; }
+    .footer-top { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap: 40px; margin-bottom: 44px; }
+    .footer-brand .logo { margin-bottom: 12px; color: white; font-size: 1.2rem; }
+    .footer-brand .logo span { color: #a5d6a7; }
+    .footer-brand p { font-size: 0.82rem; color: rgba(255,255,255,0.55); line-height: 1.75; }
+    body.lang-ml .footer-brand p { line-height: 2; }
+    .footer-col h5 { font-size: 0.8rem; font-weight: 700; letter-spacing: 0.5px; margin-bottom: 16px; color: #a5d6a7; }
+    .footer-col ul { list-style: none; display: flex; flex-direction: column; gap: 9px; }
+    .footer-col ul li a { color: rgba(255,255,255,0.55); text-decoration: none; font-size: 0.82rem; transition: color 0.2s; }
+    .footer-col ul li a:hover { color: white; }
+    .footer-bottom { border-top: 1px solid rgba(255,255,255,0.1); padding-top: 22px; display: flex; justify-content: space-between; align-items: center; font-size: 0.78rem; color: rgba(255,255,255,0.4); flex-wrap: wrap; gap: 8px; }
+
+    /* ── RESPONSIVE ── */
+    @media (max-width: 1024px) {
+      .features-grid { grid-template-columns: repeat(2,1fr); }
+      .footer-top { grid-template-columns: 1fr 1fr; gap: 30px; }
+      .pill-1,.pill-2 { display: none; }
+    }
+    @media (max-width: 860px) {
+      .nav-center,.nav-cta { display: none; }
+      .hamburger { display: flex; }
+    }
+    @media (max-width: 768px) {
+      section { padding: 60px 5%; }
+      nav { padding: 0 4%; }
+      .hero { grid-template-columns: 1fr; text-align: center; padding: 50px 4%; min-height: auto; gap: 36px; }
+      .hero-desc { margin: 0 auto 28px; }
+      .hero-btns { justify-content: center; }
+      .hero-card-main { max-width: 100%; }
+      .stats-strip { grid-template-columns: repeat(2,1fr); padding: 36px 4%; }
+      .purpose { grid-template-columns: 1fr; gap: 40px; }
+      .growth-stages { max-width: 280px; }
+      .features-grid { grid-template-columns: 1fr; }
+      .how-steps { grid-template-columns: repeat(2,1fr); }
+      .how-steps::before { display: none; }
+      .audience-grid { grid-template-columns: 1fr; }
+      .about { grid-template-columns: 1fr; gap: 40px; }
+      .test-grid { grid-template-columns: 1fr; }
+      .footer-top { grid-template-columns: 1fr; gap: 32px; }
+      .footer-bottom { flex-direction: column; text-align: center; }
+    }
+    @media (max-width: 480px) {
+      .logo { font-size: 1.1rem; }
+      .stats-strip { grid-template-columns: 1fr 1fr; }
+      .how-steps { grid-template-columns: 1fr; }
+      .hero-btns { flex-direction: column; align-items: stretch; }
+      .btn-primary,.btn-outline { text-align: center; }
+      .cta-btns { flex-direction: column; align-items: center; }
+      .btn-white,.btn-ghost { width: 100%; max-width: 280px; text-align: center; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- NAVBAR -->
+<nav>
+  <a href="{{ url_for('index') }}" class="logo">🌿 Agri<span>Vision</span> AI</a>
+  <ul class="nav-center">
+    <li><a href="#purpose" data-en="Purpose" data-ml="ലക്ഷ്യം">Purpose</a></li>
+    <li><a href="#features" data-en="Features" data-ml="സവിശേഷതകൾ">Features</a></li>
+    <li><a href="#how" data-en="How It Works" data-ml="എങ്ങനെ പ്രവർത്തിക്കുന്നു">How It Works</a></li>
+    <li><a href="#about" data-en="About" data-ml="ഞങ്ങളെ കുറിച്ച്">About</a></li>
+  </ul>
+  <div class="nav-right">
+    <div class="lang-toggle">
+      <button class="lang-btn active" onclick="setLang('en')">EN</button>
+      <button class="lang-btn" onclick="setLang('ml')">മലയാളം</button>
+    </div>
+    {% if session.get('user_id') %}
+      <a href="{{ url_for('dashboard') }}" class="nav-cta" data-en="Dashboard →" data-ml="ഡാഷ്ബോർഡ് →">Dashboard →</a>
+    {% else %}
+      <a href="{{ url_for('login') }}" class="nav-cta" data-en="Login →" data-ml="ലോഗിൻ →">Login →</a>
+    {% endif %}
+  </div>
+  <button class="hamburger" id="hamburger" aria-label="Toggle menu">
+    <span></span><span></span><span></span>
+  </button>
+</nav>
+
+<!-- MOBILE MENU -->
+<div class="mobile-menu" id="mobileMenu">
+  <a href="#purpose" data-en="Purpose" data-ml="ലക്ഷ്യം">Purpose</a>
+  <a href="#features" data-en="Features" data-ml="സവിശേഷതകൾ">Features</a>
+  <a href="#how" data-en="How It Works" data-ml="എങ്ങനെ പ്രവർത്തിക്കുന്നു">How It Works</a>
+  <a href="#about" data-en="About" data-ml="ഞങ്ങളെ കുറിച്ച്">About</a>
+  <div class="mobile-lang">
+    <button class="lang-btn active" onclick="setLang('en')">EN</button>
+    <button class="lang-btn" onclick="setLang('ml')">മലയാളം</button>
+  </div>
+  {% if session.get('user_id') %}
+    <a href="{{ url_for('dashboard') }}" class="m-cta" data-en="Go to Dashboard →" data-ml="ഡാഷ്ബോർഡിലേക്ക് →">Go to Dashboard →</a>
+  {% else %}
+    <a href="{{ url_for('register') }}" class="m-cta" data-en="Try Free Scan →" data-ml="സൗജന്യ സ്കാൻ ചെയ്യൂ →">Try Free Scan →</a>
+  {% endif %}
+</div>
+
+<!-- HERO -->
+<section class="hero">
+  <div>
+    <div class="badge" data-en="🔬 AI-Powered Crop Health Platform" data-ml="🔬 AI-ശക്തിയുള്ള വിള ആരോഗ്യ പ്ലാറ്റ്ഫോം">🔬 AI-Powered Crop Health Platform</div>
+    <h1 data-en="Detect Disease.<br><em>Predict Stage.</em><br>Protect Harvest." data-ml="രോഗം കണ്ടെത്തൂ.<br><em>ഘട്ടം പ്രവചിക്കൂ.</em><br>വിളവ് സംരക്ഷിക്കൂ.">Detect Disease.<br><em>Predict Stage.</em><br>Protect Harvest.</h1>
+    <p class="hero-desc" data-en="AgriVision AI lets farmers snap a photo of a crop leaf and instantly get the disease name, its severity stage — Stage 1, 2 or 3 — along with organic remedies, chemical treatments, and season-ready crop recommendations based on weather, soil, and market trends." data-ml="ഒരു വിള ഇലയുടെ ഫോട്ടോ എടുത്താൽ, AgriVision AI രോഗത്തിന്റെ പേര്, അതിന്റെ തീവ്രത ഘട്ടം — സ്റ്റേജ് 1, 2 അല്ലെങ്കിൽ 3 — ഒപ്പം ജൈവ പരിഹാരങ്ങൾ, രാസ ചികിത്സകൾ, കാലാവസ്ഥ-മണ്ണ്-വിപണി അടിസ്ഥാനമാക്കിയ വിള ശുപാർശകൾ എന്നിവ ഉടൻ നൽകുന്നു.">AgriVision AI lets farmers snap a photo of a crop leaf and instantly get the disease name, its severity stage — Stage 1, 2 or 3 — along with organic remedies, chemical treatments, and season-ready crop recommendations based on weather, soil, and market trends.</p>
+    <div class="hero-btns">
+      {% if session.get('user_id') %}
+        <a href="{{ url_for('dashboard') }}" class="btn-primary" data-en="Go to Dashboard" data-ml="ഡാഷ്ബോർഡിലേക്ക് പോകൂ">Go to Dashboard</a>
+      {% else %}
+        <a href="{{ url_for('register') }}" class="btn-primary" data-en="Scan a Leaf" data-ml="ഇല സ്കാൻ ചെയ്യൂ">Scan a Leaf</a>
+      {% endif %}
+      <a href="#how" class="btn-outline" data-en="See How It Works" data-ml="എങ്ങനെ പ്രവർത്തിക്കുന്നു കാണൂ">See How It Works</a>
+    </div>
+  </div>
+  <div class="hero-visual">
+    <div class="hero-card-main">
+      <h4 data-en="🍃 LEAF SCAN RESULT · LIVE" data-ml="🍃 ഇല സ്കാൻ ഫലം · തത്സമയം">🍃 LEAF SCAN RESULT · LIVE</h4>
+      <div class="scan-box">
+        <div class="scan-line"></div>
+        <svg viewBox="0 0 64 64" fill="none">
+          <path d="M32 6C18 6 8 20 8 34c0 12 10 22 22 24 2-14 2-30 2-30s10 2 12 14c4-6 6-12 6-18C50 12 44 6 32 6Z" fill="#66bb6a" stroke="#2e7d32" stroke-width="2"/>
+          <path d="M32 10c-4 10-4 30-2 44" stroke="#1a4d2e" stroke-width="1.5" stroke-linecap="round"/>
+        </svg>
+        <div class="disease-dot dd1"></div>
+        <div class="disease-dot dd2"></div>
+        <div class="disease-dot dd3"></div>
+      </div>
+      <div class="diag-row"><span class="k" data-en="Disease Detected" data-ml="കണ്ടെത്തിയ രോഗം">Disease Detected</span><span class="v" data-en="Early Blight" data-ml="ഏർളി ബ്ലൈറ്റ്">Early Blight</span></div>
+      <div class="diag-row"><span class="k" data-en="Confidence" data-ml="കൃത്യത">Confidence</span><span class="v conf">96%</span></div>
+      <div class="stage-meter">
+        <div class="stage-box" data-en="Stage 1" data-ml="സ്റ്റേജ് 1">Stage 1</div>
+        <div class="stage-box active" data-en="Stage 2" data-ml="സ്റ്റേജ് 2">Stage 2</div>
+        <div class="stage-box" data-en="Stage 3" data-ml="സ്റ്റേജ് 3">Stage 3</div>
+      </div>
+      <div class="risk-badge" data-en="⚠️ Moderate Stage: Apply copper fungicide within 48h" data-ml="⚠️ മിതമായ ഘട്ടം: 48 മണിക്കൂറിനുള്ളിൽ കോപ്പർ കുമിൾനാശിനി പ്രയോഗിക്കുക">⚠️ Moderate Stage: Apply copper fungicide within 48h</div>
+    </div>
+    <div class="floating-pill pill-1" data-en="🦠 Disease Detected" data-ml="🦠 രോഗം കണ്ടെത്തി">🦠 Disease Detected</div>
+    <div class="floating-pill pill-2" data-en="✅ Remedy Suggested" data-ml="✅ പരിഹാരം നിർദ്ദേശിച്ചു">✅ Remedy Suggested</div>
+  </div>
+</section>
+
+<!-- STATS STRIP -->
+<div class="stats-strip">
+  <div class="strip-item"><div class="num">15,000+</div><div class="desc" data-en="Leaf Images Analyzed" data-ml="വിശകലനം ചെയ്ത ഇല ചിത്രങ്ങൾ">Leaf Images Analyzed</div></div>
+  <div class="strip-item"><div class="num">96%</div><div class="desc" data-en="Disease Detection Accuracy" data-ml="രോഗ കണ്ടെത്തൽ കൃത്യത">Disease Detection Accuracy</div></div>
+  <div class="strip-item"><div class="num">3</div><div class="desc" data-en="Severity Stages Classified" data-ml="വർഗ്ഗീകരിച്ച തീവ്രത ഘട്ടങ്ങൾ">Severity Stages Classified</div></div>
+  <div class="strip-item"><div class="num">22+</div><div class="desc" data-en="Crop Diseases Covered" data-ml="ഉൾപ്പെടുത്തിയ വിള രോഗങ്ങൾ">Crop Diseases Covered</div></div>
+</div>
+
+<!-- PURPOSE -->
+<section class="purpose" id="purpose">
+  <div>
+    <div class="section-label" data-en="Our Mission & Purpose" data-ml="ഞങ്ങളുടെ ദൗത്യവും ലക്ഷ്യവും">Our Mission & Purpose</div>
+    <h2 class="section-title" data-en="Why AgriVision AI Exists" data-ml="AgriVision AI എന്തിന് വേണ്ടി">Why AgriVision AI Exists</h2>
+    <p class="section-sub" data-en="Farmers often spot plant disease only after visible damage, and pick crops from tradition rather than data. AgriVision AI unites disease diagnosis, stage-wise severity prediction, and seasonal crop planning into one intelligent platform." data-ml="കാഴ്ചയിൽ നാശം ദൃശ്യമായതിന് ശേഷം മാത്രമാണ് കർഷകർ പലപ്പോഴും രോഗം തിരിച്ചറിയുന്നത്, ഡേറ്റയെക്കാൾ പാരമ്പര്യം അടിസ്ഥാനമാക്കി വിളകൾ തിരഞ്ഞെടുക്കുന്നു. രോഗനിർണയം, ഘട്ടം തിരിച്ചുള്ള തീവ്രത പ്രവചനം, കാലിക വിള ആസൂത്രണം എന്നിവ ഒരൊറ്റ ബുദ്ധിപരമായ പ്ലാറ്റ്ഫോമിൽ AgriVision AI സംയോജിപ്പിക്കുന്നു.">Farmers often spot plant disease only after visible damage, and pick crops from tradition rather than data. AgriVision AI unites disease diagnosis, stage-wise severity prediction, and seasonal crop planning into one intelligent platform.</p>
+    <div class="purpose-points">
+      <div class="purpose-point"><div class="pp-icon">🎯</div><div class="pp-text"><h4 data-en="One Platform, Every Answer" data-ml="ഒരു പ്ലാറ്റ്ഫോം, എല്ലാ ഉത്തരവും">One Platform, Every Answer</h4><p data-en="Disease diagnosis, crop planning, and market insight in a single app instead of juggling multiple tools." data-ml="രോഗനിർണയം, വിള ആസൂത്രണം, വിപണി വിവരം എന്നിവ ഒറ്റ ആപ്പിൽ, പല ടൂളുകൾ ഉപയോഗിക്കാതെ.">Disease diagnosis, crop planning, and market insight in a single app instead of juggling multiple tools.</p></div></div>
+      <div class="purpose-point"><div class="pp-icon">🔬</div><div class="pp-text"><h4 data-en="Detect Early, Act Early" data-ml="നേരത്തേ കണ്ടെത്തൂ, നേരത്തേ പ്രവർത്തിക്കൂ">Detect Early, Act Early</h4><p data-en="Stage-wise severity classification tells farmers exactly how urgently to respond, before a disease spreads." data-ml="രോഗം പടരുന്നതിന് മുൻപ്, എത്ര അടിയന്തിരമായി പ്രവർത്തിക്കണമെന്ന് ഘട്ടം തിരിച്ചുള്ള തീവ്രത വർഗ്ഗീകരണം കർഷകരോട് പറയുന്നു.">Stage-wise severity classification tells farmers exactly how urgently to respond, before a disease spreads.</p></div></div>
+      <div class="purpose-point"><div class="pp-icon">🌾</div><div class="pp-text"><h4 data-en="Smarter Crop Choices" data-ml="മികച്ച വിള തിരഞ്ഞെടുപ്പ്">Smarter Crop Choices</h4><p data-en="Crop recommendations use weather, soil, and historical crop-loss data — not just tradition — to guide the next season." data-ml="കാലാവസ്ഥ, മണ്ണ്, ചരിത്ര വിള-നഷ്ട ഡേറ്റ എന്നിവ ഉപയോഗിച്ചാണ് വിള ശുപാർശകൾ — പാരമ്പര്യം മാത്രമല്ല — അടുത്ത സീസണിലേക്ക് വഴികാട്ടുന്നു.">Crop recommendations use weather, soil, and historical crop-loss data — not just tradition — to guide the next season.</p></div></div>
+      <div class="purpose-point"><div class="pp-icon">💰</div><div class="pp-text"><h4 data-en="Profit-Aware Farming" data-ml="ലാഭം കണക്കിലെടുത്തുള്ള കൃഷി">Profit-Aware Farming</h4><p data-en="Market price trends and demand data are factored in, so recommendations are economically sound, not just agronomically." data-ml="വിപണി വില പ്രവണതകളും ആവശ്യകത ഡേറ്റയും കണക്കിലെടുക്കുന്നു, അതിനാൽ ശുപാർശകൾ കൃഷിശാസ്ത്രപരമായി മാത്രമല്ല, സാമ്പത്തികമായും ശരിയാണ്.">Market price trends and demand data are factored in, so recommendations are economically sound, not just agronomically.</p></div></div>
+    </div>
+  </div>
+  <div class="growth-wrap">
+    <div class="growth-stages">
+      <div class="growth-track"></div>
+      <div class="growth-node" data-stage="1">
+        <div class="growth-circle">🌱</div>
+        <div class="g-label" data-en="Stage 1" data-ml="സ്റ്റേജ് 1">Stage 1</div>
+        <div class="g-sub" data-en="Early / Mild" data-ml="ആദ്യം / മൃദു">Early / Mild</div>
+      </div>
+      <div class="growth-node" data-stage="2">
+        <div class="growth-circle">🍂</div>
+        <div class="g-label" data-en="Stage 2" data-ml="സ്റ്റേജ് 2">Stage 2</div>
+        <div class="g-sub" data-en="Moderate" data-ml="മിതമായ">Moderate</div>
+      </div>
+      <div class="growth-node" data-stage="3">
+        <div class="growth-circle">🥀</div>
+        <div class="g-label" data-en="Stage 3" data-ml="സ്റ്റേജ് 3">Stage 3</div>
+        <div class="g-sub" data-en="Severe" data-ml="ഗുരുതരം">Severe</div>
+      </div>
+    </div>
+    <p class="growth-caption" data-en="Every diagnosis is classified into a clear severity stage, so farmers know whether to monitor, treat, or act immediately." data-ml="ഓരോ രോഗനിർണയവും വ്യക്തമായ തീവ്രത ഘട്ടത്തിലേക്ക് വർഗ്ഗീകരിക്കുന്നു, നിരീക്ഷിക്കണോ, ചികിത്സിക്കണോ, ഉടൻ പ്രവർത്തിക്കണോ എന്ന് കർഷകർക്ക് അറിയാം.">Every diagnosis is classified into a clear severity stage, so farmers know whether to monitor, treat, or act immediately.</p>
+  </div>
+</section>
+
+<!-- FEATURES -->
+<section class="features" id="features">
+  <div class="features-header">
+    <div class="section-label" data-en="Platform Features" data-ml="പ്ലാറ്റ്ഫോം സവിശേഷതകൾ">Platform Features</div>
+    <h2 class="section-title" data-en="Everything a Farmer Needs, in One App" data-ml="ഒരു കർഷകന് ആവശ്യമായ എല്ലാം, ഒറ്റ ആപ്പിൽ">Everything a Farmer Needs, in One App</h2>
+    <p class="section-sub" data-en="From leaf-level disease staging to season-level crop planning, AgriVision AI gives you a full-stack intelligence layer for modern agriculture." data-ml="ഇല തലത്തിലുള്ള രോഗ ഘട്ട വർഗ്ഗീകരണം മുതൽ സീസൺ തലത്തിലുള്ള വിള ആസൂത്രണം വരെ, ആധുനിക കൃഷിക്ക് സമ്പൂർണ ബൗദ്ധിക പ്ലാറ്റ്ഫോം.">From leaf-level disease staging to season-level crop planning, AgriVision AI gives you a full-stack intelligence layer for modern agriculture.</p>
+  </div>
+  <div class="features-grid">
+    <div class="feat-card"><span class="feat-icon">🩺</span><h3 data-en="AI Disease Detection & Staging" data-ml="AI രോഗ കണ്ടെത്തലും ഘട്ട വർഗ്ഗീകരണവും">AI Disease Detection & Staging</h3><p data-en="A deep learning model reads a leaf photo, names the disease, and classifies severity as Stage 1 (Early), Stage 2 (Moderate), or Stage 3 (Severe) — so farmers know exactly how urgent it is." data-ml="ഇല ഫോട്ടോ വായിച്ച്, രോഗം തിരിച്ചറിഞ്ഞ്, തീവ്രത സ്റ്റേജ് 1 (ആദ്യം), സ്റ്റേജ് 2 (മിതമായ), സ്റ്റേജ് 3 (ഗുരുതരം) എന്നിങ്ങനെ വർഗ്ഗീകരിക്കുന്ന ഡീപ് ലേണിംഗ് മോഡൽ — എത്ര അടിയന്തിരമെന്ന് കൃത്യമായി കർഷകർക്ക് അറിയാം.">A deep learning model reads a leaf photo, names the disease, and classifies severity as Stage 1 (Early), Stage 2 (Moderate), or Stage 3 (Severe) — so farmers know exactly how urgent it is.</p><span class="feat-tag" data-en="Computer Vision" data-ml="കമ്പ്യൂട്ടർ വിഷൻ">Computer Vision</span></div>
+    <div class="feat-card"><span class="feat-icon">💊</span><h3 data-en="Organic & Chemical Remedies" data-ml="ജൈവ, രാസ പരിഹാരങ്ങൾ">Organic & Chemical Remedies</h3><p data-en="Get step-by-step organic remedies and chemical treatment options tailored to the diagnosed disease and its current stage." data-ml="കണ്ടെത്തിയ രോഗത്തിനും അതിന്റെ നിലവിലെ ഘട്ടത്തിനും അനുസരിച്ച ജൈവ പരിഹാരങ്ങളും രാസ ചികിത്സാ ഓപ്ഷനുകളും ഘട്ടം ഘട്ടമായി ലഭിക്കും.">Get step-by-step organic remedies and chemical treatment options tailored to the diagnosed disease and its current stage.</p><span class="feat-tag" data-en="Treatment Guidance" data-ml="ചികിത്സാ മാർഗ്ഗനിർദ്ദേശം">Treatment Guidance</span></div>
+    <div class="feat-card"><span class="feat-icon">⚠️</span><h3 data-en="Preventive Disease Alerts" data-ml="മുൻകൂർ രോഗ മുന്നറിയിപ്പുകൾ">Preventive Disease Alerts</h3><p data-en="Using weather and humidity patterns, the system warns farmers of a likely disease outbreak before symptoms even appear." data-ml="കാലാവസ്ഥയും ഈർപ്പ രീതികളും ഉപയോഗിച്ച്, ലക്ഷണങ്ങൾ പ്രത്യക്ഷപ്പെടും മുൻപ് സാധ്യതയുള്ള രോഗബാധയെക്കുറിച്ച് കർഷകർക്ക് മുന്നറിയിപ്പ് നൽകുന്നു.">Using weather and humidity patterns, the system warns farmers of a likely disease outbreak before symptoms even appear.</p><span class="feat-tag" data-en="Early Warning" data-ml="നേരത്തേ മുന്നറിയിപ്പ്">Early Warning</span></div>
+    <div class="feat-card"><span class="feat-icon">🌦</span><h3 data-en="Seasonal Crop Recommendation" data-ml="കാലിക വിള ശുപാർശ">Seasonal Crop Recommendation</h3><p data-en="Historical crop-loss records, rainfall, temperature, humidity, and soil data combine to recommend — and explain — the best crops for the season ahead." data-ml="ചരിത്ര വിള-നഷ്ട രേഖകൾ, മഴ, താപനില, ഈർപ്പം, മണ്ണ് ഡേറ്റ എന്നിവ ചേർത്ത് വരാനിരിക്കുന്ന സീസണിലെ മികച്ച വിളകൾ ശുപാർശ ചെയ്യുകയും വിശദീകരിക്കുകയും ചെയ്യുന്നു.">Historical crop-loss records, rainfall, temperature, humidity, and soil data combine to recommend — and explain — the best crops for the season ahead.</p><span class="feat-tag" data-en="Predictive Analytics" data-ml="പ്രവചന വിശകലനം">Predictive Analytics</span></div>
+    <div class="feat-card"><span class="feat-icon">📈</span><h3 data-en="Market Price & Profit Estimation" data-ml="വിപണി വിലയും ലാഭ കണക്കാക്കലും">Market Price & Profit Estimation</h3><p data-en="Historical price trends and demand data help estimate the expected profitability of each recommended crop." data-ml="ചരിത്ര വില പ്രവണതകളും ആവശ്യകത ഡേറ്റയും ഓരോ ശുപാർശ ചെയ്ത വിളയുടെയും പ്രതീക്ഷിത ലാഭക്ഷമത കണക്കാക്കാൻ സഹായിക്കുന്നു.">Historical price trends and demand data help estimate the expected profitability of each recommended crop.</p><span class="feat-tag" data-en="FinAgri Tool" data-ml="ഫിൻ-കൃഷി ഉപകരണം">FinAgri Tool</span></div>
+    <div class="feat-card"><span class="feat-icon">🗣</span><h3 data-en="Multilingual Farmer Interface" data-ml="ബഹുഭാഷാ കർഷക ഇന്റർഫേസ്">Multilingual Farmer Interface</h3><p data-en="A simple, localized interface makes disease diagnosis and crop advice accessible regardless of technical background." data-ml="സാങ്കേതിക ജ്ഞാനം പരിഗണിക്കാതെ, ലളിതവും പ്രാദേശികവുമായ ഇന്റർഫേസ് രോഗനിർണയവും വിള ഉപദേശവും ലഭ്യമാക്കുന്നു.">A simple, localized interface makes disease diagnosis and crop advice accessible regardless of technical background.</p><span class="feat-tag" data-en="Accessibility" data-ml="പ്രാപ്യത">Accessibility</span></div>
+  </div>
+</section>
+
+<!-- HOW IT WORKS -->
+<section class="how" id="how">
+  <div class="how-header">
+    <div class="section-label" data-en="The Process" data-ml="പ്രക്രിയ">The Process</div>
+    <h2 class="section-title" data-en="How AgriVision AI Works" data-ml="AgriVision AI എങ്ങനെ പ്രവർത്തിക്കുന്നു">How AgriVision AI Works</h2>
+    <p class="section-sub" data-en="A four-step pipeline from a single leaf photo to a farmer's next action." data-ml="ഒരു ഇല ഫോട്ടോ മുതൽ കർഷകന്റെ അടുത്ത നടപടി വരെ നാല് ഘട്ടങ്ങൾ.">A four-step pipeline from a single leaf photo to a farmer's next action.</p>
+  </div>
+  <div class="how-steps">
+    <div class="step"><div class="step-num">01</div><h4 data-en="Capture Leaf Photo" data-ml="ഇല ഫോട്ടോ എടുക്കൂ">Capture Leaf Photo</h4><p data-en="A farmer takes a photo of a crop leaf using any smartphone camera — no special equipment needed." data-ml="ഏതെങ്കിലും സ്മാർട്ട്ഫോൺ ക്യാമറ ഉപയോഗിച്ച് കർഷകൻ വിള ഇലയുടെ ഫോട്ടോ എടുക്കുന്നു — പ്രത്യേക ഉപകരണം ആവശ്യമില്ല.">A farmer takes a photo of a crop leaf using any smartphone camera — no special equipment needed.</p></div>
+    <div class="step"><div class="step-num">02</div><h4 data-en="AI Diagnosis & Staging" data-ml="AI രോഗനിർണയവും ഘട്ടവും">AI Diagnosis & Staging</h4><p data-en="Our deep learning model detects the disease and classifies it into Stage 1, 2, or 3 based on severity." data-ml="ഞങ്ങളുടെ ഡീപ് ലേണിംഗ് മോഡൽ രോഗം കണ്ടെത്തി, തീവ്രത അടിസ്ഥാനമാക്കി സ്റ്റേജ് 1, 2, അല്ലെങ്കിൽ 3 ആയി വർഗ്ഗീകരിക്കുന്നു.">Our deep learning model detects the disease and classifies it into Stage 1, 2, or 3 based on severity.</p></div>
+    <div class="step"><div class="step-num">03</div><h4 data-en="Crop & Weather Analysis" data-ml="വിളയും കാലാവസ്ഥയും വിശകലനം">Crop & Weather Analysis</h4><p data-en="The system cross-references soil, weather, and historical crop-loss data to generate the season's crop recommendations." data-ml="മണ്ണ്, കാലാവസ്ഥ, ചരിത്ര വിള-നഷ്ട ഡേറ്റ എന്നിവ ക്രോസ്-റഫറൻസ് ചെയ്ത് സീസണിലെ വിള ശുപാർശകൾ സൃഷ്ടിക്കുന്നു.">The system cross-references soil, weather, and historical crop-loss data to generate the season's crop recommendations.</p></div>
+    <div class="step"><div class="step-num">04</div><h4 data-en="Actionable Advisory" data-ml="പ്രവർത്തനക്ഷമമായ ഉപദേശം">Actionable Advisory</h4><p data-en="Farmers receive treatment steps, preventive tips, and crop suggestions in their own language via the app." data-ml="ചികിത്സാ ഘട്ടങ്ങൾ, മുൻകരുതൽ നിർദ്ദേശങ്ങൾ, വിള നിർദ്ദേശങ്ങൾ എന്നിവ സ്വന്തം ഭാഷയിൽ ആപ്പ് വഴി കർഷകർക്ക് ലഭിക്കുന്നു.">Farmers receive treatment steps, preventive tips, and crop suggestions in their own language via the app.</p></div>
+  </div>
+</section>
+
+<!-- WHO WE SERVE -->
+<section class="audience">
+  <div class="audience-header">
+    <div class="section-label" data-en="Who We Serve" data-ml="ഞങ്ങൾ ആരെ സേവിക്കുന്നു">Who We Serve</div>
+    <h2 class="section-title" data-en="Built for Every Stakeholder in Agriculture" data-ml="കൃഷിയിലെ ഓരോ പങ്കാളിക്കും വേണ്ടി നിർമ്മിച്ചത്">Built for Every Stakeholder in Agriculture</h2>
+  </div>
+  <div class="audience-grid">
+    <div class="aud-card"><span class="aud-icon">👨‍🌾</span><h3 data-en="Individual Farmers" data-ml="വ്യക്തിഗത കർഷകർ">Individual Farmers</h3><p data-en="Instant leaf diagnosis and stage-wise treatment steps, explained clearly in the farmer's own language." data-ml="ഇല രോഗനിർണയവും ഘട്ടം തിരിച്ചുള്ള ചികിത്സാ ഘട്ടങ്ങളും കർഷകന്റെ സ്വന്തം ഭാഷയിൽ വ്യക്തമായി വിശദീകരിക്കുന്നു.">Instant leaf diagnosis and stage-wise treatment steps, explained clearly in the farmer's own language.</p></div>
+    <div class="aud-card"><span class="aud-icon">🌾</span><h3 data-en="FPOs & Cooperatives" data-ml="FPO-കളും സഹകരണ സ്ഥാപനങ്ങളും">FPOs & Cooperatives</h3><p data-en="Track disease trends and severity stages across member farms, and coordinate group treatment and seasonal planning." data-ml="അംഗ ഫാമുകളിലുടനീളം രോഗ പ്രവണതകളും തീവ്രത ഘട്ടങ്ങളും നിരീക്ഷിക്കുകയും, സംഘ ചികിത്സയും കാലിക ആസൂത്രണവും ഏകോപിപ്പിക്കുകയും ചെയ്യാം.">Track disease trends and severity stages across member farms, and coordinate group treatment and seasonal planning.</p></div>
+    <div class="aud-card"><span class="aud-icon">🔬</span><h3 data-en="Agri Researchers & Extension Officers" data-ml="കൃഷി ഗവേഷകരും വിപുലീകരണ ഉദ്യോഗസ്ഥരും">Agri Researchers & Extension Officers</h3><p data-en="Use aggregated disease and stage data to study outbreak patterns and improve regional advisory accuracy." data-ml="രോഗബാധാ രീതികൾ പഠിക്കാനും പ്രാദേശിക ഉപദേശ കൃത്യത മെച്ചപ്പെടുത്താനും സമാഹരിച്ച രോഗ, ഘട്ട ഡേറ്റ ഉപയോഗിക്കുന്നു.">Use aggregated disease and stage data to study outbreak patterns and improve regional advisory accuracy.</p></div>
+  </div>
+</section>
+
+<!-- ABOUT -->
+<section class="about" id="about">
+  <div>
+    <div class="section-label" data-en="About the Platform" data-ml="പ്ലാറ്റ്ഫോമിനെ കുറിച്ച്">About the Platform</div>
+    <h2 class="section-title" data-en="Built by AI Engineers, Backed by Agronomy" data-ml="AI എഞ്ചിനീയർമാർ നിർമ്മിച്ചത്, കാർഷിക ശാസ്ത്രം പിൻതുണയ്ക്കുന്നത്">Built by AI Engineers, Backed by Agronomy</h2>
+    <p class="section-sub" data-en="AgriVision AI is a decision-support platform by a team of ML engineers and agronomists, combining computer vision, historical agricultural data, weather forecasting, and market analysis into one system." data-ml="AgriVision AI ML എഞ്ചിനീയർമാരും കൃഷി വിദഗ്ധരും ചേർന്ന് നിർമ്മിച്ച ഒരു തീരുമാന-പിന്തുണ പ്ലാറ്റ്ഫോമാണ്, കമ്പ്യൂട്ടർ വിഷൻ, ചരിത്ര കാർഷിക ഡേറ്റ, കാലാവസ്ഥ പ്രവചനം, വിപണി വിശകലനം എന്നിവ ഒരൊറ്റ സിസ്റ്റത്തിൽ സംയോജിപ്പിക്കുന്നു.">AgriVision AI is a decision-support platform by a team of ML engineers and agronomists, combining computer vision, historical agricultural data, weather forecasting, and market analysis into one system.</p>
+    <div class="about-values">
+      <div class="value-item" data-en="Deep learning model trained on labeled crop-leaf image datasets" data-ml="ലേബൽ ചെയ്ത വിള-ഇല ചിത്ര ഡേറ്റാസെറ്റുകളിൽ പരിശീലിപ്പിച്ച ഡീപ് ലേണിംഗ് മോഡൽ">Deep learning model trained on labeled crop-leaf image datasets</div>
+      <div class="value-item" data-en="Severity-stage classification validated across multiple crop types" data-ml="ഒന്നിലധികം വിള ഇനങ്ങളിലുടനീളം സ്ഥിരീകരിച്ച തീവ്രത-ഘട്ട വർഗ്ഗീകരണം">Severity-stage classification validated across multiple crop types</div>
+      <div class="value-item" data-en="Combines disease diagnosis, crop planning, and profit estimation in one app" data-ml="രോഗനിർണയം, വിള ആസൂത്രണം, ലാഭ കണക്കാക്കൽ എന്നിവ ഒറ്റ ആപ്പിൽ സംയോജിപ്പിക്കുന്നു">Combines disease diagnosis, crop planning, and profit estimation in one app</div>
+      <div class="value-item" data-en="Privacy-first: farmer photos and data are never sold or shared" data-ml="സ്വകാര്യത ഒന്നാം: കർഷക ഫോട്ടോകളും ഡേറ്റയും ഒരിക്കലും വിൽക്കുകയോ പങ്കിടുകയോ ഇല്ല">Privacy-first: farmer photos and data are never sold or shared</div>
+      <div class="value-item" data-en="Multilingual and accessible to farmers of every technical background" data-ml="ബഹുഭാഷയും ഏത് സാങ്കേതിക പശ്ചാത്തലമുള്ള കർഷകർക്കും പ്രാപ്യവും">Multilingual and accessible to farmers of every technical background</div>
+    </div>
+  </div>
+  <div class="about-visual">
+    <h4 data-en="Platform Performance Metrics" data-ml="പ്ലാറ്റ്ഫോം പ്രകടന മെട്രിക്കുകൾ">Platform Performance Metrics</h4>
+    <div class="about-metric"><div class="about-metric-top"><span data-en="Disease Detection Accuracy" data-ml="രോഗ കണ്ടെത്തൽ കൃത്യത">Disease Detection Accuracy</span><strong>96%</strong></div><div class="about-track"><div class="about-fill" data-w="96"></div></div></div>
+    <div class="about-metric"><div class="about-metric-top"><span data-en="Stage Classification Accuracy" data-ml="ഘട്ട വർഗ്ഗീകരണ കൃത്യത">Stage Classification Accuracy</span><strong>91%</strong></div><div class="about-track"><div class="about-fill" data-w="91"></div></div></div>
+    <div class="about-metric"><div class="about-metric-top"><span data-en="Crop Recommendation Relevance" data-ml="വിള ശുപാർശ പ്രസക്തി">Crop Recommendation Relevance</span><strong>89%</strong></div><div class="about-track"><div class="about-fill" data-w="89"></div></div></div>
+    <div class="about-metric"><div class="about-metric-top"><span data-en="Farmer Adoption Rate" data-ml="കർഷക സ്വീകരണ നിരക്ക്">Farmer Adoption Rate</span><strong>85%</strong></div><div class="about-track"><div class="about-fill" data-w="85"></div></div></div>
+    <div class="about-metric"><div class="about-metric-top"><span data-en="Average Scan Response Time" data-ml="ശരാശരി സ്കാൻ പ്രതികരണ സമയം">Average Scan Response Time</span><strong>&lt;3s</strong></div><div class="about-track"><div class="about-fill" data-w="97"></div></div></div>
+  </div>
+</section>
+
+<!-- TESTIMONIALS -->
+<section class="testimonials">
+  <div class="test-header">
+    <div class="section-label" data-en="Farmer Stories" data-ml="കർഷക അനുഭവങ്ങൾ">Farmer Stories</div>
+    <h2 class="section-title" data-en="What Our Users Say" data-ml="ഞങ്ങളുടെ ഉപഭോക്താക്കൾ പറയുന്നത്">What Our Users Say</h2>
+  </div>
+  <div class="test-grid">
+    <div class="test-card">
+      <div class="test-stars">★★★★★</div>
+      <p class="test-text" data-en='"AgriVision flagged early blight at Stage 1 on my tomato leaves before I noticed anything myself. I treated it that same day and saved the whole crop."' data-ml='"എന്റെ തക്കാളി ഇലകളിലെ ഏർളി ബ്ലൈറ്റ് സ്റ്റേജ് 1-ൽ തന്നെ AgriVision കണ്ടെത്തി, ഞാൻ ശ്രദ്ധിക്കും മുൻപ്. അതേ ദിവസം തന്നെ ചികിത്സിച്ച് മുഴുവൻ വിളയും രക്ഷിച്ചു."'>"AgriVision flagged early blight at Stage 1 on my tomato leaves before I noticed anything myself. I treated it that same day and saved the whole crop."</p>
+      <div class="test-author"><div class="test-avatar">👨‍🌾</div><div class="test-info"><div class="name">രാജൻ നായർ</div><div class="role" data-en="Tomato Farmer, Wayanad, Kerala" data-ml="തക്കാളി കർഷകൻ, വയനാട്, കേരളം">Tomato Farmer, Wayanad, Kerala</div></div></div>
+    </div>
+    <div class="test-card">
+      <div class="test-stars">★★★★★</div>
+      <p class="test-text" data-en='"Seeing disease stages across 400 member farms lets me coordinate group spraying schedules instead of reacting farm by farm."' data-ml='"400 അംഗ ഫാമുകളിലുടനീളമുള്ള രോഗ ഘട്ടങ്ങൾ കാണുന്നത്, ഓരോ ഫാമും വെവ്വേറെ പ്രതികരിക്കുന്നതിന് പകരം സംഘ സ്പ്രേയിംഗ് ഷെഡ്യൂൾ ഏകോപിപ്പിക്കാൻ സഹായിക്കുന്നു."'>"Seeing disease stages across 400 member farms lets me coordinate group spraying schedules instead of reacting farm by farm."</p>
+      <div class="test-author"><div class="test-avatar">👩‍💼</div><div class="test-info"><div class="name">മീര കൃഷ്ണൻ</div><div class="role" data-en="FPO Manager, Palakkad, Kerala" data-ml="FPO മാനേജർ, പാലക്കാട്, കേരളം">FPO Manager, Palakkad, Kerala</div></div></div>
+    </div>
+    <div class="test-card">
+      <div class="test-stars">★★★★☆</div>
+      <p class="test-text" data-en='"The stage-wise data across our region helps us plan advisories before an outbreak spreads, not after farmers start reporting damage."' data-ml='"ഞങ്ങളുടെ പ്രദേശത്തുടനീളമുള്ള ഘട്ടം തിരിച്ചുള്ള ഡേറ്റ, കർഷകർ നാശം റിപ്പോർട്ട് ചെയ്യാൻ തുടങ്ങുന്നതിന് മുൻപ്, രോഗബാധ പടരും മുൻപ് ഉപദേശം ആസൂത്രണം ചെയ്യാൻ സഹായിക്കുന്നു."'>"The stage-wise data across our region helps us plan advisories before an outbreak spreads, not after farmers start reporting damage."</p>
+      <div class="test-author"><div class="test-avatar">🔬</div><div class="test-info"><div class="name">സുരേഷ് മേനോൻ</div><div class="role" data-en="Agri Extension Officer, Palakkad" data-ml="കൃഷി വിപുലീകരണ ഉദ്യോഗസ്ഥൻ, പാലക്കാട്">Agri Extension Officer, Palakkad</div></div></div>
+    </div>
+  </div>
+</section>
+
+<!-- CTA -->
+<section class="cta">
+  <div class="falling-leaves" id="fallingLeaves"></div>
+  <div class="cta-content">
+    <h2 data-en="Start Diagnosing Your Crops Today" data-ml="ഇന്നുതന്നെ നിങ്ങളുടെ വിളകൾ രോഗനിർണയം ചെയ്യൂ">Start Diagnosing Your Crops Today</h2>
+    <p data-en="Join farmers already using AgriVision AI to catch disease early, know exactly how severe it is, and plan a more profitable season." data-ml="രോഗം നേരത്തേ കണ്ടെത്താനും, തീവ്രത കൃത്യമായി അറിയാനും, കൂടുതൽ ലാഭകരമായ സീസൺ ആസൂത്രണം ചെയ്യാനും AgriVision AI ഇതിനകം ഉപയോഗിക്കുന്ന കർഷകരോടൊപ്പം ചേരൂ.">Join farmers already using AgriVision AI to catch disease early, know exactly how severe it is, and plan a more profitable season.</p>
+    <div class="cta-btns">
+      {% if session.get('user_id') %}
+        <a href="{{ url_for('dashboard') }}" class="btn-white" data-en="Go to Dashboard" data-ml="ഡാഷ്ബോർഡിലേക്ക് പോകൂ">Go to Dashboard</a>
+      {% else %}
+        <a href="{{ url_for('register') }}" class="btn-white" data-en="Scan a Leaf Free" data-ml="സൗജന്യമായി ഇല സ്കാൻ ചെയ്യൂ">Scan a Leaf Free</a>
+      {% endif %}
+      <a href="#" class="btn-ghost" data-en="Book a Demo" data-ml="ഡെമോ ബുക്ക് ചെയ്യൂ">Book a Demo</a>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-top">
+    <div class="footer-brand">
+      <div class="logo">🌿 Agri<span>Vision</span> AI</div>
+      <p data-en="AI-powered crop disease detection, stage prediction, and seasonal crop recommendation for India's farmers. Diagnose. Plan. Prosper." data-ml="ഇന്ത്യൻ കർഷകർക്കായുള്ള AI-ശക്തിയുള്ള വിള രോഗ കണ്ടെത്തൽ, ഘട്ട പ്രവചനം, കാലിക വിള ശുപാർശ. രോഗനിർണയം ചെയ്യൂ. ആസൂത്രണം ചെയ്യൂ. അഭിവൃദ്ധി നേടൂ.">AI-powered crop disease detection, stage prediction, and seasonal crop recommendation for India's farmers. Diagnose. Plan. Prosper.</p>
+    </div>
+    <div class="footer-col">
+      <h5 data-en="Platform" data-ml="പ്ലാറ്റ്ഫോം">Platform</h5>
+      <ul>
+        <li><a href="#" data-en="Leaf Scan" data-ml="ഇല സ്കാൻ">Leaf Scan</a></li>
+        <li><a href="#" data-en="Disease Library" data-ml="രോഗ ലൈബ്രറി">Disease Library</a></li>
+        <li><a href="#" data-en="Crop Recommendation" data-ml="വിള ശുപാർശ">Crop Recommendation</a></li>
+        <li><a href="#" data-en="Market Insights" data-ml="വിപണി വിവരങ്ങൾ">Market Insights</a></li>
+        <li><a href="#" data-en="API Access" data-ml="API ആക്സസ്">API Access</a></li>
+      </ul>
+    </div>
+    <div class="footer-col">
+      <h5 data-en="Company" data-ml="കമ്പനി">Company</h5>
+      <ul>
+        <li><a href="#" data-en="About Us" data-ml="ഞങ്ങളെ കുറിച്ച്">About Us</a></li>
+        <li><a href="#" data-en="Our Mission" data-ml="ഞങ്ങളുടെ ദൗത്യം">Our Mission</a></li>
+        <li><a href="#" data-en="Blog" data-ml="ബ്ലോഗ്">Blog</a></li>
+        <li><a href="#" data-en="Careers" data-ml="ജോലി അവസരങ്ങൾ">Careers</a></li>
+        <li><a href="#" data-en="Contact" data-ml="ബന്ധപ്പെടൂ">Contact</a></li>
+      </ul>
+    </div>
+    <div class="footer-col">
+      <h5 data-en="Support" data-ml="സഹായം">Support</h5>
+      <ul>
+        <li><a href="#" data-en="Documentation" data-ml="ഡോക്യുമെന്റേഷൻ">Documentation</a></li>
+        <li><a href="#" data-en="Privacy Policy" data-ml="സ്വകാര്യതാ നയം">Privacy Policy</a></li>
+        <li><a href="#" data-en="Terms of Service" data-ml="സേവന നിബന്ധനകൾ">Terms of Service</a></li>
+        <li><a href="#" data-en="Help Centre" data-ml="സഹായ കേന്ദ്രം">Help Centre</a></li>
+      </ul>
+    </div>
+  </div>
+  <div class="footer-bottom">
+    <span data-en="© 2026 AgriVision AI · Built with ❤️ using Python & Deep Learning" data-ml="© 2026 AgriVision AI · Python, ഡീപ് ലേണിംഗ് ഉപയോഗിച്ച് ❤️ നിർമ്മിച്ചത്">© 2026 AgriVision AI · Built with ❤️ using Python & Deep Learning</span>
+    <span data-en="Empowering Indian Agriculture with AI" data-ml="AI ഉപയോഗിച്ച് ഇന്ത്യൻ കൃഷിയെ ശക്തിപ്പെടുത്തുന്നു">Empowering Indian Agriculture with AI</span>
+  </div>
+</footer>
+
+<script>
+  let currentLang = 'en';
+
+  function setLang(lang) {
+    currentLang = lang;
+    document.body.classList.toggle('lang-ml', lang === 'ml');
+    document.documentElement.lang = lang === 'ml' ? 'ml' : 'en';
+
+    document.querySelectorAll('[data-en]').forEach(el => {
+      const text = el.getAttribute('data-' + lang) || el.getAttribute('data-en');
+      if (el.tagName === 'H1') {
+        el.innerHTML = text;
+      } else {
+        el.textContent = text;
+      }
+    });
+
+    document.querySelectorAll('.lang-btn').forEach(btn => {
+      btn.classList.remove('active');
+      if ((lang === 'en' && btn.textContent.trim() === 'EN') ||
+          (lang === 'ml' && btn.textContent.trim() === 'മലയാളം')) {
+        btn.classList.add('active');
+      }
+    });
+  }
+
+  const hamburger = document.getElementById('hamburger');
+  const mobileMenu = document.getElementById('mobileMenu');
+
+  hamburger.addEventListener('click', () => {
+    const isOpen = mobileMenu.classList.toggle('open');
+    hamburger.classList.toggle('open');
+    document.body.style.overflow = isOpen ? 'hidden' : '';
+  });
+
+  mobileMenu.querySelectorAll('a').forEach(link => {
+    link.addEventListener('click', () => {
+      mobileMenu.classList.remove('open');
+      hamburger.classList.remove('open');
+      document.body.style.overflow = '';
+    });
+  });
+
+  // Animate about-section progress bars once visible
+  const aboutFills = document.querySelectorAll('.about-fill');
+  const aboutObserver = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        entry.target.style.width = entry.target.dataset.w + '%';
+        aboutObserver.unobserve(entry.target);
+      }
+    });
+  }, { threshold: 0.3 });
+  aboutFills.forEach(el => aboutObserver.observe(el));
+
+  // Ambient falling leaves in CTA section
+  const leafEmojis = ['🍃', '🌿', '🍂'];
+  const fallingContainer = document.getElementById('fallingLeaves');
+  const leafCount = 14;
+  for (let i = 0; i < leafCount; i++) {
+    const leaf = document.createElement('span');
+    leaf.textContent = leafEmojis[i % leafEmojis.length];
+    leaf.style.left = (Math.random() * 100) + '%';
+    leaf.style.animationDuration = (7 + Math.random() * 6) + 's';
+    leaf.style.animationDelay = (Math.random() * 8) + 's';
+    leaf.style.fontSize = (1 + Math.random() * 0.8) + 'rem';
+    fallingContainer.appendChild(leaf);
+  }
+</script>
+</body>
+</html>

@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block title %}Dashboard · AgriVision AI{% endblock %}
+{% block content %}
+<div class="dashboard-card">
+  <h1>🌿 Welcome, {{ user.username }}!</h1>
+  <p>You're logged in to AgriVision AI. This is a placeholder dashboard — hook up the leaf scan and crop recommendation features here next.</p>
+
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      <div class="flash-list" style="text-align:left;">
+        {% for category, message in messages %}
+          <div class="flash flash-{{ category }}">{{ message }}</div>
+        {% endfor %}
+      </div>
+    {% endif %}
+  {% endwith %}
+
+  <div class="dashboard-meta">
+    <div><span class="k">Username</span><span class="v">{{ user.username }}</span></div>
+    <div><span class="k">Email</span><span class="v">{{ user.email }}</span></div>
+    <div><span class="k">Location</span><span class="v">{{ user.location or '—' }}</span></div>
+    <div><span class="k">Farming Experience</span><span class="v">{{ user.farming_experience if user.farming_experience is not none else '—' }} yrs</span></div>
+    <div><span class="k">Preferred Language</span><span class="v">{{ 'English' if user.preferred_language == 'en' else 'മലയാളം' }}</span></div>
+    <div><span class="k">Member Since</span><span class="v">{{ user.created_at }}</span></div>
+  </div>
+
+  <a href="{{ url_for('logout') }}" class="btn-primary" style="text-decoration:none; display:inline-block;">Log Out</a>
+  <div class="auth-footer-link"><a href="{{ url_for('index') }}">← Back to Home</a></div>
+</div>
+{% endblock %}

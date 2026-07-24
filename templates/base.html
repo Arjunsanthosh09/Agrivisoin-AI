@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>{% block title %}AgriVision AI{% endblock %}</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;800&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+
+<nav>
+  <a href="{{ url_for('index') }}" class="logo">🌿 Agri<span>Vision</span> AI</a>
+  <div class="nav-right">
+    <a href="{{ url_for('index') }}">Home</a>
+    {% if session.get('user_id') %}
+      <a href="{{ url_for('dashboard') }}">Dashboard</a>
+      <a href="{{ url_for('logout') }}" class="nav-cta">Logout →</a>
+    {% else %}
+      <a href="{{ url_for('login') }}">Login</a>
+      <a href="{{ url_for('register') }}" class="nav-cta">Sign Up →</a>
+    {% endif %}
+  </div>
+</nav>
+
+<div class="auth-wrapper">
+  {% block content %}{% endblock %}
+</div>
+
+</body>
+</html>

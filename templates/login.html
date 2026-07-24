@@ -1,0 +1,96 @@
+{% extends "base.html" %}
+{% block title %}Login · AgriVision AI{% endblock %}
+{% block content %}
+<div class="auth-visual">
+  <div>
+    <div class="visual-eyebrow">Leaf Vision Engine</div>
+    <h2>Point your camera at a leaf. Know what's wrong in seconds.</h2>
+    <p class="visual-sub">Log back in to pick up your scan history, saved fields, and the crop recommendations built around them.</p>
+  </div>
+
+  <div class="scan-stage">
+    <div class="scan-ring r1"></div>
+    <div class="scan-ring r2"></div>
+    <div class="scan-ring r3"></div>
+    <div class="particle"></div>
+    <div class="particle"></div>
+    <div class="particle"></div>
+    <div class="particle"></div>
+    <div class="leaf-glyph">
+      <svg viewBox="0 0 100 100">
+        <path class="leaf-outline" d="M50 8C74 14 88 34 84 56C80 78 62 92 50 92C38 92 20 78 16 56C12 34 26 14 50 8Z"/>
+        <path class="leaf-vein" d="M50 14V88"/>
+        <path class="leaf-vein" d="M50 30C42 34 32 34 26 30"/>
+        <path class="leaf-vein" d="M50 48C40 52 30 52 22 47"/>
+        <path class="leaf-vein" d="M50 66C41 70 32 70 25 65"/>
+        <circle class="leaf-spot" cx="40" cy="44" r="2.4"/>
+        <circle class="leaf-spot" cx="58" cy="58" r="1.8"/>
+      </svg>
+    </div>
+    <div class="scan-sweep"></div>
+  </div>
+
+  <div class="feature-row">
+    <div class="feature-item"><span class="dot"></span>Disease detection</div>
+    <div class="feature-item"><span class="dot"></span>Growth stage tracking</div>
+    <div class="feature-item"><span class="dot"></span>Season-ready tips</div>
+  </div>
+</div>
+
+<div class="auth-form-side">
+  <div class="auth-card">
+    <div class="auth-badge">🔬 Welcome Back</div>
+    <h1>Log In to AgriVision AI</h1>
+    <p class="auth-sub">Access your leaf scans, crop recommendations, and detection history.</p>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        <div class="flash-list">
+          {% for category, message in messages %}
+            <div class="flash flash-{{ category }}">{{ message }}</div>
+          {% endfor %}
+        </div>
+      {% endif %}
+    {% endwith %}
+
+    <form method="POST" action="{{ url_for('login') }}" class="js-scan-form">
+      <div class="field">
+        <label for="identifier">Email or Username</label>
+        <input type="text" id="identifier" name="identifier" placeholder="you@example.com" required autofocus>
+      </div>
+
+      <div class="field">
+        <label for="password">Password</label>
+        <input type="password" id="password" name="password" placeholder="Your password" required>
+      </div>
+
+      <button type="submit" class="btn-scan">
+        <span class="btn-scan-blade left"></span>
+        <span class="btn-scan-blade right"></span>
+        <span class="btn-scan-label">Log In</span>
+        <span class="btn-scan-icon">
+          <svg viewBox="0 0 24 24"><path d="M4 12.5L9.5 18L20 6"/></svg>
+        </span>
+      </button>
+    </form>
+
+    <div class="auth-footer-link">
+      Don't have an account? <a href="{{ url_for('register') }}">Sign up</a>
+    </div>
+  </div>
+</div>
+
+<script>
+  document.querySelectorAll('.js-scan-form').forEach(function (form) {
+    form.addEventListener('submit', function (e) {
+      if (form.dataset.animating === 'true') return;
+      var btn = form.querySelector('.btn-scan');
+      if (!btn) return;
+      e.preventDefault();
+      form.dataset.animating = 'true';
+      btn.classList.add('is-scanning');
+      setTimeout(function () { form.submit(); }, 680);
+    });
+  });
+</script>
+{% endblock %}

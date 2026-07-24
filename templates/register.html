@@ -1,0 +1,126 @@
+{% extends "base.html" %}
+{% block title %}Sign Up · AgriVision AI{% endblock %}
+{% block content %}
+<div class="auth-visual">
+  <div>
+    <div class="visual-eyebrow">Join the Field</div>
+    <h2>Every scan makes the next diagnosis sharper.</h2>
+    <p class="visual-sub">Create an account to start diagnosing leaf disease, tracking growth stages, and getting crop advice tuned to your season.</p>
+  </div>
+
+  <div class="scan-stage">
+    <div class="scan-ring r1"></div>
+    <div class="scan-ring r2"></div>
+    <div class="scan-ring r3"></div>
+    <div class="particle"></div>
+    <div class="particle"></div>
+    <div class="particle"></div>
+    <div class="particle"></div>
+    <div class="leaf-glyph">
+      <svg viewBox="0 0 100 100">
+        <path class="leaf-outline" d="M50 8C74 14 88 34 84 56C80 78 62 92 50 92C38 92 20 78 16 56C12 34 26 14 50 8Z"/>
+        <path class="leaf-vein" d="M50 14V88"/>
+        <path class="leaf-vein" d="M50 30C42 34 32 34 26 30"/>
+        <path class="leaf-vein" d="M50 48C40 52 30 52 22 47"/>
+        <path class="leaf-vein" d="M50 66C41 70 32 70 25 65"/>
+        <circle class="leaf-spot" cx="40" cy="44" r="2.4"/>
+        <circle class="leaf-spot" cx="58" cy="58" r="1.8"/>
+      </svg>
+    </div>
+    <div class="scan-sweep"></div>
+  </div>
+
+  <div class="feature-row">
+    <div class="feature-item"><span class="dot"></span>Disease detection</div>
+    <div class="feature-item"><span class="dot"></span>Growth stage tracking</div>
+    <div class="feature-item"><span class="dot"></span>Season-ready tips</div>
+  </div>
+</div>
+
+<div class="auth-form-side">
+  <div class="auth-card">
+    <div class="auth-badge">🌱 Join AgriVision AI</div>
+    <h1>Create Your Account</h1>
+    <p class="auth-sub">Sign up to get instant leaf disease diagnosis, stage prediction, and season-ready crop recommendations.</p>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        <div class="flash-list">
+          {% for category, message in messages %}
+            <div class="flash flash-{{ category }}">{{ message }}</div>
+          {% endfor %}
+        </div>
+      {% endif %}
+    {% endwith %}
+
+    <form method="POST" action="{{ url_for('register') }}" class="js-scan-form">
+      <div class="field">
+        <label for="username">Username</label>
+        <input type="text" id="username" name="username" placeholder="e.g. rajan_farmer" value="{{ form_data.username or '' }}" required minlength="3">
+      </div>
+
+      <div class="field">
+        <label for="email">Email Address</label>
+        <input type="email" id="email" name="email" placeholder="you@example.com" value="{{ form_data.email or '' }}" required>
+      </div>
+
+      <div class="form-row">
+        <div class="field">
+          <label for="password">Password</label>
+          <input type="password" id="password" name="password" placeholder="At least 8 characters" required minlength="8">
+        </div>
+        <div class="field">
+          <label for="confirm_password">Confirm Password</label>
+          <input type="password" id="confirm_password" name="confirm_password" placeholder="Repeat password" required minlength="8">
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="field">
+          <label for="location">Location <span class="hint">(optional)</span></label>
+          <input type="text" id="location" name="location" placeholder="e.g. Wayanad, Kerala" value="{{ form_data.location or '' }}">
+        </div>
+        <div class="field">
+          <label for="farming_experience">Years Farming <span class="hint">(optional)</span></label>
+          <input type="number" id="farming_experience" name="farming_experience" min="0" max="100" placeholder="e.g. 5" value="{{ form_data.farming_experience or '' }}">
+        </div>
+      </div>
+
+      <div class="field">
+        <label for="preferred_language">Preferred Language</label>
+        <select id="preferred_language" name="preferred_language">
+          <option value="en" {% if form_data.preferred_language == 'en' or not form_data.preferred_language %}selected{% endif %}>English</option>
+          <option value="ml" {% if form_data.preferred_language == 'ml' %}selected{% endif %}>മലയാളം (Malayalam)</option>
+        </select>
+      </div>
+
+      <button type="submit" class="btn-scan">
+        <span class="btn-scan-blade left"></span>
+        <span class="btn-scan-blade right"></span>
+        <span class="btn-scan-label">Create Account</span>
+        <span class="btn-scan-icon">
+          <svg viewBox="0 0 24 24"><path d="M4 12.5L9.5 18L20 6"/></svg>
+        </span>
+      </button>
+    </form>
+
+    <div class="auth-footer-link">
+      Already have an account? <a href="{{ url_for('login') }}">Log in</a>
+    </div>
+  </div>
+</div>
+
+<script>
+  document.querySelectorAll('.js-scan-form').forEach(function (form) {
+    form.addEventListener('submit', function (e) {
+      if (form.dataset.animating === 'true') return;
+      var btn = form.querySelector('.btn-scan');
+      if (!btn) return;
+      e.preventDefault();
+      form.dataset.animating = 'true';
+      btn.classList.add('is-scanning');
+      setTimeout(function () { form.submit(); }, 680);
+    });
+  });
+</script>
+{% endblock %}

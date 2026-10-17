@@ -409,7 +409,9 @@ This project is licensed under the MIT License — see the [LICENSE](LICENSE) fi
 
 | Role | Name | GitHub |
 |---|---|---|
-| Member 1 | Your Name | [@Gowtham-thulasi](https://github.com/Gowtham-thulasi) |
+| Member 1 | Arjun Santhosh | [@Arjunsanthosh](https://github.com/Arjunsanthosh09) |
+| Member 1 | Gowtham Thulasi | [@Gowtham-thulasi](https://github.com/Gowtham-thulasi) |
+| Member 1 | HariKrishnan R | [@Harikrishnan](https://github.com/Gowtham-thulasi) |
 
 ---
 
@@ -425,12 +427,10 @@ This project is licensed under the MIT License — see the [LICENSE](LICENSE) fi
 
 ## 📞 Contact
 
-**Project Maintainer:** Your Name
+**Project Maintainer:** Arjun Santhosh
 
-- 📧 Email: your.email@example.com
-- 📱 Phone: +91 12345 67890
-- 🌐 Website: [agrivision-ai.com](https://agrivision-ai.com)
-- 🐦 Twitter: [@agrivision_ai](https://twitter.com/agrivision_ai)
+- 📧 Email: arjunsanthosh440@gmail.com
+
 
 ---
 
@@ -439,11 +439,11 @@ This project is licensed under the MIT License — see the [LICENSE](LICENSE) fi
 If you use this project in your research, please cite:
 
 ```bibtex
-@software{agrivision_ai_2024,
-  author = {Your Name and Team Members},
+@software{agrivision_ai_2026,
+  author = {Arjun Santhosh, Gowtham Thulasi , Harikrishnan},
   title = {AgriVision AI: Intelligent Crop Disease Detection and Smart Seasonal Crop Recommendation System},
-  year = {2024},
-  url = {https://github.com/yourusername/AgriVision_AI}
+  year = {2026},
+  url = {https://github.com/Arjunsanthosh09/AgriVision_AI}
 }
 ```
 

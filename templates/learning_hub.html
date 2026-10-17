@@ -1,0 +1,275 @@
+{% extends "base.html" %}
+{% block title %}Learning Hub · AgriVision AI{% endblock %}
+{% block content %}
+
+<style>
+/* AgriVision AI · Learning Hub
+   Classes are prefixed "lh-". Elements with data-lang get no display rule,
+   so the language toggle keeps working. */
+.lh-page {
+  width:100%; max-width:1320px; flex:1 1 100%; align-self:stretch; grid-column:1 / -1; min-width:0;
+  margin:0 auto; padding:28px 24px 48px; display:flex; flex-direction:column; gap:18px;
+}
+@keyframes lh-in { from { opacity:0; transform:translateY(12px); } to { opacity:1; transform:none; } }
+
+/* ---------- Top shell: hero + AI search + AI result, joined ---------- */
+.lh-top { border:1px solid var(--border); border-radius:20px; overflow:hidden; background:#fff; box-shadow:0 24px 48px -28px rgba(18,53,36,.35); animation:lh-in .6s cubic-bezier(.16,1,.3,1) both; }
+
+.lh-hero {
+  position:relative; isolation:isolate; color:var(--cream); padding:30px 36px;
+  display:flex; justify-content:space-between; align-items:center; gap:24px; flex-wrap:wrap;
+  background:
+    radial-gradient(circle at 10% 20%, rgba(111,207,122,.20), transparent 45%),
+    radial-gradient(circle at 92% 85%, rgba(227,168,63,.18), transparent 42%),
+    linear-gradient(135deg, var(--forest-950), var(--forest-900) 50%, var(--forest-800));
+}
+.lh-hero::before {
+  content:''; position:absolute; inset:0; z-index:-1;
+  background-image:linear-gradient(rgba(255,255,255,.04) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.04) 1px, transparent 1px);
+  background-size:34px 34px; mask-image:radial-gradient(circle at 75% 40%, #000, transparent 75%);
+}
+.lh-hero h1 { margin:0 0 8px; font-family:'Playfair Display',serif; font-weight:600; font-size:clamp(1.7rem,3vw,2.5rem); line-height:1.15; }
+.lh-hero p { margin:0; max-width:560px; font-size:.95rem; line-height:1.7; color:rgba(250,248,242,.74); }
+.lh-stats { display:flex; gap:10px; flex-wrap:wrap; }
+.lh-stat { padding:10px 18px; border-radius:14px; text-align:center; background:rgba(255,255,255,.10); border:1px solid rgba(255,255,255,.22); }
+.lh-stat b { display:block; font-family:'Playfair Display',serif; font-size:1.5rem; line-height:1.1; color:var(--wheat); }
+.lh-stat small { font-size:.72rem; font-weight:600; color:rgba(250,248,242,.78); }
+
+/* AI search band */
+.lh-ai { padding:18px 36px; background:var(--green-xpale); border-top:1px solid var(--border); border-left:5px solid var(--green-mid); }
+.lh-ai-label { display:flex; align-items:center; gap:8px; margin-bottom:10px; font-size:.86rem; font-weight:700; color:var(--green-deep); }
+.lh-search { display:flex; gap:10px; flex-wrap:wrap; }
+.lh-search input {
+  flex:1; min-width:220px; padding:12px 16px; border:1.5px solid var(--border); border-radius:12px; background:#fff;
+  font-family:inherit; font-size:.92rem; color:var(--text); transition:border-color .2s, box-shadow .2s;
+}
+.lh-search input::placeholder { color:#9ca3af; }
+.lh-search input:focus { outline:none; border-color:var(--green-mid); box-shadow:0 0 0 4px var(--green-pale); }
+.lh-btn {
+  display:inline-flex; align-items:center; gap:8px; padding:0 24px; height:48px; border:none; border-radius:12px; cursor:pointer;
+  font-family:inherit; font-weight:600; font-size:.9rem; color:#fff; background:var(--green-mid);
+  box-shadow:0 4px 18px rgba(18,53,36,.22); transition:background .2s, transform .2s, opacity .2s;
+}
+.lh-btn:hover { background:var(--green-deep); transform:translateY(-1px); }
+.lh-btn:disabled { opacity:.6; cursor:not-allowed; transform:none; }
+.lh-btn:focus-visible { outline:3px solid var(--wheat); outline-offset:2px; }
+.lh-status { min-height:18px; margin-top:8px; font-size:.78rem; color:var(--gray); }
+
+/* AI result (inside shell) */
+.lh-result { display:none; padding:26px 36px; background:#fff; border-top:1px solid var(--border); }
+.lh-result-top { display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; }
+.lh-badge { padding:4px 12px; border-radius:99px; font-size:.74rem; font-weight:700; color:var(--green-mid); background:var(--green-pale); border:1px solid var(--border); }
+.lh-close { width:30px; height:30px; border-radius:50%; border:1px solid var(--border); background:#fff; color:var(--gray); cursor:pointer; font-size:.85rem; transition:background .2s; }
+.lh-close:hover { background:var(--green-pale); }
+.lh-close:focus-visible { outline:3px solid var(--wheat); outline-offset:2px; }
+#aiResultTitle { font-family:'Playfair Display',serif; font-weight:600; font-size:1.5rem; line-height:1.3; color:var(--green-deep); }
+#aiResultSummary { margin-top:8px; font-size:.92rem; line-height:1.7; font-style:italic; color:var(--gray); }
+#aiResultContent { margin-top:16px; font-size:.95rem; line-height:1.85; color:#2c3a31; white-space:pre-line; }
+#aiResultMeta { margin-top:16px; padding-top:12px; border-top:1px dashed var(--border); font-size:.8rem; color:var(--gray); }
+
+/* ---------- Body: sidebar + grid ---------- */
+.lh-layout { display:grid; grid-template-columns:260px minmax(0,1fr); gap:18px; align-items:start; }
+.lh-side { position:sticky; top:90px; display:flex; flex-direction:column; gap:14px; }
+.lh-card { background:#fff; border:1px solid var(--border); border-radius:20px; padding:18px; }
+.lh-card h3 { margin:0 0 12px; display:flex; align-items:center; gap:10px; font-family:'Playfair Display',serif; font-weight:600; font-size:1rem; color:var(--green-deep); }
+.lh-ico { width:30px; height:30px; flex-shrink:0; display:inline-grid; place-items:center; border-radius:9px; font-size:15px; background:var(--green-pale); }
+
+.lh-cats { display:grid; gap:6px; }
+.lh-cat {
+  display:flex; justify-content:space-between; align-items:center; gap:10px; padding:10px 12px; border-radius:12px; text-decoration:none;
+  font-size:.86rem; font-weight:600; color:var(--green-deep); background:var(--green-xpale); border:1px solid var(--green-pale);
+  transition:background .2s, border-color .2s, transform .2s;
+}
+.lh-cat:hover { background:var(--green-pale); border-color:var(--green-mid); transform:translateX(3px); }
+.lh-cat:focus-visible { outline:3px solid var(--wheat); outline-offset:2px; }
+.lh-cat em { font-style:normal; min-width:26px; padding:1px 8px; border-radius:99px; text-align:center; font-size:.75rem; background:#fff; border:1px solid var(--border); color:var(--green-mid); }
+.lh-cat.active { color:#fff; background:var(--green-mid); border-color:var(--green-mid); }
+.lh-cat.active em { color:var(--green-deep); }
+
+.lh-back {
+  display:flex; align-items:center; justify-content:center; gap:8px; padding:11px 16px; border-radius:12px; text-decoration:none;
+  font-size:.86rem; font-weight:600; color:var(--green-mid); background:#fff; border:1px solid var(--green-mid);
+  transition:background .2s, transform .2s;
+}
+.lh-back:hover { background:var(--green-pale); transform:translateY(-2px); }
+.lh-back:focus-visible { outline:3px solid var(--wheat); outline-offset:2px; }
+
+/* Article grid: fills the full width, equal-height cards */
+.lh-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(280px,1fr)); gap:14px; }
+.lh-art {
+  display:flex; flex-direction:column; padding:20px; border-radius:20px; text-decoration:none; background:#fff;
+  border:1px solid var(--border); border-top:4px solid var(--green-mid);
+  transition:transform .3s cubic-bezier(.16,1,.3,1), box-shadow .3s;
+  animation:lh-in .5s cubic-bezier(.16,1,.3,1) both; animation-delay:calc(var(--i,0) * 50ms);
+}
+.lh-art:hover { transform:translateY(-4px); box-shadow:0 16px 28px -18px rgba(18,53,36,.5); }
+.lh-art:focus-visible { outline:3px solid var(--wheat); outline-offset:2px; }
+.lh-art-top { display:flex; justify-content:space-between; align-items:center; gap:8px; }
+.lh-tag { padding:3px 10px; border-radius:99px; font-size:.68rem; font-weight:700; letter-spacing:.5px; text-transform:uppercase; color:var(--green-mid); background:var(--green-pale); }
+.lh-min { font-size:.76rem; font-weight:600; color:var(--gray); }
+.lh-art h2 { margin:12px 0 8px; font-family:'Playfair Display',serif; font-weight:600; font-size:1.08rem; line-height:1.35; color:var(--green-deep); }
+.lh-art p { margin:0; font-size:.86rem; line-height:1.65; color:#4b5b50; display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; overflow:hidden; }
+.lh-more { margin-top:auto; padding-top:14px; font-size:.82rem; font-weight:700; color:var(--green-mid); }
+
+.lh-empty { grid-column:1 / -1; text-align:center; padding:56px 20px; border-radius:20px; background:#fff; border:1px dashed var(--border); color:var(--gray); font-size:.92rem; }
+.lh-empty div { font-size:2.6rem; margin-bottom:8px; }
+
+/* ---------- Responsive ---------- */
+@media (max-width:960px) {
+  .lh-layout { grid-template-columns:1fr; }
+  .lh-side { position:static; }
+  .lh-cats { display:flex; overflow-x:auto; padding-bottom:4px; }
+  .lh-cat { flex-shrink:0; white-space:nowrap; }
+  .lh-cat:hover { transform:none; }
+}
+@media (max-width:600px) {
+  .lh-page { padding:16px 12px 36px; }
+  .lh-hero, .lh-ai, .lh-result { padding-left:20px; padding-right:20px; }
+  .lh-btn { flex:1; justify-content:center; }
+}
+@media (prefers-reduced-motion:reduce) { .lh-art, .lh-top { animation:none; } }
+</style>
+
+<div class="lh-page">
+
+  <!-- ============ Hero + AI search (joined) ============ -->
+  <section class="lh-top">
+
+    <div class="lh-hero">
+      <div>
+        <h1>📚 <span data-lang="en">Learning Hub</span><span data-lang="ml">പഠന കേന്ദ്രം</span></h1>
+        <p>
+          <span data-lang="en">Articles, guides, and schemes for Kerala farmers. Search with AI.</span>
+          <span data-lang="ml">കേരള കർഷകർക്കുള്ള ലേഖനങ്ങളും ഗൈഡുകളും.</span>
+        </p>
+      </div>
+      <div class="lh-stats">
+        <div class="lh-stat"><b>{{ articles|length }}</b><small><span data-lang="en">Articles</span><span data-lang="ml">ലേഖനങ്ങൾ</span></small></div>
+        <div class="lh-stat"><b>{{ categories|length }}</b><small><span data-lang="en">Categories</span><span data-lang="ml">വിഭാഗങ്ങൾ</span></small></div>
+      </div>
+    </div>
+
+    <div class="lh-ai">
+      <div class="lh-ai-label">
+        🤖
+        <span data-lang="en">Ask AI — get an article on any farming topic</span>
+        <span data-lang="ml">AI ചോദിക്കുക — ഏത് കൃഷി വിഷയത്തിലും ലേഖനം</span>
+      </div>
+      <div class="lh-search">
+        <input id="aiQuery" type="text" placeholder="e.g., how to grow ginger in Kerala" aria-label="Search topic">
+        <button type="button" onclick="runLearningSearch()" id="aiBtn" class="lh-btn">
+          🔍 <span data-lang="en">Search</span><span data-lang="ml">തിരയുക</span>
+        </button>
+      </div>
+      <div id="aiStatus" class="lh-status" aria-live="polite"></div>
+    </div>
+
+    <div id="aiResultWrap" class="lh-result">
+      <div class="lh-result-top">
+        <span id="aiBadge" class="lh-badge">🤖 AI</span>
+        <button type="button" class="lh-close" onclick="clearAiResult()" aria-label="Close">✕</button>
+      </div>
+      <div id="aiResultTitle"></div>
+      <div id="aiResultSummary"></div>
+      <div id="aiResultContent"></div>
+      <div id="aiResultMeta"></div>
+    </div>
+
+  </section>
+
+  <!-- ============ Sidebar + articles ============ -->
+  <div class="lh-layout">
+
+    <aside class="lh-side">
+      <div class="lh-card">
+        <h3><span class="lh-ico">🗂️</span><span data-lang="en">Categories</span><span data-lang="ml">വിഭാഗങ്ങൾ</span></h3>
+        <nav class="lh-cats">
+          <a class="lh-cat{% if not selected_category %} active{% endif %}" href="{{ url_for('learning_hub_page') }}">
+            <span><span data-lang="en">All</span><span data-lang="ml">എല്ലാം</span></span>
+          </a>
+          {% for c in categories %}
+          <a class="lh-cat{% if c.category == selected_category %} active{% endif %}" href="{{ url_for('learning_hub_page', category=c.category) }}">
+            <span>{{ c.category }}</span><em>{{ c.c }}</em>
+          </a>
+          {% endfor %}
+        </nav>
+      </div>
+      <a class="lh-back" href="{{ url_for('dashboard') }}">
+        ← <span data-lang="en">Back to Dashboard</span><span data-lang="ml">ഡാഷ്ബോർഡിലേക്ക്</span>
+      </a>
+    </aside>
+
+    <div class="lh-grid">
+      {% for a in articles %}
+      <a class="lh-art" style="--i:{{ loop.index0 }}" href="{{ url_for('learning_article_page', article_id=a.id) }}">
+        <div class="lh-art-top">
+          <span class="lh-tag">{{ a.category or 'Article' }}</span>
+          <span class="lh-min">{{ a.read_minutes or 4 }} min</span>
+        </div>
+        <h2><span data-lang="en">{{ a.title_en }}</span><span data-lang="ml">{{ a.title_ml or a.title_en }}</span></h2>
+        <p><span data-lang="en">{{ a.summary_en }}</span><span data-lang="ml">{{ a.summary_ml or a.summary_en }}</span></p>
+        <div class="lh-more"><span data-lang="en">Read more →</span><span data-lang="ml">കൂടുതൽ വായിക്കുക →</span></div>
+      </a>
+      {% endfor %}
+
+      {% if not articles %}
+      <div class="lh-empty">
+        <div>📚</div>
+        <span data-lang="en">No articles in this category.</span>
+        <span data-lang="ml">ഈ വിഭാഗത്തിൽ ലേഖനങ്ങളില്ല.</span>
+      </div>
+      {% endif %}
+    </div>
+
+  </div>
+</div>
+
+<script>
+function currentLang() { return localStorage.getItem('agrivision_lang') || 'en'; }
+
+async function runLearningSearch() {
+  const q = document.getElementById('aiQuery').value.trim();
+  if (!q) return;
+  const btn = document.getElementById('aiBtn');
+  const status = document.getElementById('aiStatus');
+  btn.disabled = true;
+  status.textContent = '🤖 Searching and generating…';
+  document.getElementById('aiResultWrap').style.display = 'none';
+
+  try {
+    const res = await fetch('/learning/search', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ query: q, language: currentLang() })
+    });
+    const data = await res.json();
+    if (!data.articles || data.articles.length === 0) {
+      status.textContent = '❌ No results. Try a different topic.';
+      return;
+    }
+    const a = data.articles[0];
+    document.getElementById('aiResultTitle').textContent = a.title || '';
+    document.getElementById('aiResultSummary').textContent = a.summary || '';
+    document.getElementById('aiResultContent').textContent = a.content || a.summary || '';
+    document.getElementById('aiResultMeta').textContent = 'Category: ' + (a.category || '—') + ' · ' + (a.read_minutes || 4) + ' min';
+    document.getElementById('aiBadge').textContent = data.source === 'ai' ? '🤖 AI-generated' : '📚 From library';
+    document.getElementById('aiResultWrap').style.display = 'block';
+    status.textContent = '✅ Done (' + data.source + ')';
+  } catch (e) {
+    status.textContent = '❌ Error: ' + e.message;
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+function clearAiResult() {
+  document.getElementById('aiResultWrap').style.display = 'none';
+  document.getElementById('aiStatus').textContent = '';
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  const inp = document.getElementById('aiQuery');
+  if (inp) inp.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); runLearningSearch(); }});
+});
+</script>
+{% endblock %}

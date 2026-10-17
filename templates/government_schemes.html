@@ -1,0 +1,352 @@
+{% extends "base.html" %}
+{% block title %}Government Schemes · AgriVision AI{% endblock %}
+{% block content %}
+
+<style>
+/* AgriVision AI · Government schemes (prefix "sc-") — uses theme variables from your main stylesheet */
+.sc-page { width:100%; max-width:1440px; flex:1 1 100%; align-self:stretch; grid-column:1/-1; min-width:0; margin:0 auto; padding:28px 32px 48px; display:flex; flex-direction:column; gap:22px; }
+.sc-rise { opacity:0; transform:translateY(16px); animation:sc-rise .7s cubic-bezier(.16,1,.3,1) forwards; animation-delay:calc(var(--i,0)*90ms); }
+@keyframes sc-rise { to { opacity:1; transform:none; } }
+
+/* HERO + AI FINDER (one block) */
+.sc-hero { position:relative; overflow:hidden; isolation:isolate; border-radius:22px; padding:32px 36px; color:var(--cream);
+  display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1.15fr); gap:32px; align-items:center;
+  background:radial-gradient(circle at 12% 18%, rgba(111,207,122,.20), transparent 45%), radial-gradient(circle at 88% 85%, rgba(227,168,63,.16), transparent 42%), linear-gradient(135deg,var(--forest-950),var(--forest-900) 50%,var(--forest-800));
+  box-shadow:0 24px 50px -22px rgba(10,29,19,.55); }
+.sc-hero::before { content:''; position:absolute; inset:0; z-index:-1; background-image:linear-gradient(rgba(255,255,255,.04) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.04) 1px,transparent 1px); background-size:34px 34px; mask-image:radial-gradient(circle at 70% 50%,#000,transparent 75%); }
+.sc-eyebrow { display:inline-flex; align-items:center; gap:8px; font-size:.72rem; font-weight:700; letter-spacing:1.4px; text-transform:uppercase; color:var(--wheat); margin-bottom:10px; }
+.sc-eyebrow::before { content:''; width:7px; height:7px; border-radius:50%; background:var(--wheat); box-shadow:0 0 0 4px var(--wheat-soft); }
+.sc-hero h1 { margin:0; font-family:'Playfair Display',serif; font-weight:600; font-size:clamp(1.6rem,2.6vw,2.3rem); line-height:1.2; }
+.sc-hero p { margin:10px 0 18px; font-size:.95rem; color:rgba(250,248,242,.72); line-height:1.6; }
+.sc-btn { display:inline-flex; align-items:center; gap:8px; padding:10px 20px; border-radius:10px; font-weight:600; font-size:.84rem; text-decoration:none; color:var(--cream); background:rgba(255,255,255,.10); border:1px solid rgba(255,255,255,.28); transition:transform .2s, background .2s; }
+.sc-btn:hover { transform:translateY(-2px); background:rgba(255,255,255,.18); }
+.sc-btn:focus-visible { outline:3px solid var(--wheat); outline-offset:2px; }
+
+.sc-finder { background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.18); border-radius:18px; padding:20px; backdrop-filter:blur(6px); }
+.sc-finder-title { display:flex; align-items:center; gap:10px; font-weight:700; font-size:.92rem; margin-bottom:12px; }
+.sc-finder-title span:first-child { width:34px; height:34px; border-radius:10px; display:grid; place-items:center; font-size:18px; background:var(--wheat-soft); }
+.sc-ask { display:flex; gap:10px; flex-wrap:wrap; }
+.sc-ask input { flex:1; min-width:200px; border:1.5px solid rgba(255,255,255,.25); border-radius:10px; padding:12px 14px; font-size:.9rem; font-family:inherit; color:var(--cream); background:rgba(0,0,0,.22); transition:border-color .2s, box-shadow .2s; }
+.sc-ask input::placeholder { color:rgba(250,248,242,.5); }
+.sc-ask input:focus { outline:none; border-color:var(--green-light); box-shadow:0 0 0 4px rgba(111,207,122,.18); }
+.sc-ask button { padding:12px 24px; border:none; border-radius:10px; cursor:pointer; font:700 .88rem 'DM Sans',sans-serif; color:var(--green-deep); background:var(--cream); transition:transform .2s, box-shadow .2s, opacity .2s; }
+.sc-ask button:hover { transform:translateY(-2px); box-shadow:0 8px 20px rgba(0,0,0,.25); }
+.sc-ask button:focus-visible { outline:3px solid var(--wheat); outline-offset:2px; }
+.sc-ask button:disabled { opacity:.6; cursor:wait; transform:none; }
+.sc-sugg { display:flex; gap:8px; flex-wrap:wrap; margin-top:12px; }
+.sc-sugg button { padding:6px 13px; border-radius:99px; cursor:pointer; font:600 .76rem 'DM Sans',sans-serif; color:var(--cream); background:rgba(255,255,255,.10); border:1px solid rgba(255,255,255,.22); transition:background .2s, transform .2s; }
+.sc-sugg button:hover { background:rgba(255,255,255,.2); transform:translateY(-1px); }
+.sc-sugg button:focus-visible { outline:3px solid var(--wheat); outline-offset:2px; }
+.sc-status { margin-top:10px; min-height:18px; font-size:.8rem; font-weight:600; color:var(--scan-line); }
+
+/* STATS */
+.sc-stats { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:16px; }
+.sc-stat { --accent:var(--green-mid); position:relative; overflow:hidden; background:var(--white); border:1px solid var(--border); border-radius:18px; padding:18px 20px 20px; display:flex; flex-direction:column; gap:8px; transition:transform .3s cubic-bezier(.16,1,.3,1), box-shadow .3s; }
+.sc-stat:hover { transform:translateY(-4px); box-shadow:0 18px 32px -20px rgba(18,53,36,.35); }
+.sc-stat::after { content:''; position:absolute; left:0; bottom:0; height:4px; width:100%; background:var(--accent); transform:scaleX(0); transform-origin:left; animation:sc-bar 1.1s cubic-bezier(.16,1,.3,1) forwards; animation-delay:calc(var(--i,0)*90ms + 400ms); }
+@keyframes sc-bar { to { transform:scaleX(1); } }
+.sc-stat-top { display:flex; justify-content:space-between; align-items:center; }
+.sc-stat-label { font-size:.8rem; font-weight:600; color:var(--gray); }
+.sc-stat-icon { width:36px; height:36px; border-radius:10px; display:grid; place-items:center; font-size:18px; background:color-mix(in srgb,var(--accent) 13%,white); }
+.sc-stat-value { font-size:2rem; font-weight:700; line-height:1.05; color:var(--accent); font-variant-numeric:tabular-nums; letter-spacing:-.5px; }
+.sc-stat.s1 { --accent:#2f7d4f; } .sc-stat.s2 { --accent:#3b82a0; } .sc-stat.s3 { --accent:#c98a1a; } .sc-stat.s4 { --accent:#7a5ea8; }
+
+/* AI RESULTS */
+.sc-ai { display:none; background:linear-gradient(135deg,var(--green-xpale),#fff8ea); border:1px solid var(--border); border-left:5px solid var(--wheat); border-radius:18px; padding:22px; }
+.sc-ai-head { display:flex; justify-content:space-between; align-items:center; gap:10px; margin-bottom:16px; flex-wrap:wrap; }
+
+/* MAIN */
+.sc-main { display:grid; grid-template-columns:290px minmax(0,1fr); gap:18px; align-items:start; }
+.sc-side { position:sticky; top:84px; display:flex; flex-direction:column; gap:18px; }
+.sc-card { background:var(--white); border:1px solid var(--border); border-radius:18px; padding:22px; display:flex; flex-direction:column; }
+.sc-card h3, .sc-ai-head h3 { margin:0 0 14px; display:flex; align-items:center; gap:10px; font-family:'Playfair Display',serif; font-size:1.1rem; font-weight:600; color:var(--green-deep); }
+.sc-ai-head h3 { margin:0; }
+.sc-label { font-size:.72rem; font-weight:700; letter-spacing:.8px; text-transform:uppercase; color:var(--gray); margin:0 0 8px; }
+.sc-group + .sc-group { margin-top:18px; }
+.sc-search { position:relative; }
+.sc-search input { width:100%; border:1.5px solid var(--border); border-radius:10px; padding:10px 14px 10px 38px; font-size:.88rem; font-family:inherit; background:var(--green-xpale); color:var(--text); transition:border-color .2s, box-shadow .2s, background .2s; }
+.sc-search input:focus { outline:none; border-color:var(--green-mid); background:#fff; box-shadow:0 0 0 4px var(--green-pale); }
+.sc-search::before { content:'🔍'; position:absolute; left:12px; top:50%; transform:translateY(-50%); font-size:14px; }
+.sc-states { display:flex; flex-direction:column; gap:6px; }
+.sc-state { display:flex; align-items:center; justify-content:space-between; gap:10px; padding:10px 14px; border-radius:10px; text-decoration:none; font-size:.86rem; font-weight:600; color:var(--green-deep); background:var(--green-xpale); border:1px solid var(--green-pale); transition:all .2s; }
+.sc-state:hover { border-color:var(--green-mid); transform:translateX(3px); }
+.sc-state.on { background:var(--green-mid); border-color:var(--green-mid); color:#fff; }
+.sc-state:focus-visible { outline:3px solid var(--wheat); outline-offset:2px; }
+.sc-chips { display:flex; gap:7px; flex-wrap:wrap; }
+.sc-chip { border:1px solid var(--border); background:var(--white); color:var(--green-deep); border-radius:99px; padding:6px 13px; font:600 .76rem 'DM Sans',sans-serif; cursor:pointer; transition:all .2s; }
+.sc-chip:hover { border-color:var(--green-mid); }
+.sc-chip.on { background:var(--green-mid); border-color:var(--green-mid); color:#fff; }
+.sc-chip:focus-visible { outline:3px solid var(--wheat); outline-offset:2px; }
+
+.sc-list-head { display:flex; justify-content:space-between; align-items:center; gap:12px; margin-bottom:16px; flex-wrap:wrap; }
+.sc-list-head h3 { margin:0; }
+.sc-count { font-size:.76rem; font-weight:700; color:var(--green-mid); padding:5px 12px; border-radius:99px; background:var(--green-pale); }
+.sc-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(320px,1fr)); gap:16px; }
+
+/* scheme card */
+.sc-scheme { --accent:var(--green-mid); position:relative; overflow:hidden; display:flex; flex-direction:column; gap:12px; padding:20px 20px 16px; background:var(--white); border:1px solid var(--border); border-radius:16px; transition:transform .3s cubic-bezier(.16,1,.3,1), box-shadow .3s, border-color .3s; }
+.sc-scheme.ai { --accent:#c98a1a; background:#fff; }
+.sc-scheme::before { content:''; position:absolute; left:0; top:0; bottom:0; width:4px; background:var(--accent); }
+.sc-scheme:hover { transform:translateY(-4px); border-color:var(--accent); box-shadow:0 16px 28px -16px color-mix(in srgb,var(--accent) 60%,transparent); }
+.sc-scheme-top { display:flex; justify-content:space-between; align-items:flex-start; gap:10px; }
+.sc-scheme-name { margin:0; font-size:1rem; font-weight:700; line-height:1.35; color:var(--green-deep); }
+.sc-badge { flex-shrink:0; padding:3px 10px; border-radius:99px; font-size:.7rem; font-weight:700; background:color-mix(in srgb,var(--accent) 13%,white); color:var(--accent); white-space:nowrap; }
+.sc-desc { margin:0; font-size:.85rem; line-height:1.6; color:var(--text); }
+.sc-sec small { display:block; margin-bottom:3px; font-size:.7rem; font-weight:700; letter-spacing:.6px; text-transform:uppercase; color:var(--gray); }
+.sc-sec div { font-size:.84rem; line-height:1.55; color:var(--text); }
+.sc-benefit { padding:11px 13px; border-radius:12px; background:var(--green-xpale); border:1px solid var(--green-pale); }
+.sc-benefit small { color:var(--green-mid); }
+.sc-benefit div { color:var(--green-deep); font-weight:600; }
+.sc-scheme-foot { margin-top:auto; display:flex; justify-content:space-between; align-items:center; gap:8px; padding-top:12px; border-top:1px dashed var(--border); font-size:.78rem; font-weight:600; color:var(--gray); }
+.sc-cat { padding:2px 10px; border-radius:99px; background:var(--green-pale); color:var(--green-deep); font-size:.72rem; }
+.sc-clear { padding:7px 14px; border-radius:8px; cursor:pointer; font:700 .78rem 'DM Sans',sans-serif; color:var(--green-mid); background:var(--green-pale); border:none; transition:background .2s, color .2s; }
+.sc-clear:hover { background:var(--green-mid); color:#fff; }
+.sc-note { padding:36px 10px; text-align:center; color:var(--gray); font-weight:600; font-size:.9rem; }
+.sc-none { display:none; }
+.sc-empty { text-align:center; padding:56px 20px; color:var(--gray); font-weight:600; }
+.sc-empty div { font-size:44px; margin-bottom:10px; }
+
+@media (max-width:1180px) { .sc-hero { grid-template-columns:1fr; } .sc-stats { grid-template-columns:repeat(2,minmax(0,1fr)); } .sc-main { grid-template-columns:1fr; } .sc-side { position:static; flex-direction:row; flex-wrap:wrap; } .sc-side > * { flex:1 1 280px; } }
+@media (max-width:760px) { .sc-page { padding:18px 16px 36px; } .sc-hero { padding:24px; } .sc-side { flex-direction:column; } }
+@media (max-width:480px) { .sc-grid { grid-template-columns:1fr; } .sc-stats { grid-template-columns:repeat(2,minmax(0,1fr)); } }
+@media (prefers-reduced-motion:reduce) { .sc-rise, .sc-stat::after { opacity:1; transform:none; animation:none; } .sc-stat::after { transform:none; } }
+</style>
+
+<div class="sc-page">
+
+  <!-- HERO + AI FINDER -->
+  <section class="sc-hero sc-rise" style="--i:0">
+    <div>
+      <div class="sc-eyebrow"><span data-lang="en">Farmer support</span><span data-lang="ml">കർഷക സഹായം</span></div>
+      <h1>🏛️ <span data-lang="en">Government Schemes for Farmers</span><span data-lang="ml">കർഷകർക്കുള്ള സർക്കാർ പദ്ധതികൾ</span></h1>
+      <p>
+        <span data-lang="en">Browse curated schemes, or let AI find ones matching your needs.</span>
+        <span data-lang="ml">ക്യൂറേറ്റ് ചെയ്ത പദ്ധതികൾ കാണുക, അല്ലെങ്കിൽ AI വഴി കണ്ടെത്തുക.</span>
+      </p>
+      <a class="sc-btn" href="{{ url_for('dashboard') }}">← <span data-lang="en">Back to Dashboard</span><span data-lang="ml">ഡാഷ്ബോർഡിലേക്ക്</span></a>
+    </div>
+
+    <div class="sc-finder">
+      <div class="sc-finder-title"><span>🤖</span><span data-lang="en">AI Scheme Finder</span><span data-lang="ml">AI പദ്ധതി കണ്ടെത്തൽ</span></div>
+      <div class="sc-ask">
+        <input id="aiQuery" type="text" placeholder="e.g., subsidy for drip irrigation in Kerala" aria-label="Describe what you need">
+        <button id="aiBtn" type="button" onclick="runAiSearch()">🔍 <span data-lang="en">Ask AI</span><span data-lang="ml">AI ചോദിക്കുക</span></button>
+      </div>
+      <div class="sc-sugg">
+        {% for q in ['Organic farming subsidy','Kerala farmer pension','Drip irrigation subsidy','Crop insurance for coconut','Women farmer schemes'] %}
+        <button type="button" data-q="{{ q }}" onclick="document.getElementById('aiQuery').value=this.dataset.q; runAiSearch();">{{ q }}</button>
+        {% endfor %}
+      </div>
+      <div class="sc-status" id="aiStatus" aria-live="polite"></div>
+    </div>
+  </section>
+
+  <!-- AI RESULTS -->
+  <section class="sc-ai" id="aiResultsWrap">
+    <div class="sc-ai-head">
+      <h3>🤖 <span data-lang="en">AI-Suggested Schemes</span><span data-lang="ml">AI നിർദ്ദേശിച്ച പദ്ധതികൾ</span></h3>
+      <button class="sc-clear" type="button" onclick="clearAiResults()">✕ <span data-lang="en">Clear</span><span data-lang="ml">മായ്ക്കുക</span></button>
+    </div>
+    <div class="sc-grid" id="aiResults"></div>
+  </section>
+
+  {% if schemes %}
+  {% set total = schemes|length %}
+  {% set kerala = schemes|selectattr('state','equalto','Kerala')|list|length %}
+  {% set types = schemes|map(attribute='scheme_type')|select|unique|list %}
+  {% set cats = schemes|map(attribute='category')|select|unique|list %}
+
+  <!-- STATS -->
+  <section class="sc-stats sc-rise" style="--i:1">
+    <div class="sc-stat s1" style="--i:2">
+      <div class="sc-stat-top"><span class="sc-stat-label"><span data-lang="en">Schemes listed</span><span data-lang="ml">പദ്ധതികൾ</span></span><span class="sc-stat-icon">🏛️</span></div>
+      <div class="sc-stat-value">{{ total }}</div>
+    </div>
+    <div class="sc-stat s2" style="--i:3">
+      <div class="sc-stat-top"><span class="sc-stat-label"><span data-lang="en">Kerala schemes</span><span data-lang="ml">കേരള പദ്ധതികൾ</span></span><span class="sc-stat-icon">🌴</span></div>
+      <div class="sc-stat-value">{{ kerala }}</div>
+    </div>
+    <div class="sc-stat s3" style="--i:4">
+      <div class="sc-stat-top"><span class="sc-stat-label"><span data-lang="en">Central / other</span><span data-lang="ml">കേന്ദ്രം / മറ്റുള്ളവ</span></span><span class="sc-stat-icon">🇮🇳</span></div>
+      <div class="sc-stat-value">{{ total - kerala }}</div>
+    </div>
+    <div class="sc-stat s4" style="--i:5">
+      <div class="sc-stat-top"><span class="sc-stat-label"><span data-lang="en">Categories</span><span data-lang="ml">വിഭാഗങ്ങൾ</span></span><span class="sc-stat-icon">🗂️</span></div>
+      <div class="sc-stat-value">{{ cats|length }}</div>
+    </div>
+  </section>
+  {% endif %}
+
+  <!-- FILTERS + LIST -->
+  <section class="sc-main sc-rise" style="--i:3">
+
+    <aside class="sc-side">
+      <div class="sc-card">
+        <h3>🎛️ <span data-lang="en">Filters</span><span data-lang="ml">ഫിൽട്ടറുകൾ</span></h3>
+
+        <div class="sc-group">
+          <p class="sc-label"><span data-lang="en">Search</span><span data-lang="ml">തിരയുക</span></p>
+          <div class="sc-search"><input type="search" id="scSearch" placeholder="Scheme, benefit, keyword…" aria-label="Search schemes"></div>
+        </div>
+
+        <div class="sc-group">
+          <p class="sc-label"><span data-lang="en">State</span><span data-lang="ml">സംസ്ഥാനം</span></p>
+          <div class="sc-states">
+            <a class="sc-state {{ '' if selected_state else 'on' }}" href="{{ url_for('schemes_page') }}"><span data-lang="en">All States</span><span data-lang="ml">എല്ലാ സംസ്ഥാനങ്ങളും</span></a>
+            <a class="sc-state {{ 'on' if selected_state == 'Kerala' else '' }}" href="{{ url_for('schemes_page', state='Kerala') }}">🌴 Kerala</a>
+            <a class="sc-state {{ 'on' if selected_state == 'All India' else '' }}" href="{{ url_for('schemes_page', state='All India') }}">🇮🇳 <span data-lang="en">Central (All India)</span><span data-lang="ml">കേന്ദ്രം (ഇന്ത്യ മുഴുവൻ)</span></a>
+          </div>
+        </div>
+
+        {% if schemes and types %}
+        <div class="sc-group">
+          <p class="sc-label"><span data-lang="en">Type</span><span data-lang="ml">തരം</span></p>
+          <div class="sc-chips" id="scTypes" role="group" aria-label="Type filter">
+            <button class="sc-chip on" type="button" data-v="all"><span data-lang="en">All</span><span data-lang="ml">എല്ലാം</span></button>
+            {% for t in types|sort %}<button class="sc-chip" type="button" data-v="{{ t }}">{{ t }}</button>{% endfor %}
+          </div>
+        </div>
+        {% endif %}
+
+        {% if schemes and cats %}
+        <div class="sc-group">
+          <p class="sc-label"><span data-lang="en">Category</span><span data-lang="ml">വിഭാഗം</span></p>
+          <div class="sc-chips" id="scCats" role="group" aria-label="Category filter">
+            <button class="sc-chip on" type="button" data-v="all"><span data-lang="en">All</span><span data-lang="ml">എല്ലാം</span></button>
+            {% for c in cats|sort %}<button class="sc-chip" type="button" data-v="{{ c }}">{{ c }}</button>{% endfor %}
+          </div>
+        </div>
+        {% endif %}
+      </div>
+    </aside>
+
+    <div class="sc-card">
+      <div class="sc-list-head">
+        <h3>✅ <span data-lang="en">Curated Schemes</span><span data-lang="ml">ക്യൂറേറ്റ് ചെയ്ത പദ്ധതികൾ</span></h3>
+        {% if schemes %}<span class="sc-count" id="scCount">{{ schemes|length }}</span>{% endif %}
+      </div>
+
+      {% if schemes %}
+      <div class="sc-grid" id="scGrid">
+        {% for s in schemes %}
+        <article class="sc-scheme"
+                 data-text="{{ (s.scheme_name ~ ' ' ~ (s.description or '') ~ ' ' ~ (s.eligibility_criteria or '') ~ ' ' ~ (s.benefits or ''))|lower|e }}"
+                 data-type="{{ s.scheme_type or '' }}" data-cat="{{ s.category or '' }}">
+          <div class="sc-scheme-top">
+            <h4 class="sc-scheme-name">{{ s.scheme_name }}</h4>
+            {% if s.scheme_type %}<span class="sc-badge">{{ s.scheme_type }}</span>{% endif %}
+          </div>
+          {% if s.description %}<p class="sc-desc">{{ s.description }}</p>{% endif %}
+          {% if s.eligibility_criteria %}
+          <div class="sc-sec"><small><span data-lang="en">Eligibility</span><span data-lang="ml">അർഹത</span></small><div>{{ s.eligibility_criteria }}</div></div>
+          {% endif %}
+          {% if s.benefits %}
+          <div class="sc-sec sc-benefit"><small><span data-lang="en">Benefits</span><span data-lang="ml">ആനുകൂല്യങ്ങൾ</span></small><div>{{ s.benefits }}</div></div>
+          {% endif %}
+          <div class="sc-scheme-foot">
+            <span>📍 {{ s.state or 'All India' }}</span>
+            {% if s.category %}<span class="sc-cat">{{ s.category }}</span>{% endif %}
+          </div>
+        </article>
+        {% endfor %}
+      </div>
+      <div class="sc-note sc-none" id="scNone"><span data-lang="en">No schemes match your filters.</span><span data-lang="ml">ഫിൽട്ടറിന് അനുയോജ്യമായ പദ്ധതികളില്ല.</span></div>
+      {% else %}
+      <div class="sc-empty"><div>🏛️</div><span data-lang="en">No curated schemes for this filter.</span><span data-lang="ml">ഈ ഫിൽട്ടറിന് പദ്ധതികളില്ല.</span></div>
+      {% endif %}
+    </div>
+  </section>
+</div>
+
+<script>
+function currentLang() { return localStorage.getItem('agrivision_lang') || 'en'; }
+function esc(str) { const d = document.createElement('div'); d.textContent = str || ''; return d.innerHTML; }
+
+async function runAiSearch() {
+  const q = document.getElementById('aiQuery').value.trim();
+  if (!q) return;
+  const btn = document.getElementById('aiBtn');
+  const status = document.getElementById('aiStatus');
+  const wrap = document.getElementById('aiResultsWrap');
+  const list = document.getElementById('aiResults');
+  const ml = currentLang() === 'ml';
+
+  btn.disabled = true;
+  status.textContent = ml ? '🤖 AI യോട് ചോദിക്കുന്നു…' : '🤖 Asking AI…';
+  wrap.style.display = 'block';
+  list.innerHTML = '<div class="sc-note">' + (ml ? 'തയ്യാറാക്കുന്നു…' : 'Generating…') + '</div>';
+  wrap.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+
+  try {
+    const res = await fetch('/schemes/search', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ query: q, language: currentLang() })
+    });
+    const data = await res.json();
+    if (!data.schemes || data.schemes.length === 0) {
+      list.innerHTML = '<div class="sc-note">' + (ml ? 'പദ്ധതികളൊന്നും കണ്ടെത്തിയില്ല. മറ്റൊരു ചോദ്യം ശ്രമിക്കുക.' : 'No schemes found. Try a different query.') + '</div>';
+      status.textContent = '';
+      return;
+    }
+    list.innerHTML = data.schemes.map(s => `
+      <article class="sc-scheme ai">
+        <div class="sc-scheme-top">
+          <h4 class="sc-scheme-name">${esc(s.scheme_name)}</h4>
+          ${s.scheme_type ? `<span class="sc-badge">${esc(s.scheme_type)}</span>` : ''}
+        </div>
+        ${s.description ? `<p class="sc-desc">${esc(s.description)}</p>` : ''}
+        ${s.eligibility_criteria ? `<div class="sc-sec"><small>${ml ? 'അർഹത' : 'Eligibility'}</small><div>${esc(s.eligibility_criteria)}</div></div>` : ''}
+        ${s.benefits ? `<div class="sc-sec sc-benefit"><small>${ml ? 'ആനുകൂല്യങ്ങൾ' : 'Benefits'}</small><div>${esc(s.benefits)}</div></div>` : ''}
+        <div class="sc-scheme-foot">
+          <span>📍 ${esc(s.state || 'All India')}</span>
+          <span class="sc-cat">🤖 AI</span>
+        </div>
+      </article>`).join('');
+    status.textContent = (ml ? '✅ കണ്ടെത്തിയത്: ' : '✅ Found ') + data.schemes.length + (ml ? ' പദ്ധതി(കൾ)' : ' scheme(s)');
+  } catch (e) {
+    list.innerHTML = '<div class="sc-note" style="color:var(--error);">' + (ml ? 'നെറ്റ്‌വർക്ക് പിശക്. വീണ്ടും ശ്രമിക്കുക.' : 'Network error. Try again.') + '</div>';
+    status.textContent = ml ? '❌ പരാജയപ്പെട്ടു' : '❌ Failed';
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+function clearAiResults() {
+  document.getElementById('aiResultsWrap').style.display = 'none';
+  document.getElementById('aiResults').innerHTML = '';
+  document.getElementById('aiStatus').textContent = '';
+}
+
+document.addEventListener('DOMContentLoaded', function () {
+  var inp = document.getElementById('aiQuery');
+  if (inp) inp.addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); runAiSearch(); } });
+
+  /* client-side filtering of curated schemes */
+  var grid = document.getElementById('scGrid'); if (!grid) return;
+  var cards = Array.prototype.slice.call(grid.children);
+  var state = { q: '', type: 'all', cat: 'all' };
+  function apply() {
+    var n = 0;
+    cards.forEach(function (c) {
+      var ok = (!state.q || c.dataset.text.indexOf(state.q) > -1) &&
+               (state.type === 'all' || c.dataset.type === state.type) &&
+               (state.cat === 'all' || c.dataset.cat === state.cat);
+      c.style.display = ok ? '' : 'none'; if (ok) n++;
+    });
+    document.getElementById('scCount').textContent = n;
+    document.getElementById('scNone').style.display = n ? 'none' : 'block';
+  }
+  function chips(id, key) {
+    var box = document.getElementById(id); if (!box) return;
+    box.addEventListener('click', function (e) {
+      var b = e.target.closest('.sc-chip'); if (!b) return;
+      box.querySelectorAll('.sc-chip').forEach(function (x) { x.classList.remove('on'); });
+      b.classList.add('on'); state[key] = b.dataset.v; apply();
+    });
+  }
+  chips('scTypes', 'type'); chips('scCats', 'cat');
+  document.getElementById('scSearch').addEventListener('input', function () { state.q = this.value.trim().toLowerCase(); apply(); });
+});
+</script>
+{% endblock %}

@@ -1,0 +1,244 @@
+{% extends "base.html" %}
+{% block title %}Disease Risk · AgriVision AI{% endblock %}
+{% block content %}
+
+<style>
+/* =========================================================
+   AgriVision AI · Disease Risk (input form)
+   Theme variables from your main stylesheet. Prefix: "dr-"
+   Layout: hero → [ form | tip + how-it-works ]
+   ========================================================= */
+.dr-page {
+  width: 100%; max-width: 1440px;
+  flex: 1 1 100%; align-self: stretch; grid-column: 1 / -1; min-width: 0;
+  margin: 0 auto; padding: 20px 24px 36px;
+  display: flex; flex-direction: column; gap: 16px;
+}
+.dr-rise { opacity: 0; transform: translateY(14px); animation: dr-rise .7s cubic-bezier(.16,1,.3,1) forwards; animation-delay: calc(var(--i, 0) * 90ms); }
+@keyframes dr-rise { to { opacity: 1; transform: none; } }
+
+/* ---------- Hero ---------- */
+.dr-hero {
+  position: relative; overflow: hidden; isolation: isolate;
+  display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 24px;
+  padding: 26px 32px; border-radius: 18px; color: var(--cream);
+  background:
+    radial-gradient(circle at 10% 20%, rgba(111,207,122,.20), transparent 45%),
+    radial-gradient(circle at 90% 85%, rgba(229,57,53,.22), transparent 42%),
+    linear-gradient(135deg, var(--forest-950) 0%, var(--forest-900) 50%, var(--forest-800) 100%);
+  box-shadow: 0 20px 44px -22px rgba(10,29,19,.55);
+}
+.dr-hero::before {
+  content: ''; position: absolute; inset: 0; z-index: -1;
+  background-image:
+    linear-gradient(rgba(255,255,255,.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,.04) 1px, transparent 1px);
+  background-size: 32px 32px;
+  mask-image: radial-gradient(circle at 70% 50%, #000, transparent 75%);
+}
+.dr-hero h1 { margin: 0; font-family: 'Playfair Display', serif; font-weight: 600; font-size: clamp(1.4rem, 2.4vw, 2rem); line-height: 1.2; display: flex; flex-wrap: wrap; gap: 4px 10px; align-items: baseline; }
+.dr-hero p { margin: 8px 0 0; font-size: .92rem; color: rgba(250,248,242,.72); max-width: 640px; }
+.dr-pulse { position: relative; width: 86px; height: 86px; display: grid; place-items: center; font-size: 38px; }
+.dr-pulse::before, .dr-pulse::after {
+  content: ''; position: absolute; inset: 0; border-radius: 50%;
+  border: 1px solid rgba(239,83,80,.5); animation: dr-ring 3s ease-out infinite;
+}
+.dr-pulse::after { animation-delay: 1.5s; }
+@keyframes dr-ring { 0% { transform: scale(.6); opacity: 0; } 25% { opacity: .9; } 100% { transform: scale(1.15); opacity: 0; } }
+
+/* ---------- Flash ---------- */
+.dr-flash-wrap { display: flex; flex-direction: column; gap: 8px; }
+.dr-flash {
+  display: flex; align-items: center; gap: 10px; padding: 11px 16px; border-radius: 12px;
+  font-size: .88rem; font-weight: 500;
+  background: var(--success-bg); color: var(--success);
+  border: 1px solid var(--border); border-left: 4px solid var(--green-light);
+}
+.dr-flash.error { background: var(--error-bg); color: var(--error); border-color: #f5c6c3; border-left-color: var(--error); }
+
+/* ---------- Main grid ---------- */
+.dr-main { display: grid; grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr); gap: 16px; align-items: start; }
+.dr-card { background: var(--white); border: 1px solid var(--border); border-radius: 18px; padding: 22px 24px; }
+.dr-card h3 {
+  margin: 0 0 14px; display: flex; align-items: center; gap: 10px;
+  font-family: 'Playfair Display', serif; font-size: 1.08rem; font-weight: 600; color: var(--green-deep);
+}
+.dr-card h3::after { content: ''; flex: 1; height: 1px; background: linear-gradient(90deg, var(--border), transparent); }
+
+/* form (override global form gap) */
+.dr-card form { gap: 16px; }
+.dr-row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.dr-row3 { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 14px; }
+.dr-f label { display: block; margin-bottom: 6px; font-size: .8rem; font-weight: 600; color: var(--green-deep); }
+.dr-in {
+  width: 100%; padding: 12px 14px; border: 1.5px solid var(--border); border-radius: 10px;
+  font-family: inherit; font-size: .92rem; color: var(--text); background: var(--green-xpale);
+  transition: border-color .2s, background .2s, box-shadow .2s;
+}
+.dr-in:focus { outline: none; border-color: var(--green-mid); background: #fff; box-shadow: 0 0 0 4px var(--green-pale); }
+.dr-in::placeholder { color: #9ca3af; }
+
+.dr-weather { padding: 16px; border-radius: 14px; background: var(--green-xpale); border: 1px solid var(--green-pale); }
+.dr-weather-title { margin: 0 0 12px; font-size: .78rem; font-weight: 700; color: var(--gray); text-transform: uppercase; letter-spacing: .8px; }
+.dr-weather .dr-in { background: #fff; font-size: 1.05rem; font-weight: 700; font-variant-numeric: tabular-nums; }
+
+.dr-submit {
+  display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%;
+  padding: 14px; border: none; border-radius: 12px; cursor: pointer;
+  font-family: inherit; font-size: .96rem; font-weight: 700; color: #fff;
+  background: linear-gradient(135deg, #b71c1c, #e53935);
+  box-shadow: 0 10px 22px -12px rgba(183,28,28,.7);
+  transition: transform .2s, box-shadow .2s;
+}
+.dr-submit:hover { transform: translateY(-2px); box-shadow: 0 16px 26px -12px rgba(183,28,28,.75); }
+.dr-submit:focus-visible { outline: 3px solid var(--wheat); outline-offset: 2px; }
+
+/* ---------- Side column ---------- */
+.dr-side { display: flex; flex-direction: column; gap: 16px; }
+.dr-tip { background: #fff8e1; border-color: #f3e2a8; border-left: 5px solid var(--wheat); }
+.dr-tip h3 { color: #8a5a00; }
+.dr-tip p { margin: 0; font-size: .86rem; line-height: 1.65; color: #5d4a1f; }
+
+.dr-steps { display: flex; flex-direction: column; gap: 10px; counter-reset: s; }
+.dr-step { display: flex; gap: 12px; align-items: flex-start; padding: 10px 12px; border-radius: 12px; background: var(--green-xpale); border: 1px solid var(--green-pale); }
+.dr-step::before {
+  counter-increment: s; content: counter(s);
+  flex-shrink: 0; width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center;
+  font-size: .78rem; font-weight: 700; color: #fff; background: var(--green-mid);
+}
+.dr-step b { display: block; font-size: .86rem; color: var(--green-deep); }
+.dr-step span.d { display: block; margin-top: 2px; font-size: .78rem; color: var(--gray); line-height: 1.5; }
+
+.dr-back {
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  padding: 11px 18px; border-radius: 10px; text-decoration: none;
+  font-size: .84rem; font-weight: 700; color: var(--green-mid); background: var(--green-pale); border: 1px solid var(--border);
+  transition: background .2s, color .2s, transform .2s;
+}
+.dr-back:hover { background: var(--green-mid); color: #fff; transform: translateY(-1px); }
+.dr-back:focus-visible { outline: 3px solid var(--wheat); outline-offset: 2px; }
+
+@media (max-width: 980px) { .dr-main { grid-template-columns: 1fr; } }
+@media (max-width: 640px) {
+  .dr-page { padding: 14px 12px 28px; }
+  .dr-hero { grid-template-columns: 1fr; padding: 22px 20px; }
+  .dr-pulse { display: none; }
+  .dr-row2, .dr-row3 { grid-template-columns: 1fr; }
+}
+@media (prefers-reduced-motion: reduce) { .dr-rise { opacity: 1; transform: none; animation: none; } .dr-pulse::before, .dr-pulse::after { animation: none; } }
+</style>
+
+<div class="dr-page">
+
+  <!-- ================= HERO ================= -->
+  <section class="dr-hero dr-rise" style="--i:0">
+    <div>
+      <h1>
+        🦠 <span data-lang="en">Disease Risk Prediction</span>
+        <span data-lang="ml">രോഗ സാധ്യത പ്രവചനം</span>
+      </h1>
+      <p>
+        <span data-lang="en">Enter today's weather to see which diseases may threaten your crop.</span>
+        <span data-lang="ml">ഇന്നത്തെ കാലാവസ്ഥ നൽകി നിങ്ങളുടെ വിളയ്ക്കുള്ള രോഗ സാധ്യത അറിയുക.</span>
+      </p>
+    </div>
+    <div class="dr-pulse" aria-hidden="true">🌦️</div>
+  </section>
+
+  <!-- ================= FLASH ================= -->
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      <div class="dr-flash-wrap dr-rise" style="--i:1">
+        {% for cat, msg in messages %}
+          <div class="dr-flash {{ 'error' if cat=='error' else '' }}">
+            <span>{{ '⚠️' if cat=='error' else '✅' }}</span><span>{{ msg }}</span>
+          </div>
+        {% endfor %}
+      </div>
+    {% endif %}
+  {% endwith %}
+
+  <!-- ================= FORM + SIDE ================= -->
+  <section class="dr-main dr-rise" style="--i:2">
+
+    <div class="dr-card">
+      <h3>🔮 <span data-lang="en">Today's conditions</span><span data-lang="ml">ഇന്നത്തെ സാഹചര്യം</span></h3>
+
+      <form method="POST">
+
+        <div class="dr-row2">
+          <div class="dr-f">
+            <label for="drLoc">📍 <span data-lang="en">Location</span><span data-lang="ml">സ്ഥലം</span></label>
+            <input class="dr-in" id="drLoc" type="text" name="location" required placeholder="e.g., Kottayam"
+                   value="{{ session.get('username','') }}">
+          </div>
+          <div class="dr-f">
+            <label for="drCrop">🌱 <span data-lang="en">Crop</span><span data-lang="ml">വിള</span></label>
+            <select class="dr-in" id="drCrop" name="crop">
+              <option value="">— <span data-lang="en">All crops</span><span data-lang="ml">എല്ലാ വിളകളും</span> —</option>
+              {% for c in crops %}
+              <option value="{{ c }}">{{ c }}</option>
+              {% endfor %}
+            </select>
+          </div>
+        </div>
+
+        <div class="dr-weather">
+          <p class="dr-weather-title"><span data-lang="en">Weather</span><span data-lang="ml">കാലാവസ്ഥ</span></p>
+          <div class="dr-row3">
+            <div class="dr-f">
+              <label for="drTemp">🌡️ <span data-lang="en">Temp (°C)</span><span data-lang="ml">താപനില</span></label>
+              <input class="dr-in" id="drTemp" type="number" step="0.1" name="temperature" required value="25">
+            </div>
+            <div class="dr-f">
+              <label for="drHum">💧 <span data-lang="en">Humidity (%)</span><span data-lang="ml">ഈർപ്പം</span></label>
+              <input class="dr-in" id="drHum" type="number" step="1" min="0" max="100" name="humidity" required value="75">
+            </div>
+            <div class="dr-f">
+              <label for="drRain">☔ <span data-lang="en">Rain (mm)</span><span data-lang="ml">മഴ</span></label>
+              <input class="dr-in" id="drRain" type="number" step="1" min="0" name="rainfall" required value="10">
+            </div>
+          </div>
+        </div>
+
+        <button type="submit" class="dr-submit">
+          🔮 <span data-lang="en">Predict Disease Risk</span><span data-lang="ml">രോഗ സാധ്യത പ്രവചിക്കുക</span>
+        </button>
+      </form>
+    </div>
+
+    <div class="dr-side">
+      <div class="dr-card dr-tip">
+        <h3>💡 <span data-lang="en">Tip</span><span data-lang="ml">സൂചന</span></h3>
+        <p>
+          <span data-lang="en">Get today's weather from your local weather app or news. The prediction is more accurate when you enter real numbers.</span>
+          <span data-lang="ml">ഇന്നത്തെ കാലാവസ്ഥ നിങ്ങളുടെ പ്രാദേശിക ആപ്പിൽ നിന്നോ വാർത്തയിൽ നിന്നോ എടുക്കുക.</span>
+        </p>
+      </div>
+
+      <div class="dr-card">
+        <h3>📋 <span data-lang="en">How it works</span><span data-lang="ml">എങ്ങനെ പ്രവർത്തിക്കുന്നു</span></h3>
+        <div class="dr-steps">
+          <div class="dr-step"><div>
+            <b><span data-lang="en">Enter the weather</span><span data-lang="ml">കാലാവസ്ഥ നൽകുക</span></b>
+            <span class="d"><span data-lang="en">Temperature, humidity and rainfall for your area.</span><span data-lang="ml">താപനില, ഈർപ്പം, മഴ.</span></span>
+          </div></div>
+          <div class="dr-step"><div>
+            <b><span data-lang="en">See your risks</span><span data-lang="ml">സാധ്യതകൾ കാണുക</span></b>
+            <span class="d"><span data-lang="en">Diseases ranked by how likely they are right now.</span><span data-lang="ml">രോഗങ്ങൾ സാധ്യത അനുസരിച്ച്.</span></span>
+          </div></div>
+          <div class="dr-step"><div>
+            <b><span data-lang="en">Follow the plan</span><span data-lang="ml">പദ്ധതി പിന്തുടരുക</span></b>
+            <span class="d"><span data-lang="en">AI advice and a 7-day preventive action plan.</span><span data-lang="ml">AI ഉപദേശവും 7 ദിവസത്തെ പദ്ധതിയും.</span></span>
+          </div></div>
+        </div>
+      </div>
+
+      <a class="dr-back" href="{{ url_for('dashboard') }}">
+        ← <span data-lang="en">Back to Dashboard</span><span data-lang="ml">ഡാഷ്ബോർഡിലേക്ക്</span>
+      </a>
+    </div>
+
+  </section>
+</div>
+{% endblock %}

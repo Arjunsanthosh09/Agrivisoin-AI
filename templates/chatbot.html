@@ -1,0 +1,467 @@
+{% extends "base.html" %}
+{% block title %}AI Farmer Assistant · AgriVision AI{% endblock %}
+{% block content %}
+
+<style>
+/* AgriVision AI · AI Farmer Assistant
+   Classes are prefixed "cb-". Elements with data-lang get no display rule,
+   so the language toggle keeps working. */
+.cb-page {
+  width:100%; max-width:1320px; flex:1 1 100%; align-self:stretch; grid-column:1 / -1; min-width:0;
+  margin:0 auto; padding:32px 24px 40px;
+}
+
+/* ---------- 3-column layout: left panel | chat | right panel ---------- */
+.cb-layout { display:grid; grid-template-columns:250px minmax(0,1fr) 250px; gap:20px; align-items:start; }
+.cb-side { position:sticky; top:90px; display:flex; flex-direction:column; gap:16px; min-width:0; animation:cb-in .6s cubic-bezier(.16,1,.3,1) .1s both; }
+
+.cb-card { background:#fff; border:1px solid var(--border); border-radius:20px; padding:20px; }
+.cb-card h3 { margin:0 0 12px; display:flex; align-items:center; gap:10px; font-family:'Playfair Display',serif; font-weight:600; font-size:1rem; color:var(--green-deep); }
+.cb-ico { width:30px; height:30px; flex-shrink:0; display:inline-grid; place-items:center; border-radius:9px; font-size:15px; background:var(--green-pale); }
+
+/* quick links */
+.cb-links { display:grid; gap:8px; }
+.cb-link {
+  display:flex; align-items:center; gap:10px; padding:10px 12px; border-radius:12px; text-decoration:none;
+  font-size:.86rem; font-weight:600; color:var(--green-deep); background:var(--green-xpale); border:1px solid var(--green-pale);
+  transition:background .2s, border-color .2s, transform .2s;
+}
+.cb-link:hover { background:var(--green-pale); border-color:var(--green-mid); transform:translateX(3px); }
+.cb-link:focus-visible { outline:3px solid var(--wheat); outline-offset:2px; }
+.cb-link span:first-child { font-size:1.05rem; }
+
+/* scan promo (dark card with pulsing rings) */
+.cb-promo {
+  position:relative; isolation:isolate; overflow:hidden; border-radius:20px; padding:22px 20px; color:var(--cream); text-align:center;
+  background:
+    radial-gradient(circle at 15% 15%, rgba(111,207,122,.22), transparent 50%),
+    radial-gradient(circle at 85% 90%, rgba(227,168,63,.16), transparent 45%),
+    linear-gradient(160deg, var(--forest-950), var(--forest-900) 55%, var(--forest-800));
+}
+.cb-promo::before {
+  content:''; position:absolute; inset:0; z-index:-1;
+  background-image:linear-gradient(rgba(255,255,255,.04) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.04) 1px, transparent 1px);
+  background-size:30px 30px; mask-image:radial-gradient(circle at 50% 35%, #000, transparent 75%);
+}
+.cb-orb { position:relative; width:110px; height:110px; margin:0 auto 12px; display:grid; place-items:center; }
+.cb-orb i { position:absolute; inset:0; border:1px solid rgba(155,231,159,.3); border-radius:50%; animation:cb-ring 3.6s ease-out infinite; }
+.cb-orb i:nth-child(2) { animation-delay:1.2s; }
+.cb-orb i:nth-child(3) { animation-delay:2.4s; }
+@keyframes cb-ring { 0% { transform:scale(.5); opacity:0; } 25% { opacity:.9; } 100% { transform:scale(1); opacity:0; } }
+.cb-orb svg { position:relative; width:52px; height:52px; filter:drop-shadow(0 8px 16px rgba(0,0,0,.35)); }
+.cb-promo b { display:block; margin-bottom:6px; font-family:'Playfair Display',serif; font-weight:600; font-size:1.02rem; }
+.cb-promo p { margin:0 0 14px; font-size:.82rem; line-height:1.6; color:rgba(250,248,242,.72); }
+.cb-promo a {
+  display:inline-flex; padding:9px 16px; border-radius:10px; text-decoration:none; font-size:.82rem; font-weight:600;
+  color:var(--green-deep); background:var(--cream); transition:transform .2s, box-shadow .2s;
+}
+.cb-promo a:hover { transform:translateY(-2px); box-shadow:0 8px 20px rgba(0,0,0,.25); }
+.cb-promo a:focus-visible { outline:3px solid var(--wheat); outline-offset:2px; }
+
+/* topics + tips (right) */
+.cb-topics { display:flex; flex-wrap:wrap; gap:8px; }
+.cb-topic { padding:6px 12px; border-radius:99px; font-size:.78rem; font-weight:600; color:var(--green-mid); background:var(--green-xpale); border:1px solid var(--border); }
+.cb-tips { list-style:none; margin:0; padding:0; display:grid; gap:10px; }
+.cb-tips li { position:relative; padding-left:24px; font-size:.84rem; line-height:1.6; color:#2c3a31; }
+.cb-tips li::before { content:'✓'; position:absolute; left:0; top:3px; width:16px; height:16px; border-radius:50%; display:grid; place-items:center; font-size:9px; font-weight:700; color:#fff; background:var(--green-mid); }
+
+.cb-notice { padding:16px 18px; border-radius:20px; border:1px solid #fbe7b8; border-left:5px solid var(--wheat); background:#fffaf0; }
+.cb-notice b { display:block; margin-bottom:4px; font-size:.84rem; color:#8a6100; }
+.cb-notice p { margin:0; font-size:.8rem; line-height:1.6; color:#5b4a1f; }
+
+/* ---------- Chat shell: header, messages, suggestions and input touch edge to edge ---------- */
+.cb-shell {
+  display:flex; flex-direction:column;
+  border:1px solid var(--border); border-radius:20px; overflow:hidden; background:#fff;
+  box-shadow:0 24px 48px -28px rgba(18,53,36,.35);
+  animation:cb-in .6s cubic-bezier(.16,1,.3,1) both;
+}
+@keyframes cb-in { from { opacity:0; transform:translateY(12px); } to { opacity:1; transform:none; } }
+
+/* ---------- Header ---------- */
+.cb-head {
+  position:relative; isolation:isolate; color:var(--cream); padding:22px 28px;
+  display:flex; align-items:center; gap:16px;
+  background:
+    radial-gradient(circle at 10% 20%, rgba(111,207,122,.20), transparent 45%),
+    radial-gradient(circle at 92% 85%, rgba(227,168,63,.16), transparent 42%),
+    linear-gradient(135deg, var(--forest-950), var(--forest-900) 50%, var(--forest-800));
+}
+.cb-head::before {
+  content:''; position:absolute; inset:0; z-index:-1;
+  background-image:linear-gradient(rgba(255,255,255,.04) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.04) 1px, transparent 1px);
+  background-size:34px 34px; mask-image:radial-gradient(circle at 80% 40%, #000, transparent 75%);
+}
+.cb-head-ico { position:relative; width:48px; height:48px; flex-shrink:0; display:grid; place-items:center; border-radius:14px; font-size:24px; background:rgba(255,255,255,.10); border:1px solid rgba(255,255,255,.22); }
+.cb-head-ico::after { content:''; position:absolute; right:-3px; bottom:-3px; width:12px; height:12px; border-radius:50%; background:var(--scan-line); border:2px solid var(--forest-900); }
+.cb-head h1 { margin:0 0 4px; font-family:'Playfair Display',serif; font-weight:600; font-size:1.4rem; line-height:1.2; }
+.cb-head p { margin:0; font-size:.88rem; line-height:1.55; color:rgba(250,248,242,.74); }
+
+/* ---------- Messages ---------- */
+.cb-chat {
+  height:min(520px, 62vh); overflow-y:auto; padding:22px 28px;
+  display:flex; flex-direction:column; gap:14px; background:var(--green-xpale);
+  scroll-behavior:smooth;
+}
+.cb-row { display:flex; gap:10px; align-items:flex-start; animation:cb-pop .25s ease-out both; }
+.cb-row.user { justify-content:flex-end; }
+@keyframes cb-pop { from { opacity:0; transform:translateY(5px); } to { opacity:1; transform:none; } }
+
+.cb-avatar { width:34px; height:34px; flex-shrink:0; display:grid; place-items:center; border-radius:50%; font-size:17px; background:var(--green-pale); border:1px solid var(--border); }
+.cb-avatar.user { background:#fdf0d4; border-color:#f3dfae; }
+
+.cb-bubble {
+  max-width:78%; padding:11px 15px; border-radius:16px; font-size:.92rem; line-height:1.65;
+  word-wrap:break-word; overflow-wrap:anywhere;
+}
+.cb-row.bot .cb-bubble { background:#fff; color:var(--text); border:1px solid var(--border); border-top-left-radius:4px; }
+.cb-row.user .cb-bubble { background:var(--green-mid); color:#fff; border-top-right-radius:4px; white-space:pre-wrap; }
+
+/* ---------- Markdown Table & Content Styling ---------- */
+.cb-bubble p { margin: 0 0 10px; }
+.cb-bubble p:last-child { margin-bottom: 0; }
+.cb-bubble table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 12px 0;
+  font-size: 0.85rem;
+  display: block;
+  overflow-x: auto;
+}
+.cb-bubble th, .cb-bubble td {
+  border: 1px solid var(--border);
+  padding: 8px 10px;
+  text-align: left;
+}
+.cb-bubble th {
+  background: var(--green-xpale);
+  font-weight: 600;
+}
+.cb-bubble tr:nth-child(even) {
+  background: #f9fafb;
+}
+.cb-bubble ul, .cb-bubble ol {
+  margin: 8px 0;
+  padding-left: 20px;
+}
+
+.cb-typing { display:inline-flex; gap:5px; align-items:center; padding:14px 16px; }
+.cb-typing i { width:7px; height:7px; border-radius:50%; background:var(--green-mid); animation:cb-bounce 1.2s infinite; }
+.cb-typing i:nth-child(2) { animation-delay:.15s; }
+.cb-typing i:nth-child(3) { animation-delay:.3s; }
+@keyframes cb-bounce { 0%, 60%, 100% { transform:translateY(0); opacity:.4; } 30% { transform:translateY(-4px); opacity:1; } }
+
+/* ---------- Suggestions ---------- */
+.cb-chips { display:flex; gap:8px; flex-wrap:wrap; padding:14px 28px; background:#fff; border-top:1px solid var(--border); }
+.cb-chip {
+  padding:7px 14px; border-radius:99px; cursor:pointer; font-family:inherit; font-size:.8rem; font-weight:600;
+  color:var(--green-mid); background:var(--green-xpale); border:1px solid var(--border);
+  transition:background .2s, transform .2s, border-color .2s;
+}
+.cb-chip:hover { background:var(--green-pale); border-color:var(--green-mid); transform:translateY(-1px); }
+.cb-chip:focus-visible { outline:3px solid var(--wheat); outline-offset:2px; }
+
+/* ---------- Input bar ---------- */
+.cb-bar { display:flex; gap:10px; align-items:flex-end; padding:14px 28px 12px; background:#fff; border-top:1px solid var(--border); }
+.cb-input {
+  flex:1; min-width:0; display:flex; border:1.5px solid var(--border); border-radius:12px; background:var(--green-xpale);
+  transition:border-color .2s, background .2s, box-shadow .2s;
+}
+.cb-input:focus-within { border-color:var(--green-mid); background:#fff; box-shadow:0 0 0 4px var(--green-pale); }
+.cb-input textarea {
+  flex:1; min-width:0; border:none; outline:none; resize:none; background:transparent;
+  padding:12px 14px; font-family:inherit; font-size:.92rem; line-height:1.5; color:var(--text); max-height:120px;
+}
+.cb-input textarea::placeholder { color:#9ca3af; }
+.cb-send {
+  height:48px; padding:0 22px; border:none; border-radius:12px; cursor:pointer;
+  font-family:inherit; font-weight:600; font-size:.92rem; color:#fff; background:var(--green-mid);
+  display:inline-flex; align-items:center; gap:8px; flex-shrink:0;
+  box-shadow:0 4px 18px rgba(18,53,36,.22); transition:background .2s, transform .2s, opacity .2s;
+}
+.cb-send:hover { background:var(--green-deep); transform:translateY(-1px); }
+.cb-send:disabled { opacity:.6; cursor:not-allowed; transform:none; }
+.cb-send:focus-visible { outline:3px solid var(--wheat); outline-offset:2px; }
+
+.cb-status { min-height:20px; padding:0 28px 12px; text-align:center; font-size:.78rem; color:var(--gray); background:#fff; }
+
+/* ---------- Responsive ---------- */
+@media (max-width:1180px) {
+  .cb-layout { grid-template-columns:1fr; }
+  .cb-side { display:none; }
+  .cb-page { max-width:860px; }
+}
+@media (max-width:600px) {
+  .cb-page { padding:16px 12px 28px; }
+  .cb-head, .cb-chat, .cb-chips, .cb-bar, .cb-status { padding-left:16px; padding-right:16px; }
+  .cb-bubble { max-width:86%; }
+  .cb-send { padding:0 16px; }
+  .cb-bubble table { display: block; overflow-x: auto; }
+}
+@media (prefers-reduced-motion:reduce) {
+  .cb-chat { scroll-behavior:auto; }
+  .cb-typing i { animation:none; opacity:.7; }
+  .cb-orb i { animation:none; opacity:.4; }
+}
+</style>
+
+<div class="cb-page">
+  <div class="cb-layout">
+
+    <!-- ============ LEFT PANEL ============ -->
+    <aside class="cb-side">
+
+      <div class="cb-card">
+        <h3><span class="cb-ico">🧭</span><span data-lang="en">Quick links</span><span data-lang="ml">വേഗത്തിലുള്ള ലിങ്കുകൾ</span></h3>
+        <nav class="cb-links">
+          <a class="cb-link" href="{{ url_for('detect_page') }}">
+            <span>🔬</span><span><span data-lang="en">Detect leaf disease</span><span data-lang="ml">ഇല രോഗം കണ്ടെത്തുക</span></span>
+          </a>
+          <a class="cb-link" href="{{ url_for('recommend_page') }}">
+            <span>🌾</span><span><span data-lang="en">Crop recommendation</span><span data-lang="ml">വിള ശുപാർശ</span></span>
+          </a>
+          <a class="cb-link" href="{{ url_for('dashboard') }}">
+            <span>📊</span><span><span data-lang="en">Dashboard</span><span data-lang="ml">ഡാഷ്ബോർഡ്</span></span>
+          </a>
+        </nav>
+      </div>
+
+      <div class="cb-promo">
+        <div class="cb-orb">
+          <i></i><i></i><i></i>
+          <svg viewBox="0 0 64 64" aria-hidden="true">
+            <path d="M32 6C18 14 10 28 14 44c2 7 9 12 18 12s16-5 18-12C54 28 46 14 32 6z" fill="#163c26" stroke="#6fcf7a" stroke-width="1.6"/>
+            <path d="M32 12v40M32 26l-9-7M32 34l10-8M32 42l-8-6" stroke="rgba(155,231,159,.6)" stroke-width="1.2" fill="none" stroke-linecap="round"/>
+            <circle cx="40" cy="38" r="2.4" fill="#e3a83f"/>
+          </svg>
+        </div>
+        <b><span data-lang="en">Not sure what's wrong?</span><span data-lang="ml">എന്താണ് പ്രശ്നമെന്ന് അറിയില്ലേ?</span></b>
+        <p><span data-lang="en">Upload a photo of the leaf and get a diagnosis with remedies.</span><span data-lang="ml">ഇലയുടെ ഫോട്ടോ അപ്‌ലോഡ് ചെയ്ത് പരിഹാരങ്ങൾ സഹിതം രോഗനിർണയം നേടുക.</span></p>
+        <a href="{{ url_for('detect_page') }}"><span data-lang="en">Scan a leaf</span><span data-lang="ml">ഇല പരിശോധിക്കുക</span></a>
+      </div>
+
+    </aside>
+
+    <!-- ============ CENTER: CHAT ============ -->
+    <div class="cb-shell">
+
+      <!-- Header -->
+      <header class="cb-head">
+        <div class="cb-head-ico">🤖</div>
+        <div>
+          <h1><span data-lang="en">AI Farmer Assistant</span><span data-lang="ml">AI കർഷക സഹായി</span></h1>
+          <p>
+            <span data-lang="en">Ask anything about crop diseases, remedies, seasons, or schemes.</span>
+            <span data-lang="ml">വിള രോഗങ്ങൾ, പരിഹാരങ്ങൾ, സീസണുകൾ, പദ്ധതികൾ — എന്തും ചോദിക്കാം.</span>
+          </p>
+        </div>
+      </header>
+
+      <!-- Chat -->
+      <div id="chatBox" class="cb-chat" aria-live="polite">
+
+        {% if not history %}
+        <div class="cb-row bot">
+          <div class="cb-avatar">🤖</div>
+          <div class="cb-bubble">
+            <span data-lang="en">Hello! I'm your farming assistant. Ask me anything — like "How do I treat tomato late blight?"</span>
+            <span data-lang="ml">നമസ്കാരം! ഞാൻ നിങ്ങളുടെ കൃഷി സഹായിയാണ്. "തക്കാളിയിലെ വൈകി വരുന്ന വാട്ടം എങ്ങനെ ചികിത്സിക്കാം?" പോലുള്ള ചോദ്യങ്ങൾ ചോദിക്കാം.</span>
+          </div>
+        </div>
+        {% endif %}
+
+        {% for msg in history %}
+        <div class="cb-row user">
+          <div class="cb-bubble">{{ msg.user_message }}</div>
+          <div class="cb-avatar user">🧑‍🌾</div>
+        </div>
+        <div class="cb-row bot">
+          <div class="cb-avatar">🤖</div>
+          <div class="cb-bubble">{{ msg.bot_response }}</div>
+        </div>
+        {% endfor %}
+
+      </div>
+
+      <!-- Suggestions -->
+      <div class="cb-chips">
+        {% set chips = [
+          ("How do I treat late blight in tomato?", "തക്കാളിയിലെ വൈകി വരുന്ന വാട്ടം എങ്ങനെ ചികിത്സിക്കാം?"),
+          ("Best crop for monsoon season?", "മൺസൂൺ സീസണിൽ മികച്ച വിള ഏതാണ്?"),
+          ("Government schemes for farmers?", "കർഷകർക്കുള്ള സർക്കാർ പദ്ധതികൾ?"),
+          ("How to improve soil pH naturally?", "മണ്ണിന്റെ pH സ്വാഭാവികമായി എങ്ങനെ മെച്ചപ്പെടുത്താം?"),
+          ("Natural pesticide for aphids?", "അഫിഡ്സിനുള്ള പ്രകൃതിദത്ത കീടനാശിനി?")
+        ] %}
+        {% for en, ml in chips %}
+        <button type="button" class="cb-chip" data-en="{{ en }}" data-ml="{{ ml }}" onclick="sendChip(this)">
+          <span data-lang="en">{{ en }}</span><span data-lang="ml">{{ ml }}</span>
+        </button>
+        {% endfor %}
+      </div>
+
+      <!-- Input bar -->
+      <div class="cb-bar">
+        <div class="cb-input">
+          <textarea id="userInput" rows="1" placeholder="Type your question…" aria-label="Your question"></textarea>
+        </div>
+        <button type="button" id="sendBtn" class="cb-send" onclick="sendMessage()">
+          <span data-lang="en">Send</span><span data-lang="ml">അയയ്ക്കുക</span>
+        </button>
+      </div>
+      <div id="statusMsg" class="cb-status"></div>
+
+    </div>
+
+    <!-- ============ RIGHT PANEL ============ -->
+    <aside class="cb-side">
+
+      <div class="cb-card">
+        <h3><span class="cb-ico">💬</span><span data-lang="en">You can ask about</span><span data-lang="ml">ചോദിക്കാവുന്നവ</span></h3>
+        <div class="cb-topics">
+          <span class="cb-topic"><span data-lang="en">Diseases</span><span data-lang="ml">രോഗങ്ങൾ</span></span>
+          <span class="cb-topic"><span data-lang="en">Remedies</span><span data-lang="ml">പരിഹാരങ്ങൾ</span></span>
+          <span class="cb-topic"><span data-lang="en">Pests</span><span data-lang="ml">കീടങ്ങൾ</span></span>
+          <span class="cb-topic"><span data-lang="en">Soil &amp; pH</span><span data-lang="ml">മണ്ണ് &amp; pH</span></span>
+          <span class="cb-topic"><span data-lang="en">Seasons</span><span data-lang="ml">സീസണുകൾ</span></span>
+          <span class="cb-topic"><span data-lang="en">Schemes</span><span data-lang="ml">പദ്ധതികൾ</span></span>
+        </div>
+      </div>
+
+      <div class="cb-card">
+        <h3><span class="cb-ico">💡</span><span data-lang="en">Get better answers</span><span data-lang="ml">മികച്ച മറുപടി ലഭിക്കാൻ</span></h3>
+        <ul class="cb-tips">
+          <li><span data-lang="en">Name the crop, e.g. tomato or banana.</span><span data-lang="ml">വിളയുടെ പേര് പറയുക, ഉദാ: തക്കാളി, വാഴ.</span></li>
+          <li><span data-lang="en">Describe what you see on the leaves.</span><span data-lang="ml">ഇലകളിൽ കാണുന്നത് വിവരിക്കുക.</span></li>
+          <li><span data-lang="en">Mention your location and season.</span><span data-lang="ml">നിങ്ങളുടെ സ്ഥലവും സീസണും പറയുക.</span></li>
+        </ul>
+      </div>
+
+      <div class="cb-notice">
+        <b><span data-lang="en">Good to know</span><span data-lang="ml">ശ്രദ്ധിക്കുക</span></b>
+        <p>
+          <span data-lang="en">AI advice is a guide. For severe outbreaks, check with your local Krishi Bhavan.</span>
+          <span data-lang="ml">AI നൽകുന്നത് മാർഗനിർദേശം മാത്രമാണ്. രൂക്ഷമായ രോഗബാധയ്ക്ക് അടുത്തുള്ള കൃഷിഭവനുമായി ബന്ധപ്പെടുക.</span>
+        </p>
+      </div>
+
+    </aside>
+
+  </div>
+</div>
+
+<!-- Include Markdown Parser -->
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+
+<script>
+const chatBox  = document.getElementById('chatBox');
+const input    = document.getElementById('userInput');
+const sendBtn  = document.getElementById('sendBtn');
+const statusEl = document.getElementById('statusMsg');
+
+// Auto-grow textarea
+input.addEventListener('input', () => {
+  input.style.height = 'auto';
+  input.style.height = Math.min(input.scrollHeight, 120) + 'px';
+});
+
+// Enter sends, Shift+Enter new line
+input.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter' && !e.shiftKey) {
+    e.preventDefault();
+    sendMessage();
+  }
+});
+
+function scrollBottom() {
+  chatBox.scrollTop = chatBox.scrollHeight;
+}
+scrollBottom();
+
+function currentLang() {
+  return localStorage.getItem('agrivision_lang') || 'en';
+}
+
+function addBubble(role, text) {
+  const row = document.createElement('div');
+  row.className = 'cb-row ' + role;
+  const bubble = document.createElement('div');
+  bubble.className = 'cb-bubble';
+  
+  // Use marked.js to render markdown for the bot, keep textContent for user
+  if (role === 'bot' && typeof marked !== 'undefined') {
+    // marked.parse converts markdown to HTML
+    bubble.innerHTML = marked.parse(text);
+  } else {
+    bubble.textContent = text;
+  }
+  
+  const avatar = document.createElement('div');
+  avatar.className = 'cb-avatar' + (role === 'user' ? ' user' : '');
+  avatar.textContent = role === 'user' ? '🧑‍🌾' : '🤖';
+  if (role === 'user') { row.append(bubble, avatar); } else { row.append(avatar, bubble); }
+  chatBox.appendChild(row);
+  scrollBottom();
+}
+const addUserBubble = (t) => addBubble('user', t);
+const addBotBubble  = (t) => addBubble('bot', t);
+
+function addTypingBubble() {
+  const row = document.createElement('div');
+  row.className = 'cb-row bot';
+  row.id = 'typingBubble';
+  row.innerHTML = '<div class="cb-avatar">🤖</div><div class="cb-bubble cb-typing"><i></i><i></i><i></i></div>';
+  chatBox.appendChild(row);
+  scrollBottom();
+}
+
+function removeTypingBubble() {
+  const el = document.getElementById('typingBubble');
+  if (el) el.remove();
+}
+
+async function sendMessage() {
+  const text = input.value.trim();
+  if (!text || sendBtn.disabled) return;
+
+  addUserBubble(text);
+  input.value = '';
+  input.style.height = 'auto';
+
+  sendBtn.disabled = true;
+  statusEl.textContent = '';
+  addTypingBubble();
+
+  try {
+    const res = await fetch('/chatbot/send', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        message: text,
+        language: currentLang()   // sends 'en' or 'ml' from the header toggle
+      })
+    });
+    removeTypingBubble();
+
+    if (!res.ok) {
+      addBotBubble('Something went wrong. Please try again.');
+      return;
+    }
+    const data = await res.json();
+    addBotBubble(data.reply || 'No reply.');
+  } catch (e) {
+    removeTypingBubble();
+    addBotBubble('Network error. Please check your connection.');
+  } finally {
+    sendBtn.disabled = false;
+    input.focus();
+  }
+}
+
+function sendChip(btn) {
+  const text = currentLang() === 'ml' ? btn.dataset.ml : btn.dataset.en;
+  input.value = text;
+  sendMessage();
+}
+</script>
+
+{% endblock %}

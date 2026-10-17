@@ -1,0 +1,143 @@
+{% extends "base.html" %}
+{% block title %}{{ crop.name }} · Crop Details{% endblock %}
+{% block content %}
+
+<div style="width:100%;max-width:1100px;margin:26px auto;padding:0 24px;box-sizing:border-box;">
+
+  <!-- Hero -->
+  <div style="background:linear-gradient(135deg,#1b5e20,#43a047);
+              padding:30px 36px;border-radius:18px;color:#fff;position:relative;
+              overflow:hidden;">
+    <div style="position:absolute;top:-60px;right:-60px;width:220px;height:220px;
+                background:rgba(255,255,255,0.07);border-radius:50%;"></div>
+    <div style="position:relative;z-index:1;">
+      <div style="display:inline-block;padding:5px 14px;background:rgba(255,255,255,0.2);
+                  border-radius:20px;font-size:12px;font-weight:600;
+                  letter-spacing:1px;margin-bottom:12px;">
+        {{ crop.category or 'CROP' }} · {{ crop.season_type or crop.growing_season or '—' }}
+      </div>
+      <h1 style="margin:0;font-size:32px;">🌱 {{ crop.name }}</h1>
+      <div style="margin-top:14px;display:flex;gap:16px;flex-wrap:wrap;font-size:13px;">
+        <span>📅 <b>{{ crop.harvest_days or '—' }} <span data-lang="en">days to harvest</span><span data-lang="ml">ദിവസം</span></b></span>
+        <span>💰 <b>₹{{ crop.market_price }}/kg</b></span>
+        {% if crop.scientific_name %}
+        <span>🔬 <b><i>{{ crop.scientific_name }}</i></b></span>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  {% if not d %}
+  <!-- AI generation failed -->
+  <div style="background:#fff;border-radius:14px;padding:40px;margin-top:20px;
+              text-align:center;box-shadow:0 2px 12px rgba(0,0,0,0.06);">
+    <div style="font-size:60px;margin-bottom:12px;">🤖</div>
+    <h3 style="color:#666;margin:0 0 10px;">
+      <span data-lang="en">Details not available yet</span>
+      <span data-lang="ml">വിശദാംശങ്ങൾ ഇപ്പോൾ ലഭ്യമല്ല</span>
+    </h3>
+    <p style="color:#888;font-size:14px;margin:0 0 20px;">
+      <span data-lang="en">AI could not generate details. Try again in a moment.</span>
+      <span data-lang="ml">AI വിശദാംശങ്ങൾ നൽകാൻ കഴിഞ്ഞില്ല. അൽപ്പസമയത്തിന് ശേഷം വീണ്ടും ശ്രമിക്കുക.</span>
+    </p>
+    <a href="{{ url_for('crop_detail_page', crop_id=crop.id) }}"
+       style="padding:12px 24px;background:#2e7d32;color:#fff;text-decoration:none;
+              border-radius:10px;font-weight:600;">
+      🔄 <span data-lang="en">Retry</span><span data-lang="ml">വീണ്ടും ശ്രമിക്കുക</span>
+    </a>
+  </div>
+
+  {% else %}
+  <!-- Details grid -->
+  <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:16px;margin-top:20px;">
+
+    {% macro card(icon, title_en, title_ml, val_en, val_ml, color) %}
+    <div style="background:#fff;border-radius:14px;padding:20px;
+                box-shadow:0 2px 12px rgba(0,0,0,0.06);
+                border-left:5px solid {{ color }};">
+      <div style="font-size:11px;color:{{ color }};text-transform:uppercase;
+                  font-weight:700;letter-spacing:0.8px;margin-bottom:8px;">
+        {{ icon }} <span data-lang="en">{{ title_en }}</span>
+        <span data-lang="ml">{{ title_ml }}</span>
+      </div>
+      <div style="font-size:14px;color:#333;line-height:1.7;white-space:pre-line;">
+        <span data-lang="en">{{ val_en or '—' }}</span>
+        <span data-lang="ml">{{ val_ml or val_en or '—' }}</span>
+      </div>
+    </div>
+    {% endmacro %}
+
+    {{ card("🌦️", "Season", "സീസൺ", d.season_en, d.season_ml, "#1976d2") }}
+    {{ card("📅", "Best Planting Months", "നടീൽ മാസങ്ങൾ", d.planting_months_en, d.planting_months_ml, "#1976d2") }}
+    {{ card("🪨", "Soil Requirements", "മണ്ണ് ആവശ്യകതകൾ", d.soil_en, d.soil_ml, "#8d6e63") }}
+    {{ card("⚗️", "Ideal pH Range", "അനുയോജ്യമായ pH", d.ph_range_en, d.ph_range_ml, "#8d6e63") }}
+    {{ card("🌡️", "Climate Needs", "കാലാവസ്ഥ ആവശ്യകതകൾ", d.climate_en, d.climate_ml, "#f57c00") }}
+    {{ card("🚜", "Land Preparation", "ഭൂമി ഒരുക്കൽ", d.land_prep_en, d.land_prep_ml, "#f57c00") }}
+    {{ card("🌰", "Seed Rate", "വിത്ത് നിരക്ക്", d.seed_rate_en, d.seed_rate_ml, "#6a1b9a") }}
+    {{ card("📏", "Spacing", "അകലം", d.spacing_en, d.spacing_ml, "#6a1b9a") }}
+    {{ card("🧪", "Fertilizer Schedule", "വളപ്രയോഗം", d.fertilizer_en, d.fertilizer_ml, "#2e7d32") }}
+    {{ card("💧", "Irrigation", "ജലസേചനം", d.irrigation_en, d.irrigation_ml, "#0277bd") }}
+    {{ card("🐛", "Pest Management", "കീട നിയന്ത്രണം", d.pest_en, d.pest_ml, "#c62828") }}
+    {{ card("🦠", "Disease Management", "രോഗ നിയന്ത്രണം", d.disease_en, d.disease_ml, "#c62828") }}
+    {{ card("🌾", "Harvest", "വിളവെടുപ്പ്", d.harvest_en, d.harvest_ml, "#e65100") }}
+    {{ card("📊", "Expected Yield", "പ്രതീക്ഷിത വിളവ്", d.yield_en, d.yield_ml, "#e65100") }}
+    {{ card("📦", "Storage", "സംഭരണം", d.storage_en, d.storage_ml, "#455a64") }}
+  </div>
+
+  <!-- Tips section (full width) -->
+  {% if d.tips_en or d.tips_ml %}
+  <div style="background:linear-gradient(135deg,#fff8e1,#fffde7);
+              border-radius:14px;padding:24px;margin-top:20px;
+              border-left:5px solid #f57c00;">
+    <div style="font-size:13px;color:#e65100;font-weight:700;
+                text-transform:uppercase;letter-spacing:0.8px;margin-bottom:10px;">
+      💡 <span data-lang="en">Expert Tips for Kerala Farmers</span>
+      <span data-lang="ml">കേരള കർഷകർക്കുള്ള വിദഗ്ധ നിർദ്ദേശങ്ങൾ</span>
+    </div>
+    <div style="color:#333;line-height:1.8;font-size:14px;white-space:pre-line;">
+      <span data-lang="en">{{ d.tips_en or '—' }}</span>
+      <span data-lang="ml">{{ d.tips_ml or d.tips_en or '—' }}</span>
+    </div>
+  </div>
+  {% endif %}
+
+  {% if d._meta and session.get('role') == 'admin' %}
+  <div style="background:#f3e5f5;border-radius:12px;padding:16px;margin-top:16px;
+              font-size:12px;color:#6a1b9a;display:flex;
+              justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;">
+    <span>
+      🤖 <b>Admin view:</b>
+      Generated by {{ d._meta.generated_by }} on
+      {{ d._meta.updated_at.strftime('%d %b %Y, %H:%M') if d._meta.updated_at else '—' }}
+    </span>
+    <form method="POST"
+          action="{{ url_for('crop_detail_regenerate', crop_id=crop.id) }}"
+          onsubmit="return confirm('Regenerate details with AI? This takes 3-5 seconds.');">
+      <button type="submit"
+              style="padding:8px 16px;background:#6a1b9a;color:#fff;border:none;
+                     border-radius:8px;font-weight:600;cursor:pointer;font-size:12px;">
+        🔄 Regenerate
+      </button>
+    </form>
+  </div>
+  {% endif %}
+
+  {% endif %}
+
+  <div style="margin-top:22px;display:flex;gap:10px;flex-wrap:wrap;">
+    <a href="{{ url_for('crops_list_page') }}"
+       style="padding:10px 18px;background:#fff;color:#2e7d32;
+              border:2px solid #a5d6a7;text-decoration:none;border-radius:10px;
+              font-weight:600;font-size:13px;">
+      ← <span data-lang="en">All Crops</span><span data-lang="ml">എല്ലാ വിളകളും</span>
+    </a>
+    <a href="{{ url_for('dashboard') }}"
+       style="padding:10px 18px;background:#fff;color:#666;
+              border:2px solid #ccc;text-decoration:none;border-radius:10px;
+              font-weight:600;font-size:13px;">
+      🏠 <span data-lang="en">Dashboard</span><span data-lang="ml">ഡാഷ്ബോർഡ്</span>
+    </a>
+  </div>
+
+</div>
+{% endblock %}

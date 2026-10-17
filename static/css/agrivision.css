@@ -1,0 +1,328 @@
+/* ==========================================================================
+   AgriVision AI — green + white theme (stores pages)
+   Save as: static/css/agrivision.css
+   Loaded by stores.html and store_detail.html (no changes to base.html needed)
+   ========================================================================== */
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;700&display=swap");
+
+/* ---------- Tokens + page wrapper ---------- */
+.ag {
+    --leaf: #34D27B;  --leaf-hover: #4BDB8B;
+    --forest: #0B6B3A; --forest-deep: #084F2B;
+    --sage: #D6F2E1;  --mint: #F0FAF4;  --paper: #FFFFFF;
+    --ink: #0F2A1D;   --ink-soft: #4F6B5C; --line: #DCEBE2;
+    --font-display: "Space Grotesk", "Inter", system-ui, sans-serif;
+    --font-body: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+    --ease: cubic-bezier(.2, .7, .2, 1);
+
+    display: block;
+    flex: 1 1 100%;
+    grid-column: 1 / -1;
+    align-self: stretch;
+    min-width: 0;
+    width: 100%;
+    max-width: 1600px;
+    margin: 0 auto;
+    padding: 20px clamp(16px, 2.5vw, 40px) 28px;
+    box-sizing: border-box;
+    font-family: var(--font-body);
+    color: var(--ink);
+}
+.ag.ag-detail { max-width: 1400px; }
+
+.ag *, .ag *::before, .ag *::after { box-sizing: border-box; }
+.ag .icon {
+    width: 18px; height: 18px; flex-shrink: 0;
+    fill: none; stroke: currentColor; stroke-width: 1.8;
+    stroke-linecap: round; stroke-linejoin: round;
+}
+.ag :focus-visible { outline: 3px solid var(--leaf); outline-offset: 3px; border-radius: 8px; }
+
+/* ---------- Full-width fix ----------
+   The content was being squeezed into half of the screen by a parent
+   wrapper (flex / grid / fixed width). These rules release every wrapper
+   that sits directly around the page, up to three levels above it. */
+body :has(> .ag),
+body :has(> * > .ag),
+body :has(> * > * > .ag) {
+    display: block !important;
+    float: none !important;
+    columns: auto !important;
+    grid-template-columns: 1fr !important;
+    width: 100% !important;
+    max-width: none !important;
+    min-width: 0 !important;
+}
+
+/* ---------- Hero (forest panel + slow radar sweep) ---------- */
+.ag-hero {
+    position: relative;
+    overflow: hidden;
+    padding: 30px 34px;
+    border-radius: 22px;
+    background: var(--forest);
+    color: #fff;
+}
+.ag-hero::before,
+.ag-hero::after {
+    content: "";
+    position: absolute;
+    width: 520px; height: 520px;
+    right: -120px; top: -200px;
+    border-radius: 50%;
+    pointer-events: none;
+}
+.ag-hero::before {
+    background:
+        radial-gradient(circle at 34% 40%, #fff 0 3px, rgba(255,255,255,.35) 4px 9px, transparent 10px),
+        radial-gradient(circle at 66% 66%, #fff 0 3px, rgba(255,255,255,.35) 4px 9px, transparent 10px),
+        repeating-radial-gradient(circle at center, transparent 0 60px, rgba(255,255,255,.17) 60px 61px),
+        radial-gradient(circle, rgba(52,210,123,.5), transparent 68%);
+}
+.ag-hero::after {
+    background: conic-gradient(from 0deg, rgba(140,240,185,0) 0deg 270deg, rgba(140,240,185,.5) 360deg);
+    animation: ag-sweep 8s linear infinite;
+}
+.ag-hero > * { position: relative; z-index: 1; }
+.ag-hero h1 {
+    margin: 0;
+    font: 700 clamp(1.7rem, 3vw, 2.3rem)/1.1 var(--font-display);
+    letter-spacing: -0.025em;
+}
+.ag-hero p { margin: 8px 0 0; max-width: 56ch; color: rgba(255,255,255,.92); font-size: .98rem; }
+
+.ag-count {
+    display: inline-flex; align-items: center; gap: 8px;
+    margin-top: 16px; padding: 6px 12px;
+    border-radius: 999px;
+    background: rgba(255,255,255,.14);
+    border: 1px solid rgba(255,255,255,.25);
+    font-size: .82rem; font-weight: 600;
+}
+.ag-count b { font-family: var(--font-display); font-size: 1rem; }
+
+/* ---------- Buttons ---------- */
+.ag-btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+    padding: 12px 22px;
+    border: 1.5px solid transparent;
+    border-radius: 10px;
+    font: 700 .95rem/1 var(--font-display);
+    text-decoration: none;
+    cursor: pointer;
+    transition: transform .2s ease, background-color .2s ease, border-color .2s ease, box-shadow .2s ease;
+}
+.ag-btn:hover { transform: translateY(-2px); }
+.ag-btn:active { transform: translateY(0) scale(.99); }
+.ag-btn-primary { background: var(--leaf); color: var(--ink); box-shadow: 0 10px 20px -10px rgba(52,210,123,.85); }
+.ag-btn-primary:hover { background: var(--leaf-hover); }
+.ag-btn-ghost { background: transparent; color: var(--forest); border-color: var(--line); }
+.ag-btn-ghost:hover { background: var(--mint); border-color: #BFDCCB; }
+.ag-btn-light { background: #fff; color: var(--forest); }
+.ag-btn-light:hover { background: var(--mint); }
+.ag-btn-glass { background: transparent; color: #fff; border-color: rgba(255,255,255,.45); }
+.ag-btn-glass:hover { background: rgba(255,255,255,.14); border-color: rgba(255,255,255,.7); }
+
+/* ==========================================================================
+   Stores list
+   ========================================================================== */
+.ag .ag-filter,
+.ag form.ag-filter {
+    display: flex !important;
+    flex-direction: row !important;
+    flex-wrap: wrap;
+    align-items: stretch;
+    width: 100%;
+    max-width: none;
+    gap: 10px;
+    margin: 14px 0 0;
+    padding: 12px;
+    background: var(--paper);
+    border: 1px solid var(--line);
+    border-radius: 16px;
+}
+.ag .ag-filter select {
+    flex: 1 1 200px;
+    width: auto; height: auto; margin: 0; min-width: 0;
+    padding: 12px 40px 12px 14px;
+    font: 500 .95rem/1.3 var(--font-body);
+    color: var(--ink);
+    background-color: var(--paper);
+    border: 1.5px solid var(--line);
+    border-radius: 10px;
+    appearance: none; -webkit-appearance: none;
+    cursor: pointer;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5l5 5 5-5' fill='none' stroke='%230B6B3A' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 14px center;
+    transition: border-color .2s ease, box-shadow .2s ease;
+}
+.ag .ag-filter select:hover { border-color: #BFDCCB; }
+.ag .ag-filter select:focus { outline: none; border-color: var(--leaf); box-shadow: 0 0 0 4px rgba(52,210,123,.28); }
+
+.ag-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(290px, 1fr));
+    gap: 14px;
+    margin-top: 14px;
+}
+.ag-grid .ag-card {
+    display: flex; flex-direction: column; gap: 12px;
+    padding: 20px;
+    text-decoration: none;
+    color: inherit;
+    background: var(--paper);
+    border: 1px solid var(--line);
+    border-radius: 22px;
+    transition: transform .25s var(--ease), box-shadow .25s ease, border-color .25s ease;
+}
+.ag-grid .ag-card:hover {
+    transform: translateY(-3px);
+    border-color: #C5E0D1;
+    box-shadow: 0 18px 36px -22px rgba(11,107,58,.45);
+}
+.ag-card-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
+.ag-grid .ag-card h3 {
+    margin: 0;
+    font: 700 1.05rem/1.3 var(--font-display);
+    letter-spacing: -0.01em;
+    color: var(--ink);
+}
+.ag-type {
+    flex-shrink: 0;
+    padding: 4px 10px;
+    border-radius: 999px;
+    background: var(--sage);
+    color: var(--forest-deep);
+    font-size: .76rem; font-weight: 600; white-space: nowrap;
+}
+.ag-loc { display: flex; align-items: flex-start; gap: 8px; color: var(--ink-soft); font-size: .88rem; line-height: 1.45; }
+.ag-loc .icon { width: 16px; height: 16px; margin-top: 2px; color: var(--forest); }
+.ag-card-foot {
+    display: flex; align-items: center; gap: 8px;
+    margin-top: auto; padding-top: 12px;
+    border-top: 1px solid var(--line);
+}
+.ag-rating { display: inline-flex; align-items: center; gap: 5px; font: 700 .9rem var(--font-display); }
+.ag-rating .icon { width: 16px; height: 16px; fill: #F5A524; stroke: #F5A524; }
+.ag-verified {
+    display: inline-flex; align-items: center; gap: 5px;
+    padding: 3px 9px; border-radius: 999px;
+    background: var(--sage); color: #0B5A31;
+    font-size: .75rem; font-weight: 600;
+}
+.ag-verified .icon { width: 13px; height: 13px; stroke-width: 2.4; }
+.ag-open { margin-left: auto; color: var(--forest); transition: transform .2s ease; }
+.ag-card:hover .ag-open { transform: translateX(4px); }
+
+.ag-empty {
+    grid-column: 1 / -1;
+    padding: 48px 20px;
+    text-align: center;
+    color: var(--ink-soft);
+    background: var(--mint);
+    border: 1.5px dashed #BFDCCB;
+    border-radius: 22px;
+    font-weight: 500;
+}
+.ag-empty .icon { width: 44px; height: 44px; margin-bottom: 8px; color: var(--forest); }
+
+.ag-back { margin-top: 14px; }
+
+/* ==========================================================================
+   Store detail
+   ========================================================================== */
+.ag-detail .ag-hero::before,
+.ag-detail .ag-hero::after { top: -210px; }
+.ag-detail .ag-hero h1 {
+    margin: 12px 0 0;
+    max-width: 22ch;
+    font-size: clamp(1.8rem, 3.6vw, 2.6rem);
+    line-height: 1.05;
+    letter-spacing: -0.03em;
+}
+.ag-tag {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 5px 12px;
+    border-radius: 999px;
+    background: rgba(255,255,255,.14);
+    border: 1px solid rgba(255,255,255,.25);
+    font-size: .8rem; font-weight: 600; text-transform: capitalize;
+}
+.ag-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-top: 14px; }
+.ag-chip {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 5px 11px; border-radius: 999px;
+    background: #fff; color: var(--forest-deep);
+    font: 700 .85rem var(--font-display);
+}
+.ag-chip .icon { width: 15px; height: 15px; }
+.ag-chip.star .icon { fill: #F5A524; stroke: #F5A524; }
+.ag-chip.ok { background: var(--leaf); color: var(--ink); }
+.ag-chip.ok .icon { stroke-width: 2.4; }
+
+.ag-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 20px; }
+
+.ag-body {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 14px;
+    margin-top: 14px;
+}
+.ag-body.single { grid-template-columns: minmax(0, 1fr); }
+.ag-detail .ag-card {
+    padding: 22px;
+    background: var(--paper);
+    border: 1px solid var(--line);
+    border-radius: 22px;
+}
+.ag-detail .ag-card h2 {
+    display: flex; align-items: center; gap: 10px;
+    margin: 0 0 14px;
+    font: 700 1.05rem/1.2 var(--font-display);
+    letter-spacing: -0.01em;
+}
+.ag-detail .ag-card h2 .ic {
+    display: grid; place-items: center;
+    width: 34px; height: 34px;
+    border-radius: 10px;
+    background: var(--sage); color: var(--forest);
+}
+.ag-rows { display: grid; gap: 10px; }
+.ag-row {
+    display: flex; align-items: flex-start; gap: 12px;
+    padding: 12px 14px;
+    background: var(--mint);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+}
+.ag-row .icon { width: 18px; height: 18px; margin-top: 2px; color: var(--forest); }
+.ag-label { font-size: .78rem; font-weight: 600; color: var(--ink-soft); }
+.ag-value { margin-top: 2px; font-size: .95rem; font-weight: 500; line-height: 1.5; }
+.ag-value a { color: var(--forest); font-weight: 700; text-decoration: none; border-bottom: 2px solid transparent; transition: border-color .2s ease; }
+.ag-value a:hover { border-bottom-color: var(--leaf); }
+
+.ag-products { display: flex; flex-wrap: wrap; gap: 8px; }
+.ag-product {
+    padding: 7px 13px;
+    border-radius: 999px;
+    background: var(--sage);
+    color: var(--forest-deep);
+    font-size: .88rem; font-weight: 600;
+}
+
+/* ---------- Motion + responsive ---------- */
+@keyframes ag-sweep { to { transform: rotate(360deg); } }
+
+@media (max-width: 760px) {
+    .ag-body { grid-template-columns: minmax(0, 1fr); }
+}
+@media (max-width: 560px) {
+    .ag { padding: 14px 14px 22px; }
+    .ag-hero { padding: 24px 20px; }
+    .ag .ag-filter .ag-btn { flex: 1 1 100%; }
+    .ag-actions .ag-btn { flex: 1 1 100%; }
+}
+@media (prefers-reduced-motion: reduce) {
+    .ag *, .ag *::before, .ag *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; }
+}

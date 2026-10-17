@@ -1,0 +1,490 @@
+{% extends "base.html" %}
+{% block title %}Detection Result · AgriVision AI{% endblock %}
+{% block content %}
+
+<style>
+/* =========================================================
+   AgriVision AI · Detection result
+   Classes are prefixed "rs-" so they never clash with other pages.
+   NOTE: elements that carry data-lang never get a display rule here,
+   so your language toggle keeps working.
+   ========================================================= */
+:root {
+  --forest-950:#0a1d13; --forest-900:#0f2c1c; --forest-800:#163c26;
+  --green-deep:#123524; --green-mid:#2f7d4f; --green-light:#6fcf7a;
+  --green-pale:#eaf4ec; --green-xpale:#f6faf5; --border:#d7e9da;
+  --cream:#faf8f2; --wheat:#e3a83f; --wheat-soft:rgba(227,168,63,.16);
+  --scan-line:#9be79f; --gray:#6c7d70; --text:#16241b;
+}
+
+.rs-page {
+  width:100%; max-width:1280px; flex:1 1 100%; align-self:stretch; grid-column:1 / -1; min-width:0;
+  margin:0 auto; padding:28px 32px 56px; display:flex; flex-direction:column; gap:22px;
+}
+
+.rs-rise { opacity:0; transform:translateY(16px); animation:rs-rise .7s cubic-bezier(.16,1,.3,1) forwards; animation-delay:calc(var(--i,0) * 90ms); }
+@keyframes rs-rise { to { opacity:1; transform:none; } }
+
+/* ---------- Hero ---------- */
+.rs-hero {
+  position:relative; overflow:hidden; isolation:isolate; color:var(--cream);
+  border-radius:22px; padding:34px 40px;
+  display:flex; justify-content:space-between; align-items:flex-end; gap:24px; flex-wrap:wrap;
+  background:
+    radial-gradient(circle at 10% 20%, rgba(111,207,122,.20), transparent 45%),
+    radial-gradient(circle at 92% 85%, rgba(227,168,63,.18), transparent 42%),
+    linear-gradient(135deg, var(--forest-950), var(--forest-900) 50%, var(--forest-800));
+  box-shadow:0 24px 50px -22px rgba(10,29,19,.55);
+}
+.rs-hero::before {
+  content:''; position:absolute; inset:0; z-index:-1;
+  background-image:linear-gradient(rgba(255,255,255,.04) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.04) 1px, transparent 1px);
+  background-size:34px 34px; mask-image:radial-gradient(circle at 75% 40%, #000, transparent 75%);
+}
+.rs-kicker { display:inline-flex; align-items:center; gap:9px; font-size:.84rem; font-weight:600; color:var(--wheat); margin-bottom:10px; }
+.rs-kicker::before { content:''; width:8px; height:8px; border-radius:50%; background:var(--wheat); box-shadow:0 0 0 4px var(--wheat-soft); animation:rs-pulse 2s ease-in-out infinite; }
+@keyframes rs-pulse { 50% { box-shadow:0 0 0 8px rgba(227,168,63,0); } }
+.rs-hero h1 { margin:0 0 10px; font-family:'Playfair Display',serif; font-weight:600; font-size:clamp(1.8rem,3.2vw,2.8rem); line-height:1.15; }
+.rs-hero p { margin:0; max-width:560px; font-size:.95rem; line-height:1.7; color:rgba(250,248,242,.74); }
+
+.rs-actions { display:flex; gap:10px; flex-wrap:wrap; }
+.rs-btn {
+  display:inline-flex; align-items:center; gap:8px; padding:11px 20px; border-radius:10px; cursor:pointer;
+  font-family:inherit; font-weight:600; font-size:.86rem; text-decoration:none; border:1px solid transparent;
+  transition:transform .2s, background .2s, box-shadow .2s;
+}
+.rs-btn:hover { transform:translateY(-2px); }
+.rs-btn:focus-visible { outline:3px solid var(--wheat); outline-offset:2px; }
+.rs-btn-primary { background:var(--cream); color:var(--green-deep); }
+.rs-btn-primary:hover { box-shadow:0 8px 20px rgba(0,0,0,.25); }
+.rs-btn-ghost { background:rgba(255,255,255,.10); color:var(--cream); border-color:rgba(255,255,255,.28); }
+.rs-btn-ghost:hover { background:rgba(255,255,255,.18); }
+
+/* ---------- Layout ---------- */
+.rs-layout { display:grid; grid-template-columns:340px 1fr; gap:22px; align-items:start; }
+.rs-side { position:sticky; top:90px; display:flex; flex-direction:column; gap:18px; }
+.rs-main { display:flex; flex-direction:column; gap:18px; min-width:0; }
+
+.rs-card { background:#fff; border:1px solid var(--border); border-radius:20px; padding:24px; }
+.rs-card h3 { margin:0 0 14px; font-family:'Playfair Display',serif; font-size:1.08rem; font-weight:600; color:var(--green-deep); display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+.rs-ico { width:34px; height:34px; border-radius:10px; display:inline-grid; place-items:center; font-size:17px; background:var(--green-pale); flex-shrink:0; }
+
+/* ---------- Photo with one scan on load ---------- */
+.rs-photo { position:relative; border-radius:20px; overflow:hidden; background:var(--forest-950); box-shadow:0 18px 36px -20px rgba(10,29,19,.6); }
+.rs-photo img { display:block; width:100%; aspect-ratio:1 / 1; object-fit:cover; }
+.rs-photo::after { content:''; position:absolute; left:0; right:0; top:0; height:3px; background:linear-gradient(90deg, transparent, var(--scan-line), transparent); box-shadow:0 0 22px 4px var(--scan-line); opacity:0; animation:rs-scan 2.2s ease-in-out .5s 1 forwards; }
+@keyframes rs-scan { 0% { top:0; opacity:0; } 12% { opacity:1; } 88% { opacity:1; } 100% { top:calc(100% - 3px); opacity:0; } }
+.rs-frame { position:absolute; inset:12px; pointer-events:none; }
+.rs-frame i { position:absolute; width:22px; height:22px; border:3px solid var(--scan-line); }
+.rs-frame i:nth-child(1) { top:0; left:0; border-right:0; border-bottom:0; border-radius:8px 0 0 0; }
+.rs-frame i:nth-child(2) { top:0; right:0; border-left:0; border-bottom:0; border-radius:0 8px 0 0; }
+.rs-frame i:nth-child(3) { bottom:0; left:0; border-right:0; border-top:0; border-radius:0 0 0 8px; }
+.rs-frame i:nth-child(4) { bottom:0; right:0; border-left:0; border-top:0; border-radius:0 0 8px 0; }
+
+/* ---------- Confidence gauge ---------- */
+.rs-gauge-card { display:flex; align-items:center; gap:20px; }
+.rs-gauge { position:relative; width:120px; height:120px; flex-shrink:0; }
+.rs-gauge svg { width:100%; height:100%; transform:rotate(-90deg); }
+.rs-gauge circle { fill:none; stroke-width:10; stroke-linecap:round; }
+.rs-gauge .track { stroke:var(--green-pale); }
+.rs-gauge .bar {
+  stroke:url(#rsGrad); stroke-dasharray:326.73; stroke-dashoffset:326.73;
+  animation:rs-gauge 1.6s cubic-bezier(.16,1,.3,1) .5s forwards;
+}
+@keyframes rs-gauge { to { stroke-dashoffset:calc(326.73 - 326.73 * var(--pct, 0) / 100); } }
+.rs-gauge-num { position:absolute; inset:0; display:grid; place-items:center; font-size:1.55rem; font-weight:700; color:var(--green-deep); font-variant-numeric:tabular-nums; }
+.rs-gauge-text b { display:block; font-size:1rem; color:var(--green-deep); }
+.rs-gauge-text small { display:block; margin-top:4px; font-size:.8rem; color:var(--gray); line-height:1.5; }
+
+/* ---------- Fact list ---------- */
+.rs-facts { display:flex; flex-direction:column; gap:10px; }
+.rs-fact { padding:12px 16px; border-radius:14px; background:var(--green-xpale); border:1px solid var(--green-pale); }
+.rs-fact small { display:block; font-size:.75rem; font-weight:600; color:var(--gray); }
+.rs-fact b { display:block; margin-top:4px; font-size:.95rem; color:var(--green-deep); }
+.rs-fact.urgent { background:#fff4e5; border-color:#ffd8a8; border-left:4px solid #f08c00; }
+.rs-fact.urgent small, .rs-fact.urgent b { color:#b45309; }
+.rs-badge { display:inline-block; margin-top:6px; padding:5px 14px; border-radius:99px; font-size:.82rem; font-weight:700; }
+.rs-badge.high { background:#ffe3e3; color:#b71c1c; }
+.rs-badge.mod  { background:#fff3d6; color:#b45309; }
+.rs-badge.ok   { background:#dff3e4; color:#1b5e20; }
+.rs-badge.info { background:#e3f0fb; color:#0d47a1; }
+
+/* ---------- Immediate actions (a real sequence, so numbered) ---------- */
+.rs-urgent { border-left:5px solid #f08c00; background:linear-gradient(180deg, #fffaf1, #fff); }
+.rs-urgent h3 { color:#b45309; }
+.rs-urgent .rs-ico { background:#ffe8c2; }
+.rs-steps { list-style:none; margin:0; padding:0; counter-reset:step; }
+.rs-steps li { counter-increment:step; position:relative; padding:12px 14px 12px 54px; margin-bottom:8px; border-radius:12px; background:#fff; border:1px solid #fde3b8; line-height:1.6; font-size:.92rem; color:#4a3b22; transition:transform .25s; }
+.rs-steps li:hover { transform:translateX(5px); }
+.rs-steps li::before { content:counter(step); position:absolute; left:12px; top:50%; transform:translateY(-50%); width:30px; height:30px; border-radius:50%; display:grid; place-items:center; font-size:.85rem; font-weight:700; color:#fff; background:#f08c00; }
+.rs-steps li:last-child { margin-bottom:0; }
+
+/* ---------- Text blocks ---------- */
+.rs-two { display:grid; grid-template-columns:1fr 1fr; gap:18px; }
+.rs-text { margin:0; font-size:.92rem; line-height:1.75; color:#34443a; }
+.rs-note { margin:12px 0 0; padding-top:12px; border-top:1px dashed var(--border); font-size:.84rem; line-height:1.65; color:var(--gray); }
+
+/* ---------- Remedies ---------- */
+.rs-remedies { display:grid; grid-template-columns:repeat(auto-fit, minmax(290px, 1fr)); gap:16px; }
+.rs-remedy { border-radius:16px; padding:18px; background:var(--green-xpale); border:1px solid var(--border); border-top:4px solid var(--green-mid); transition:transform .3s cubic-bezier(.16,1,.3,1), box-shadow .3s; }
+.rs-remedy:hover { transform:translateY(-4px); box-shadow:0 16px 28px -18px rgba(18,53,36,.5); }
+.rs-remedy-head { display:flex; justify-content:space-between; align-items:flex-start; gap:10px; margin-bottom:12px; }
+.rs-remedy-head h4 { margin:0; font-size:1rem; color:var(--green-deep); line-height:1.3; }
+.rs-tag { flex-shrink:0; padding:3px 10px; border-radius:99px; font-size:.72rem; font-weight:700; color:var(--green-mid); background:#fff; border:1px solid var(--border); }
+.rs-remedy p { margin:0 0 8px; font-size:.86rem; line-height:1.65; color:#2c3a31; }
+.rs-remedy p:last-child { margin-bottom:0; }
+.rs-remedy p b { color:var(--green-deep); }
+
+/* ---------- Lists ---------- */
+.rs-list { list-style:none; margin:0; padding:0; display:grid; gap:9px; }
+.rs-list li { position:relative; padding:10px 14px 10px 42px; border-radius:12px; font-size:.9rem; line-height:1.6; color:#2c3a31; background:var(--green-xpale); border:1px solid var(--green-pale); transition:transform .25s; }
+.rs-list li:hover { transform:translateX(5px); }
+.rs-list li::before { content:'✓'; position:absolute; left:12px; top:50%; transform:translateY(-50%); width:22px; height:22px; border-radius:50%; display:grid; place-items:center; font-size:11px; font-weight:700; color:#fff; background:var(--green-mid); }
+
+.rs-prevent .rs-list li { background:#fffaf0; border-color:#fbe7b8; }
+.rs-prevent .rs-list li::before { content:'🛡'; background:var(--wheat-soft); font-size:12px; color:inherit; }
+.rs-prevent .rs-ico { background:var(--wheat-soft); }
+
+.rs-chips { display:flex; flex-wrap:wrap; gap:10px; }
+.rs-chip { padding:8px 16px; border-radius:99px; font-size:.86rem; font-weight:600; color:#5b3f86; background:#f1eaf9; border:1px solid #e0d2f2; transition:transform .25s, background .25s; }
+.rs-chip:hover { transform:translateY(-3px); background:#e8dcf6; }
+.rs-companion .rs-ico { background:#f1eaf9; }
+
+/* ---------- Chemical (collapsible, user-triggered) ---------- */
+.rs-chem { border:1px solid #c9dff2; border-left:5px solid #1565c0; border-radius:20px; background:#f5faff; overflow:hidden; }
+.rs-chem summary { list-style:none; cursor:pointer; padding:20px 24px; display:flex; align-items:center; gap:12px; font-family:'Playfair Display',serif; font-weight:600; font-size:1.05rem; color:#0d47a1; }
+.rs-chem summary::-webkit-details-marker { display:none; }
+.rs-chem summary .rs-ico { background:#dcecfb; }
+.rs-chem summary .rs-chev { margin-left:auto; width:28px; height:28px; border-radius:50%; display:grid; place-items:center; background:#dcecfb; font-size:12px; transition:transform .3s; }
+.rs-chem[open] summary .rs-chev { transform:rotate(180deg); }
+.rs-chem summary:focus-visible { outline:3px solid #1565c0; outline-offset:-3px; }
+.rs-chem-body { padding:0 24px 24px; }
+.rs-chem-grid { display:grid; grid-template-columns:repeat(3, minmax(0,1fr)); gap:12px; margin-bottom:14px; }
+.rs-chem-item { padding:12px 14px; border-radius:12px; background:#fff; border:1px solid #d6e7f6; font-size:.88rem; line-height:1.55; color:#1f3347; }
+.rs-chem-item small { display:block; margin-bottom:4px; font-size:.75rem; font-weight:700; color:#1565c0; }
+.rs-warn { margin:0; padding:12px 16px; border-radius:12px; font-size:.86rem; line-height:1.65; color:#b71c1c; background:#fff; border:1px solid #f5c6c3; }
+
+/* ---------- Expert help ---------- */
+.rs-help { display:flex; gap:16px; align-items:flex-start; padding:20px 24px; border-radius:20px; background:#fff0f4; border:1px solid #f6cfda; border-left:5px solid #c2185b; }
+.rs-help-ico { width:44px; height:44px; flex-shrink:0; border-radius:14px; display:grid; place-items:center; font-size:22px; background:#fadde6; }
+.rs-help p { margin:0; font-size:.92rem; line-height:1.7; color:#880e4f; }
+
+.rs-bottom { display:flex; gap:12px; flex-wrap:wrap; padding:20px 24px; border-radius:20px; background:#fff; border:1px solid var(--border); }
+.rs-bottom .rs-btn-primary { background:var(--green-mid); color:#fff; }
+.rs-bottom .rs-btn-primary:hover { background:var(--green-deep); }
+.rs-bottom .rs-btn-ghost { background:#fff; color:var(--green-mid); border-color:var(--green-mid); }
+.rs-bottom .rs-btn-ghost:hover { background:var(--green-pale); }
+
+/* ---------- Responsive ---------- */
+@media (max-width:1020px) {
+  .rs-layout { grid-template-columns:1fr; }
+  .rs-side { position:static; display:grid; grid-template-columns:1fr 1fr; align-items:start; }
+  .rs-photo { grid-row:span 2; }
+}
+@media (max-width:720px) {
+  .rs-page { padding:18px 16px 40px; }
+  .rs-hero { padding:26px 22px; }
+  .rs-side { grid-template-columns:1fr; }
+  .rs-two, .rs-chem-grid { grid-template-columns:1fr; }
+  .rs-gauge-card { flex-direction:row; }
+}
+
+/* ---------- Print / Save PDF ---------- */
+@media print {
+  nav, .rs-noprint, .rs-bottom { display:none !important; }
+  .rs-rise { opacity:1; transform:none; animation:none; }
+  .rs-page { padding:0; max-width:100%; }
+  .rs-hero { background:#fff; color:#000; box-shadow:none; border:1px solid #ccc; }
+  .rs-hero p, .rs-kicker { color:#333; }
+  .rs-layout { grid-template-columns:240px 1fr; }
+  .rs-side { position:static; }
+  .rs-card, .rs-remedy, .rs-chem, .rs-help { break-inside:avoid; box-shadow:none; }
+  .rs-gauge .bar { animation:none; stroke-dashoffset:calc(326.73 - 326.73 * var(--pct, 0) / 100); }
+  .rs-photo::after { display:none; }
+}
+@media (prefers-reduced-motion:reduce) {
+  .rs-rise { opacity:1; transform:none; animation:none; }
+  .rs-gauge .bar { animation:none; stroke-dashoffset:calc(326.73 - 326.73 * var(--pct, 0) / 100); }
+  .rs-photo::after { display:none; }
+}
+</style>
+
+{% macro action_buttons(style) %}
+  <a class="rs-btn rs-btn-primary" href="{{ url_for('detect_page') }}">
+    🔬 <span data-lang="en">Detect another leaf</span><span data-lang="ml">മറ്റൊരു ഇല പരിശോധിക്കുക</span>
+  </a>
+  <a class="rs-btn rs-btn-ghost" href="{{ url_for('dashboard') }}">
+    <span data-lang="en">Back to dashboard</span><span data-lang="ml">ഡാഷ്ബോർഡിലേക്ക്</span>
+  </a>
+  <button type="button" class="rs-btn rs-btn-ghost" onclick="window.print()">
+    🖨️ <span data-lang="en">Print / Save PDF</span><span data-lang="ml">പ്രിന്റ് / PDF സേവ്</span>
+  </button>
+{% endmacro %}
+
+<div class="rs-page">
+
+  <!-- ================= HERO ================= -->
+  <section class="rs-hero rs-rise" style="--i:0">
+    <div>
+      <div class="rs-kicker"><span data-lang="en">Detection result</span><span data-lang="ml">കണ്ടെത്തൽ ഫലം</span></div>
+      <h1>
+        <span data-lang="en">{{ info.display_name_en or class_name }}</span>
+        <span data-lang="ml">{{ info.display_name_ml or class_name }}</span>
+      </h1>
+      <p>
+        <span data-lang="en">Your leaf has been analyzed. Follow the recommendations below.</span>
+        <span data-lang="ml">നിങ്ങളുടെ ഇല പരിശോധിച്ചു. താഴെ നൽകിയിരിക്കുന്ന നിർദ്ദേശങ്ങൾ പാലിക്കുക.</span>
+      </p>
+    </div>
+    <div class="rs-actions rs-noprint">{{ action_buttons('hero') }}</div>
+  </section>
+
+  <div class="rs-layout">
+
+    <!-- ================= SIDEBAR ================= -->
+    <aside class="rs-side">
+
+      <div class="rs-photo rs-rise" style="--i:1">
+        <img src="{{ image_url }}" alt="Uploaded leaf">
+        <div class="rs-frame"><i></i><i></i><i></i><i></i></div>
+      </div>
+
+      <div class="rs-card rs-gauge-card rs-rise" style="--i:2">
+        <div class="rs-gauge" style="--pct:{{ confidence }}">
+          <svg viewBox="0 0 120 120" aria-hidden="true">
+            <defs>
+              <linearGradient id="rsGrad" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0%" stop-color="#6fcf7a"/><stop offset="100%" stop-color="#2f7d4f"/>
+              </linearGradient>
+            </defs>
+            <circle class="track" cx="60" cy="60" r="52"/>
+            <circle class="bar" cx="60" cy="60" r="52"/>
+          </svg>
+          <div class="rs-gauge-num"><span id="rsPct" data-count="{{ confidence }}">{{ confidence }}</span>%</div>
+        </div>
+        <div class="rs-gauge-text">
+          <b><span data-lang="en">Confidence</span><span data-lang="ml">വിശ്വാസ്യത</span></b>
+          <small><span data-lang="en">How sure the model is about this result.</span><span data-lang="ml">ഈ ഫലത്തിൽ മോഡലിന് എത്ര ഉറപ്പുണ്ടെന്ന് ഇത് കാണിക്കുന്നു.</span></small>
+        </div>
+      </div>
+
+      <div class="rs-card rs-rise" style="--i:3">
+        <div class="rs-facts">
+          <div class="rs-fact">
+            <small>🌱 <span data-lang="en">Crop</span><span data-lang="ml">വിള</span></small>
+            <b><span data-lang="en">{{ info.crop_en or '—' }}</span><span data-lang="ml">{{ info.crop_ml or '—' }}</span></b>
+          </div>
+
+          <div class="rs-fact">
+            <small>🦠 <span data-lang="en">Disease type</span><span data-lang="ml">രോഗ തരം</span></small>
+            <b><span data-lang="en">{{ info.type_en or '—' }}</span><span data-lang="ml">{{ info.type_ml or '—' }}</span></b>
+          </div>
+
+          <div class="rs-fact">
+            <small>📊 <span data-lang="en">Severity</span><span data-lang="ml">തീവ്രത</span></small>
+            {% set sev = (info.severity_en or 'Unknown')|lower %}
+            {% if 'severe' in sev or 'high' in sev %}
+              <span class="rs-badge high"><span data-lang="en">{{ info.severity_en }}</span><span data-lang="ml">{{ info.severity_ml }}</span></span>
+            {% elif 'moderate' in sev or 'medium' in sev %}
+              <span class="rs-badge mod"><span data-lang="en">{{ info.severity_en }}</span><span data-lang="ml">{{ info.severity_ml }}</span></span>
+            {% elif 'none' in sev or 'healthy' in class_name|lower %}
+              <span class="rs-badge ok"><span data-lang="en">Healthy</span><span data-lang="ml">ആരോഗ്യകരമായ</span></span>
+            {% else %}
+              <span class="rs-badge info">{{ info.severity_en }}</span>
+            {% endif %}
+          </div>
+
+          {% if info.urgency_en %}
+          <div class="rs-fact urgent">
+            <small>⏱️ <span data-lang="en">Urgency</span><span data-lang="ml">അടിയന്തിരാവസ്ഥ</span></small>
+            <b><span data-lang="en">{{ info.urgency_en }}</span><span data-lang="ml">{{ info.urgency_ml }}</span></b>
+          </div>
+          {% endif %}
+        </div>
+      </div>
+    </aside>
+
+    <!-- ================= MAIN ================= -->
+    <div class="rs-main">
+
+      {% if info.immediate_actions_en %}
+      <section class="rs-card rs-urgent rs-rise" style="--i:2">
+        <h3>
+          <span class="rs-ico">⚡</span>
+          <span data-lang="en">Immediate actions (do these first)</span>
+          <span data-lang="ml">ഉടനടി ചെയ്യേണ്ട കാര്യങ്ങൾ</span>
+        </h3>
+        <ol data-lang="en" class="rs-steps">
+          {% for action in info.immediate_actions_en %}<li>{{ action }}</li>{% endfor %}
+        </ol>
+        <ol data-lang="ml" class="rs-steps">
+          {% for action in info.immediate_actions_ml %}<li>{{ action }}</li>{% endfor %}
+        </ol>
+      </section>
+      {% endif %}
+
+      <section class="rs-two rs-rise" style="--i:3">
+        <div class="rs-card">
+          <h3><span class="rs-ico">🔍</span><span data-lang="en">Symptoms</span><span data-lang="ml">ലക്ഷണങ്ങൾ</span></h3>
+          <p data-lang="en" class="rs-text">{{ info.symptoms_en or '—' }}</p>
+          <p data-lang="ml" class="rs-text">{{ info.symptoms_ml or '—' }}</p>
+        </div>
+
+        <div class="rs-card">
+          <h3><span class="rs-ico">⚠️</span><span data-lang="en">Causes</span><span data-lang="ml">കാരണങ്ങൾ</span></h3>
+          <p data-lang="en" class="rs-text">{{ info.causes_en or '—' }}</p>
+          <p data-lang="ml" class="rs-text">{{ info.causes_ml or '—' }}</p>
+          {% if info.favorable_conditions_en %}
+          <p data-lang="en" class="rs-note"><b>Favorable conditions:</b> {{ info.favorable_conditions_en }}</p>
+          <p data-lang="ml" class="rs-note"><b>അനുകൂല സാഹചര്യങ്ങൾ:</b> {{ info.favorable_conditions_ml }}</p>
+          {% endif %}
+        </div>
+      </section>
+
+      {% if info.natural_home_remedies %}
+      <section class="rs-card rs-rise" style="--i:4">
+        <h3>
+          <span class="rs-ico">🌿</span>
+          <span data-lang="en">Home-made natural remedies</span>
+          <span data-lang="ml">വീട്ടിൽ തയ്യാറാക്കാവുന്ന പ്രകൃതിദത്ത പരിഹാരങ്ങൾ</span>
+        </h3>
+        <div class="rs-remedies">
+          {% for remedy in info.natural_home_remedies %}
+          <article class="rs-remedy">
+            <div class="rs-remedy-head">
+              <h4><span data-lang="en">{{ remedy.name_en }}</span><span data-lang="ml">{{ remedy.name_ml }}</span></h4>
+              {% if remedy.effectiveness_en %}
+              <span class="rs-tag"><span data-lang="en">{{ remedy.effectiveness_en }}</span><span data-lang="ml">{{ remedy.effectiveness_ml }}</span></span>
+              {% endif %}
+            </div>
+            <p data-lang="en"><b>Ingredients:</b> {{ remedy.ingredients_en }}</p>
+            <p data-lang="ml"><b>ചേരുവകൾ:</b> {{ remedy.ingredients_ml }}</p>
+            <p data-lang="en"><b>How to use:</b> {{ remedy.method_en }}</p>
+            <p data-lang="ml"><b>ഉപയോഗ രീതി:</b> {{ remedy.method_ml }}</p>
+          </article>
+          {% endfor %}
+        </div>
+      </section>
+      {% endif %}
+
+      {% if info.organic_products_en %}
+      <section class="rs-card rs-rise" style="--i:5">
+        <h3>
+          <span class="rs-ico">🌱</span>
+          <span data-lang="en">Organic / eco-friendly products</span>
+          <span data-lang="ml">ജൈവ / പരിസ്ഥിതി സൗഹൃദ ഉൽപ്പന്നങ്ങൾ</span>
+        </h3>
+        <ul data-lang="en" class="rs-list">
+          {% for item in info.organic_products_en %}<li>{{ item }}</li>{% endfor %}
+        </ul>
+        <ul data-lang="ml" class="rs-list">
+          {% for item in info.organic_products_ml %}<li>{{ item }}</li>{% endfor %}
+        </ul>
+      </section>
+      {% endif %}
+
+      {% if info.chemical_treatments %}
+      <details class="rs-chem rs-rise" style="--i:6" id="rsChem">
+        <summary>
+          <span class="rs-ico">🧪</span>
+          <span>
+            <span data-lang="en">Chemical treatments (only if natural remedies fail)</span>
+            <span data-lang="ml">രാസ ചികിത്സകൾ (ജൈവ പരിഹാരങ്ങൾ ഫലിക്കാത്തപ്പോൾ മാത്രം)</span>
+          </span>
+          <span class="rs-chev">▼</span>
+        </summary>
+        <div class="rs-chem-body">
+          <div data-lang="en">
+            <div class="rs-chem-grid">
+              <div class="rs-chem-item"><small>Recommended</small>{{ info.chemical_treatments.recommended_en | join(', ') }}</div>
+              <div class="rs-chem-item"><small>Dosage</small>{{ info.chemical_treatments.dosage_en }}</div>
+              <div class="rs-chem-item"><small>Frequency</small>{{ info.chemical_treatments.frequency_en }}</div>
+            </div>
+            <p class="rs-warn">⚠️ <b>Precautions:</b> {{ info.chemical_treatments.precautions_en }}</p>
+          </div>
+          <div data-lang="ml">
+            <div class="rs-chem-grid">
+              <div class="rs-chem-item"><small>ശുപാർശ ചെയ്യുന്നത്</small>{{ info.chemical_treatments.recommended_ml | join(', ') }}</div>
+              <div class="rs-chem-item"><small>അളവ്</small>{{ info.chemical_treatments.dosage_ml }}</div>
+              <div class="rs-chem-item"><small>ആവൃത്തി</small>{{ info.chemical_treatments.frequency_ml }}</div>
+            </div>
+            <p class="rs-warn">⚠️ <b>മുൻകരുതലുകൾ:</b> {{ info.chemical_treatments.precautions_ml }}</p>
+          </div>
+        </div>
+      </details>
+      {% endif %}
+
+      {% if info.preventive_measures_en %}
+      <section class="rs-card rs-prevent rs-rise" style="--i:7">
+        <h3>
+          <span class="rs-ico">🛡️</span>
+          <span data-lang="en">Preventive measures for future seasons</span>
+          <span data-lang="ml">ഭാവി സീസണുകൾക്കുള്ള പ്രതിരോധ നടപടികൾ</span>
+        </h3>
+        <ul data-lang="en" class="rs-list">
+          {% for measure in info.preventive_measures_en %}<li>{{ measure }}</li>{% endfor %}
+        </ul>
+        <ul data-lang="ml" class="rs-list">
+          {% for measure in info.preventive_measures_ml %}<li>{{ measure }}</li>{% endfor %}
+        </ul>
+      </section>
+      {% endif %}
+
+      {% if info.companion_plants_en %}
+      <section class="rs-card rs-companion rs-rise" style="--i:8">
+        <h3>
+          <span class="rs-ico">🌸</span>
+          <span data-lang="en">Companion plants (plant these nearby)</span>
+          <span data-lang="ml">കൂടെ നട്ടുപിടിപ്പിക്കാവുന്ന ചെടികൾ</span>
+        </h3>
+        <div data-lang="en"><div class="rs-chips">{% for p in info.companion_plants_en %}<span class="rs-chip">{{ p }}</span>{% endfor %}</div></div>
+        <div data-lang="ml"><div class="rs-chips">{% for p in info.companion_plants_ml %}<span class="rs-chip">{{ p }}</span>{% endfor %}</div></div>
+      </section>
+      {% endif %}
+
+      {% if info.when_to_seek_help_en %}
+      <section class="rs-help rs-rise" style="--i:9">
+        <div class="rs-help-ico">👨‍🌾</div>
+        <div>
+          <p data-lang="en"><b>When to seek expert help:</b> {{ info.when_to_seek_help_en }}</p>
+          <p data-lang="ml"><b>വിദഗ്ധ സഹായം എപ്പോൾ തേടണം:</b> {{ info.when_to_seek_help_ml }}</p>
+        </div>
+      </section>
+      {% endif %}
+
+      <div class="rs-bottom rs-noprint rs-rise" style="--i:10">{{ action_buttons('bottom') }}</div>
+
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+  /* confidence number counts up in step with the gauge */
+  var el = document.getElementById('rsPct');
+  if (el && !window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    var target = parseFloat(el.dataset.count) || 0;
+    var dec = (el.dataset.count.split('.')[1] || '').length > 0 ? 1 : 0;
+    var start = null, dur = 1600;
+    el.textContent = (0).toFixed(dec);
+    setTimeout(function () {
+      requestAnimationFrame(function tick(t) {
+        if (start === null) start = t;
+        var p = Math.min((t - start) / dur, 1);
+        el.textContent = (target * (1 - Math.pow(1 - p, 4))).toFixed(dec);
+        if (p < 1) requestAnimationFrame(tick);
+      });
+    }, 500);
+  }
+
+  /* make sure the chemical section is included when printing */
+  var chem = document.getElementById('rsChem');
+  if (chem) {
+    var wasOpen = false;
+    window.addEventListener('beforeprint', function () { wasOpen = chem.open; chem.open = true; });
+    window.addEventListener('afterprint', function () { chem.open = wasOpen; });
+  }
+})();
+</script>
+
+{% endblock %}

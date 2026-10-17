@@ -1,0 +1,197 @@
+{% extends "base.html" %}
+{% block title %}About · AgriVision AI{% endblock %}
+{% block content %}
+
+<style>
+/* AgriVision AI · About  (classes prefixed "av-") */
+.av-page {
+  width: 100%; max-width: 1440px; flex: 1 1 100%; align-self: stretch; grid-column: 1 / -1; min-width: 0;
+  margin: 0 auto; padding: 28px 32px 48px; display: flex; flex-direction: column; gap: 22px;
+}
+.av-rise { opacity: 0; transform: translateY(16px); animation: av-rise .7s cubic-bezier(.16,1,.3,1) forwards; animation-delay: calc(var(--i,0) * 90ms); }
+@keyframes av-rise { to { opacity: 1; transform: none; } }
+
+.av-title { display: flex; align-items: center; gap: 10px; margin: 0 0 14px; font-family: 'Playfair Display', serif; font-size: 1.15rem; font-weight: 600; color: var(--green-deep); }
+.av-title::after { content: ''; flex: 1; height: 1px; background: linear-gradient(90deg, var(--border), transparent); }
+
+/* hero */
+.av-hero {
+  position: relative; overflow: hidden; isolation: isolate; border-radius: 22px; padding: 40px 44px;
+  display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 32px; color: var(--cream);
+  background:
+    radial-gradient(circle at 12% 18%, rgba(111,207,122,.20), transparent 45%),
+    radial-gradient(circle at 88% 85%, rgba(227,168,63,.16), transparent 42%),
+    linear-gradient(135deg, var(--forest-950) 0%, var(--forest-900) 50%, var(--forest-800) 100%);
+  box-shadow: 0 24px 50px -22px rgba(10,29,19,.55);
+}
+.av-hero::before {
+  content: ''; position: absolute; inset: 0; z-index: -1;
+  background-image: linear-gradient(rgba(255,255,255,.04) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.04) 1px, transparent 1px);
+  background-size: 34px 34px; mask-image: radial-gradient(circle at 70% 50%, #000, transparent 75%);
+}
+.av-hero h1 { margin: 0; font-family: 'Playfair Display', serif; font-weight: 600; font-size: clamp(1.7rem, 2.8vw, 2.5rem); line-height: 1.2; }
+.av-hero p { margin: 12px 0 24px; max-width: 620px; font-size: 1rem; line-height: 1.6; color: rgba(250,248,242,.74); }
+.av-hero-actions { display: flex; gap: 12px; flex-wrap: wrap; }
+.av-btn { display: inline-flex; align-items: center; gap: 8px; padding: 11px 22px; border-radius: 10px; font-weight: 600; font-size: .86rem; text-decoration: none; transition: transform .2s, background .2s, box-shadow .2s; }
+.av-btn:hover { transform: translateY(-2px); }
+.av-btn:focus-visible { outline: 3px solid var(--wheat); outline-offset: 2px; }
+.av-btn-ghost { color: var(--cream); background: rgba(255,255,255,.10); border: 1px solid rgba(255,255,255,.28); }
+.av-btn-ghost:hover { background: rgba(255,255,255,.18); }
+.av-btn-solid { color: var(--green-deep); background: var(--cream); }
+.av-btn-solid:hover { box-shadow: 0 8px 20px rgba(0,0,0,.25); }
+
+/* scanning leaf (same as login/dashboard) */
+.av-scan { position: relative; width: 190px; height: 190px; display: flex; align-items: center; justify-content: center; }
+.av-ring { position: absolute; border-radius: 50%; border: 1px solid rgba(155,231,159,.32); animation: av-ring 3.6s ease-out infinite; }
+.av-ring.r1 { width: 100px; height: 100px; } .av-ring.r2 { width: 146px; height: 146px; animation-delay: 1.2s; } .av-ring.r3 { width: 190px; height: 190px; animation-delay: 2.4s; }
+@keyframes av-ring { 0% { transform: scale(.7); opacity: 0; } 25% { opacity: .9; } 100% { transform: scale(1); opacity: 0; } }
+.av-leaf { position: relative; z-index: 2; width: 84px; height: 84px; filter: drop-shadow(0 8px 18px rgba(0,0,0,.4)); animation: av-float 5s ease-in-out infinite; }
+@keyframes av-float { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
+.av-leaf svg { width: 100%; height: 100%; overflow: visible; }
+.av-sweep { position: absolute; left: 10%; right: 10%; height: 2px; z-index: 3; background: linear-gradient(90deg, transparent, var(--scan-line), transparent); box-shadow: 0 0 12px 1px var(--scan-line); animation: av-sweep 3.2s ease-in-out infinite; }
+@keyframes av-sweep { 0% { top: 24%; opacity: 0; } 10% { opacity: 1; } 50% { top: 76%; opacity: 1; } 60%,100% { top: 76%; opacity: 0; } }
+
+/* cards */
+.av-card { background: var(--white); border: 1px solid var(--border); border-radius: 18px; padding: 24px; }
+.av-duo { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; align-items: stretch; }
+.av-card h3 { margin: 0 0 10px; font-family: 'Playfair Display', serif; font-size: 1.1rem; font-weight: 600; color: var(--green-deep); }
+.av-card p { margin: 0; font-size: .92rem; line-height: 1.75; color: var(--text); max-width: 70ch; }
+
+/* model stats */
+.av-nums { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 12px; margin-top: 18px; }
+.av-num { padding: 14px 16px; border-radius: 12px; background: var(--green-xpale); border: 1px solid var(--green-pale); }
+.av-num b { display: block; font-size: 1.7rem; line-height: 1.1; font-weight: 700; color: var(--green-mid); font-variant-numeric: tabular-nums; letter-spacing: -.5px; }
+.av-num small { display: block; margin-top: 4px; font-size: .76rem; font-weight: 600; color: var(--gray); }
+
+/* features */
+.av-feats { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 14px; }
+.av-feat {
+  --accent: var(--green-mid); position: relative; overflow: hidden; display: flex; gap: 14px; align-items: flex-start;
+  padding: 20px; background: var(--white); border: 1px solid var(--border); border-radius: 16px;
+  transition: transform .3s cubic-bezier(.16,1,.3,1), box-shadow .3s, border-color .3s;
+}
+.av-feat:hover { transform: translateY(-4px); border-color: var(--accent); box-shadow: 0 16px 28px -18px color-mix(in srgb, var(--accent) 60%, transparent); }
+.av-feat-icon { width: 50px; height: 50px; flex-shrink: 0; border-radius: 14px; display: grid; place-items: center; font-size: 24px; background: color-mix(in srgb, var(--accent) 13%, white); }
+.av-feat-t { font-weight: 700; font-size: .95rem; color: var(--green-deep); }
+.av-feat-d { margin-top: 4px; font-size: .84rem; line-height: 1.55; color: var(--gray); }
+.av-feat.f1 { --accent: #2f7d4f; } .av-feat.f2 { --accent: #e3a83f; } .av-feat.f3 { --accent: #3b82a0; }
+.av-feat.f4 { --accent: #7a5ea8; } .av-feat.f5 { --accent: #1f8a7a; } .av-feat.f6 { --accent: #c2575f; }
+
+/* tech chips */
+.av-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.av-chip { padding: 7px 16px; border-radius: 99px; font-size: .82rem; font-weight: 600; color: var(--green-deep); background: var(--green-pale); border: 1px solid var(--border); }
+
+/* closing bar */
+.av-end {
+  display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap;
+  padding: 20px 26px; border-radius: 18px; color: var(--cream);
+  background: linear-gradient(150deg, var(--forest-900), var(--forest-800));
+}
+.av-end strong { font-family: 'Playfair Display', serif; font-weight: 600; font-size: 1.1rem; }
+.av-end-actions { display: flex; gap: 10px; flex-wrap: wrap; }
+
+@media (max-width: 1100px) { .av-feats { grid-template-columns: repeat(2, minmax(0,1fr)); } .av-duo { grid-template-columns: 1fr; } }
+@media (max-width: 760px) {
+  .av-page { padding: 18px 16px 36px; } .av-hero { grid-template-columns: 1fr; padding: 28px 24px; } .av-scan { display: none; }
+  .av-feats { grid-template-columns: 1fr; } .av-end { padding: 18px; }
+}
+@media (max-width: 480px) { .av-nums { grid-template-columns: 1fr; } }
+@media (prefers-reduced-motion: reduce) { .av-rise { opacity: 1; transform: none; animation: none; } }
+</style>
+
+<div class="av-page">
+
+  <!-- HERO -->
+  <section class="av-hero av-rise" style="--i:0">
+    <div>
+      <h1>🌿 <span data-lang="en">About AgriVision AI</span><span data-lang="ml">AgriVision AI നെ കുറിച്ച്</span></h1>
+      <p>
+        <span data-lang="en">An intelligent agriculture support system for Indian farmers.</span>
+        <span data-lang="ml">ഇന്ത്യൻ കർഷകർക്കായുള്ള ബുദ്ധിമാനായ കൃഷി സഹായ സംവിധാനം.</span>
+      </p>
+      <div class="av-hero-actions">
+        <a class="av-btn av-btn-ghost" href="{{ url_for('dashboard') if session.get('user_id') else url_for('index') }}">← <span data-lang="en">Back</span><span data-lang="ml">തിരികെ</span></a>
+        <a class="av-btn av-btn-solid" href="{{ url_for('contact_page') }}">✉️ <span data-lang="en">Contact us</span><span data-lang="ml">ബന്ധപ്പെടുക</span></a>
+      </div>
+    </div>
+    <div class="av-scan" aria-hidden="true">
+      <div class="av-ring r1"></div><div class="av-ring r2"></div><div class="av-ring r3"></div>
+      <div class="av-leaf">
+        <svg viewBox="0 0 100 100">
+          <path d="M50 8 C82 24 90 58 50 92 C10 58 18 24 50 8 Z" fill="#163c26" stroke="#6fcf7a" stroke-width="1.6"/>
+          <path d="M50 14 L50 88 M50 38 L68 28 M50 56 L72 44 M50 38 L32 28 M50 56 L28 44" stroke="rgba(155,231,159,.55)" stroke-width="1.2" fill="none"/>
+          <circle cx="62" cy="62" r="3.4" fill="#e3a83f"/>
+        </svg>
+      </div>
+      <div class="av-sweep"></div>
+    </div>
+  </section>
+
+  <!-- MISSION + MODEL -->
+  <section class="av-duo av-rise" style="--i:1">
+    <div class="av-card">
+      <h3>🎯 <span data-lang="en">Our mission</span><span data-lang="ml">ഞങ്ങളുടെ ദൗത്യം</span></h3>
+      <p>
+        <span data-lang="en">AgriVision AI combines machine learning, computer vision, real market data, and generative AI to help farmers make better decisions — from detecting plant diseases early to choosing the right crop for the season.</span>
+        <span data-lang="ml">AgriVision AI, മെഷീൻ ലേണിംഗ്, കമ്പ്യൂട്ടർ വിഷൻ, യഥാർത്ഥ വിപണി ഡാറ്റ, ജനറേറ്റീവ് AI എന്നിവ സംയോജിപ്പിച്ച് കർഷകർക്ക് മികച്ച തീരുമാനങ്ങൾ എടുക്കാൻ സഹായിക്കുന്നു.</span>
+      </p>
+    </div>
+    <div class="av-card">
+      <h3>📊 <span data-lang="en">The AI model</span><span data-lang="ml">AI മോഡൽ</span></h3>
+      <p>
+        <span data-lang="en">The disease detection model is a Convolutional Neural Network (CNN) trained on the PlantVillage dataset of labeled leaf images.</span>
+        <span data-lang="ml">രോഗ കണ്ടെത്തൽ മോഡൽ, PlantVillage ഡാറ്റാസെറ്റിൽ പരിശീലിപ്പിച്ച ഒരു CNN ആണ്.</span>
+      </p>
+      <div class="av-nums">
+        <div class="av-num"><b>54,000+</b><small><span data-lang="en">Leaf images</span><span data-lang="ml">ഇല ചിത്രങ്ങൾ</span></small></div>
+        <div class="av-num"><b>38</b><small><span data-lang="en">Disease classes</span><span data-lang="ml">രോഗ വിഭാഗങ്ങൾ</span></small></div>
+        <div class="av-num"><b>~92%</b><small><span data-lang="en">Validation accuracy</span><span data-lang="ml">കൃത്യത</span></small></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FEATURES -->
+  <section class="av-rise" style="--i:2">
+    <h2 class="av-title">✨ <span data-lang="en">Key features</span><span data-lang="ml">പ്രധാന സവിശേഷതകൾ</span></h2>
+    <div class="av-feats">
+      {% set features = [
+        ("🔬", "Disease Detection", "AI identifies 38 crop diseases from leaf images", "രോഗ കണ്ടെത്തൽ", "38 രോഗങ്ങൾ ഇല ചിത്രങ്ങളിൽ നിന്ന് തിരിച്ചറിയുന്നു"),
+        ("🌾", "Crop Recommendation", "Suggests best crops for your season and soil", "വിള ശുപാർശ", "സീസണിനും മണ്ണിനും അനുയോജ്യമായ വിളകൾ"),
+        ("🤖", "AI Chatbot", "24/7 farming assistant in English & Malayalam", "AI ചാറ്റ്ബോട്ട്", "ഇംഗ്ലീഷിലും മലയാളത്തിലും കൃഷി സഹായി"),
+        ("🏛️", "Government Schemes", "Find subsidies and welfare schemes you qualify for", "സർക്കാർ പദ്ധതികൾ", "അർഹതയുള്ള സബ്‌സിഡികളും പദ്ധതികളും"),
+        ("📈", "Live Market Prices", "Real Agmarknet prices from Kerala mandis", "വിപണി വിലകൾ", "കേരള മണ്ഡികളിലെ യഥാർത്ഥ വിലകൾ"),
+        ("🌐", "Bilingual Support", "Full UI in English and Malayalam", "ദ്വിഭാഷാ പിന്തുണ", "ഇംഗ്ലീഷിലും മലയാളത്തിലും"),
+      ] %}
+      {% for icon, en_t, en_d, ml_t, ml_d in features %}
+      <div class="av-feat f{{ loop.index }}">
+        <div class="av-feat-icon">{{ icon }}</div>
+        <div>
+          <div class="av-feat-t"><span data-lang="en">{{ en_t }}</span><span data-lang="ml">{{ ml_t }}</span></div>
+          <div class="av-feat-d"><span data-lang="en">{{ en_d }}</span><span data-lang="ml">{{ ml_d }}</span></div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </section>
+
+  <!-- TECH -->
+  <section class="av-rise" style="--i:3">
+    <h2 class="av-title">🛠️ <span data-lang="en">Technology stack</span><span data-lang="ml">സാങ്കേതിക സ്റ്റാക്ക്</span></h2>
+    <div class="av-chips">
+      {% for tech in ["Python 3", "Flask", "TensorFlow", "MobileNetV2", "MySQL", "HTML5", "CSS3", "JavaScript", "Groq AI (LLM)", "Agmarknet Data", "Jinja2"] %}
+      <span class="av-chip">{{ tech }}</span>
+      {% endfor %}
+    </div>
+  </section>
+
+  <!-- CLOSING -->
+  <section class="av-end av-rise" style="--i:4">
+    <strong><span data-lang="en">Built for the farmers of Kerala 🌾</span><span data-lang="ml">കേരളത്തിലെ കർഷകർക്കായി നിർമ്മിച്ചത് 🌾</span></strong>
+    <div class="av-end-actions">
+      <a class="av-btn av-btn-ghost" href="{{ url_for('dashboard') if session.get('user_id') else url_for('index') }}">← <span data-lang="en">Back</span><span data-lang="ml">തിരികെ</span></a>
+      <a class="av-btn av-btn-solid" href="{{ url_for('contact_page') }}">✉️ <span data-lang="en">Contact us</span><span data-lang="ml">ബന്ധപ്പെടുക</span></a>
+    </div>
+  </section>
+
+</div>
+{% endblock %}

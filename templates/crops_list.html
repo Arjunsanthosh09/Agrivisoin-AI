@@ -1,0 +1,113 @@
+{% extends "base.html" %}
+{% block title %}Crop Details · AgriVision AI{% endblock %}
+{% block content %}
+
+<div style="width:100%;max-width:1300px;margin:26px auto;padding:0 24px;box-sizing:border-box;">
+
+  <!-- Header -->
+  <div style="background:linear-gradient(135deg,#1b5e20,#43a047);
+              padding:28px 34px;border-radius:18px;color:#fff;">
+    <h1 style="margin:0;font-size:26px;">
+      🌱 <span data-lang="en">Crop Knowledge Base</span>
+      <span data-lang="ml">വിള വിജ്ഞാനകോശം</span>
+    </h1>
+    <p style="margin:8px 0 0;opacity:0.95;font-size:14px;">
+      <span data-lang="en">Complete cultivation guide for 20 crops — AI-generated, Kerala-specific.</span>
+      <span data-lang="ml">20 വിളകൾക്കുള്ള സമ്പൂർണ്ണ കൃഷി മാർഗ്ഗദർശിനി — AI നിർമ്മിതം.</span>
+    </p>
+  </div>
+
+  <!-- Filters -->
+  <form method="GET" style="margin-top:18px;display:flex;gap:10px;flex-wrap:wrap;">
+    <input type="text" name="q" value="{{ search }}"
+           placeholder="Search crops… e.g., Rice, Tomato"
+           style="flex:1;min-width:200px;padding:12px 16px;border:1px solid #ddd;
+                  border-radius:10px;font-size:14px;outline:none;background:#fafafa;">
+    <select name="category"
+            style="padding:12px 16px;border:1px solid #ddd;border-radius:10px;
+                   font-size:14px;background:#fff;">
+      <option value="">All Categories</option>
+      {% for cat in categories %}
+      <option value="{{ cat }}" {% if cat==selected_category %}selected{% endif %}>{{ cat }}</option>
+      {% endfor %}
+    </select>
+    <button type="submit"
+            style="padding:12px 24px;background:#2e7d32;color:#fff;border:none;
+                   border-radius:10px;font-weight:600;cursor:pointer;">
+      🔍 <span data-lang="en">Filter</span><span data-lang="ml">ഫിൽട്ടർ</span>
+    </button>
+    {% if search or selected_category %}
+    <a href="{{ url_for('crops_list_page') }}"
+       style="padding:12px 20px;color:#666;text-decoration:none;border-radius:10px;
+              border:1px solid #ddd;font-weight:600;">✕ Clear</a>
+    {% endif %}
+  </form>
+
+  <!-- Grid -->
+  <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));
+              gap:16px;margin-top:22px;">
+
+    {% for c in crops %}
+    <a href="{{ url_for('crop_detail_page', crop_id=c.id) }}"
+       style="display:block;text-decoration:none;background:#fff;border-radius:14px;
+              padding:22px;box-shadow:0 2px 12px rgba(0,0,0,0.06);
+              border-top:4px solid #2e7d32;
+              transition:transform 0.2s,box-shadow 0.2s;">
+
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;">
+        <h3 style="margin:0;color:#1b5e20;font-size:18px;font-weight:700;">
+          {{ c.name }}
+        </h3>
+        {% if c.has_details %}
+          <span style="padding:2px 8px;background:#e8f5e9;color:#2e7d32;
+                       border-radius:8px;font-size:10px;font-weight:700;">
+            ✅ <span data-lang="en">READY</span><span data-lang="ml">തയ്യാർ</span>
+          </span>
+        {% else %}
+          <span style="padding:2px 8px;background:#fff8e1;color:#e65100;
+                       border-radius:8px;font-size:10px;font-weight:700;">
+            🤖 AI
+          </span>
+        {% endif %}
+      </div>
+
+      <div style="font-size:12px;color:#888;margin-top:6px;">
+        {{ c.category or 'General' }}
+      </div>
+
+      <div style="margin-top:14px;padding-top:14px;border-top:1px solid #f0f0f0;
+                  display:flex;justify-content:space-between;font-size:12px;color:#555;">
+        <span>📅 {{ c.harvest_days or '—' }} <span data-lang="en">days</span>
+          <span data-lang="ml">ദിവസം</span></span>
+        <span style="font-weight:700;color:#2e7d32;">₹{{ c.market_price }}/kg</span>
+      </div>
+
+      <div style="margin-top:14px;padding:8px 12px;background:#f1f8e9;border-radius:8px;
+                  text-align:center;color:#2e7d32;font-size:13px;font-weight:600;">
+        <span data-lang="en">View details →</span>
+        <span data-lang="ml">വിശദാംശങ്ങൾ കാണുക →</span>
+      </div>
+    </a>
+    {% endfor %}
+
+    {% if not crops %}
+    <div style="grid-column:1/-1;text-align:center;padding:60px;color:#aaa;">
+      <div style="font-size:60px;margin-bottom:10px;">🌱</div>
+      <span data-lang="en">No crops found.</span>
+      <span data-lang="ml">വിളകളൊന്നും കണ്ടെത്തിയില്ല.</span>
+    </div>
+    {% endif %}
+  </div>
+
+  <div style="margin-top:22px;">
+    <a href="{{ url_for('dashboard') }}"
+       style="padding:10px 18px;background:#fff;color:#2e7d32;
+              border:2px solid #a5d6a7;text-decoration:none;border-radius:10px;
+              font-weight:600;font-size:13px;">
+      ← <span data-lang="en">Back to Dashboard</span>
+      <span data-lang="ml">ഡാഷ്ബോർഡിലേക്ക്</span>
+    </a>
+  </div>
+
+</div>
+{% endblock %}

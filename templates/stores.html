@@ -1,0 +1,103 @@
+{% extends "base.html" %}
+{% block title %}Agri Stores · AgriVision AI{% endblock %}
+{% block content %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/agrivision.css') }}">
+
+<div class="ag">
+
+  <div class="ag-hero">
+    <h1>
+      <span data-lang="en">Agriculture Stores</span>
+      <span data-lang="ml">കാർഷിക കടകൾ</span>
+    </h1>
+    <p>
+      <span data-lang="en">Verified Kerala agri-input stores — seeds, fertilizer, equipment, advisory.</span>
+      <span data-lang="ml">കേരളത്തിലെ സാക്ഷ്യപ്പെടുത്തിയ കാർഷിക കടകൾ.</span>
+    </p>
+    <div class="ag-count">
+      <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 9l1.5-5h15L21 9M3 9h18M3 9v11h18V9M9 20v-6h6v6"/></svg>
+      <span><b>{{ stores|length }}</b> <span data-lang="en">stores found</span><span data-lang="ml">കടകൾ</span></span>
+    </div>
+  </div>
+
+  <form method="GET" class="ag-filter">
+    <select name="district" aria-label="District">
+      <option value="">All Districts</option>
+      {% for d in districts %}
+      <option value="{{ d }}" {% if d==selected_district %}selected{% endif %}>{{ d }}</option>
+      {% endfor %}
+    </select>
+    <select name="type" aria-label="Store type">
+      <option value="">All Types</option>
+      <option value="seeds"      {% if selected_type=='seeds'      %}selected{% endif %}>🌱 Seeds</option>
+      <option value="fertilizer" {% if selected_type=='fertilizer' %}selected{% endif %}>🧪 Fertilizer</option>
+      <option value="pesticide"  {% if selected_type=='pesticide'  %}selected{% endif %}>💊 Pesticide</option>
+      <option value="equipment"  {% if selected_type=='equipment'  %}selected{% endif %}>🚜 Equipment</option>
+      <option value="mixed"      {% if selected_type=='mixed'      %}selected{% endif %}>🏪 Mixed</option>
+      <option value="advisory"   {% if selected_type=='advisory'   %}selected{% endif %}>📋 Advisory</option>
+    </select>
+    <button type="submit" class="ag-btn ag-btn-primary">
+      <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+      <span data-lang="en">Filter</span><span data-lang="ml">ഫിൽട്ടർ</span>
+    </button>
+    {% if selected_district or selected_type %}
+    <a href="{{ url_for('stores_page') }}" class="ag-btn ag-btn-ghost">
+      <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M18 6L6 18M6 6l12 12"/></svg>
+      Clear
+    </a>
+    {% endif %}
+  </form>
+
+  <div class="ag-grid">
+    {% for s in stores %}
+    <a href="{{ url_for('store_detail_page', store_id=s.id) }}" class="ag-card">
+      <div class="ag-card-top">
+        <h3>{{ s.name }}</h3>
+        <span class="ag-type">
+          {% if s.store_type == 'seeds' %}🌱 Seeds
+          {% elif s.store_type == 'fertilizer' %}🧪 Fertilizer
+          {% elif s.store_type == 'pesticide' %}💊 Pesticide
+          {% elif s.store_type == 'equipment' %}🚜 Equipment
+          {% elif s.store_type == 'advisory' %}📋 Advisory
+          {% else %}🏪 Mixed{% endif %}
+        </span>
+      </div>
+
+      <div class="ag-loc">
+        <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s7-6.2 7-11.5A7 7 0 005 9.5C5 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></svg>
+        <span>{{ s.district }}{% if s.address %} · {{ s.address[:40] }}{% if s.address|length > 40 %}…{% endif %}{% endif %}</span>
+      </div>
+
+      <div class="ag-card-foot">
+        <span class="ag-rating">
+          <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1L3.2 9.5l6.1-.9L12 3z"/></svg>
+          {{ s.rating }}
+        </span>
+        {% if s.is_verified %}
+        <span class="ag-verified">
+          <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>
+          <span data-lang="en">Verified</span><span data-lang="ml">സ്ഥിരീകരിച്ചു</span>
+        </span>
+        {% endif %}
+        <svg class="icon ag-open" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+      </div>
+    </a>
+    {% endfor %}
+
+    {% if not stores %}
+    <div class="ag-empty">
+      <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 9l1.5-5h15L21 9M3 9h18M3 9v11h18V9M9 20v-6h6v6"/></svg><br>
+      <span data-lang="en">No stores match your filter.</span>
+      <span data-lang="ml">ഫിൽട്ടറിന് അനുയോജ്യമായ കടകളില്ല.</span>
+    </div>
+    {% endif %}
+  </div>
+
+  <div class="ag-back">
+    <a href="{{ url_for('dashboard') }}" class="ag-btn ag-btn-ghost">
+      <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M19 12H5M11 6l-6 6 6 6"/></svg>
+      <span data-lang="en">Back to Dashboard</span><span data-lang="ml">ഡാഷ്ബോർഡിലേക്ക്</span>
+    </a>
+  </div>
+</div>
+{% endblock %}

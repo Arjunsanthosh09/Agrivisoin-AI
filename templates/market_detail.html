@@ -1,0 +1,305 @@
+{% extends "base.html" %}
+{% block title %}{{ crop.name }} Price · AgriVision AI{% endblock %}
+{% block content %}
+
+<style>
+/* AgriVision AI · Market detail (prefix "md-") — uses theme variables from your main stylesheet */
+.md-page { width:100%; max-width:1440px; flex:1 1 100%; align-self:stretch; grid-column:1/-1; min-width:0; margin:0 auto; padding:28px 32px 48px; display:flex; flex-direction:column; gap:22px; }
+.md-rise { opacity:0; transform:translateY(16px); animation:md-rise .7s cubic-bezier(.16,1,.3,1) forwards; animation-delay:calc(var(--i,0)*90ms); }
+@keyframes md-rise { to { opacity:1; transform:none; } }
+
+/* HERO */
+.md-hero { position:relative; overflow:hidden; isolation:isolate; border-radius:22px; padding:30px 36px; color:var(--cream);
+  display:grid; grid-template-columns:1fr auto; gap:28px; align-items:center;
+  background:radial-gradient(circle at 12% 18%, rgba(111,207,122,.20), transparent 45%), radial-gradient(circle at 88% 85%, rgba(227,168,63,.16), transparent 42%), linear-gradient(135deg,var(--forest-950),var(--forest-900) 50%,var(--forest-800));
+  box-shadow:0 24px 50px -22px rgba(10,29,19,.55); }
+.md-hero::before { content:''; position:absolute; inset:0; z-index:-1; background-image:linear-gradient(rgba(255,255,255,.04) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.04) 1px,transparent 1px); background-size:34px 34px; mask-image:radial-gradient(circle at 70% 50%,#000,transparent 75%); }
+.md-eyebrow { display:inline-flex; align-items:center; gap:8px; font-size:.72rem; font-weight:700; letter-spacing:1.4px; text-transform:uppercase; color:var(--wheat); margin-bottom:10px; }
+.md-eyebrow::before { content:''; width:7px; height:7px; border-radius:50%; background:var(--wheat); box-shadow:0 0 0 4px var(--wheat-soft); }
+.md-hero h1 { margin:0; font-family:'Playfair Display',serif; font-weight:600; font-size:clamp(1.7rem,2.8vw,2.5rem); }
+.md-hero h1 em { font-style:normal; color:var(--green-light); }
+.md-hero p { margin:8px 0 18px; font-size:.95rem; color:rgba(250,248,242,.72); }
+.md-btn { display:inline-flex; align-items:center; gap:8px; padding:10px 20px; border-radius:10px; font-weight:600; font-size:.84rem; text-decoration:none; color:var(--cream); background:rgba(255,255,255,.10); border:1px solid rgba(255,255,255,.28); transition:transform .2s, background .2s; }
+.md-btn:hover { transform:translateY(-2px); background:rgba(255,255,255,.18); }
+.md-btn:focus-visible { outline:3px solid var(--wheat); outline-offset:2px; }
+.md-now { text-align:right; }
+.md-now small { display:block; font-size:.74rem; font-weight:700; letter-spacing:1px; text-transform:uppercase; color:rgba(250,248,242,.6); }
+.md-now-price { font-size:clamp(2.4rem,4vw,3.4rem); font-weight:700; line-height:1.05; letter-spacing:-1px; font-variant-numeric:tabular-nums; }
+.md-now-price span { font-size:1rem; font-weight:600; color:rgba(250,248,242,.6); letter-spacing:0; }
+.md-delta { display:inline-flex; align-items:center; gap:6px; margin-top:8px; padding:4px 12px; border-radius:99px; font-size:.82rem; font-weight:700; background:rgba(255,255,255,.12); }
+.md-delta.up { color:#9be79f; } .md-delta.down { color:#ff9aa2; }
+
+/* STATS */
+.md-stats { display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:16px; }
+.md-stat { --accent:var(--green-mid); position:relative; overflow:hidden; background:var(--white); border:1px solid var(--border); border-radius:18px; padding:18px 20px 20px; display:flex; flex-direction:column; gap:8px; transition:transform .3s cubic-bezier(.16,1,.3,1), box-shadow .3s; }
+.md-stat:hover { transform:translateY(-4px); box-shadow:0 18px 32px -20px rgba(18,53,36,.35); }
+.md-stat::after { content:''; position:absolute; left:0; bottom:0; height:4px; width:100%; background:var(--accent); transform:scaleX(0); transform-origin:left; animation:md-bar 1.1s cubic-bezier(.16,1,.3,1) forwards; animation-delay:calc(var(--i,0)*90ms + 400ms); }
+@keyframes md-bar { to { transform:scaleX(1); } }
+.md-stat-top { display:flex; justify-content:space-between; align-items:center; }
+.md-stat-label { font-size:.8rem; font-weight:600; color:var(--gray); }
+.md-stat-icon { width:36px; height:36px; border-radius:10px; display:grid; place-items:center; font-size:18px; background:color-mix(in srgb,var(--accent) 13%,white); }
+.md-stat-value { font-size:1.9rem; font-weight:700; line-height:1.05; color:var(--accent); font-variant-numeric:tabular-nums; letter-spacing:-.5px; }
+.md-stat-sub { font-size:.76rem; color:var(--gray); font-weight:600; }
+.md-stat.s1 { --accent:#7a5ea8; } .md-stat.s2 { --accent:#2e7d32; } .md-stat.s3 { --accent:#c2575f; } .md-stat.s4 { --accent:#c98a1a; } .md-stat.s5 { --accent:#1f8a7a; }
+
+/* MAIN GRID */
+.md-main { display:grid; grid-template-columns:minmax(0,1.9fr) minmax(300px,1fr); gap:18px; align-items:stretch; }
+.md-side { display:flex; flex-direction:column; gap:18px; }
+.md-card { background:var(--white); border:1px solid var(--border); border-radius:18px; padding:22px; display:flex; flex-direction:column; }
+.md-card-head { display:flex; justify-content:space-between; align-items:center; gap:12px; margin-bottom:14px; flex-wrap:wrap; }
+.md-card-head h3 { margin:0; display:flex; align-items:center; gap:10px; font-family:'Playfair Display',serif; font-size:1.1rem; font-weight:600; color:var(--green-deep); }
+.md-tag { font-size:.74rem; font-weight:700; color:var(--green-mid); padding:5px 12px; border-radius:99px; background:var(--green-pale); }
+
+/* chart */
+.md-chart { position:relative; flex:1; min-height:340px; }
+.md-chart svg { position:absolute; inset:0; width:100%; height:100%; overflow:visible; }
+.md-tip { position:absolute; pointer-events:none; opacity:0; transform:translate(-50%,-100%); background:var(--forest-900); color:var(--cream); padding:8px 12px; border-radius:10px; font-size:.78rem; line-height:1.45; white-space:nowrap; box-shadow:0 10px 24px rgba(10,29,19,.35); transition:opacity .15s; z-index:5; }
+.md-tip b { color:var(--green-light); font-size:.95rem; }
+
+/* side: demand + insights */
+.md-demand { display:flex; flex-direction:column; gap:12px; }
+.md-demand-row { display:grid; grid-template-columns:78px 1fr auto; gap:10px; align-items:center; font-size:.82rem; font-weight:600; color:var(--green-deep); }
+.md-demand-bar { height:8px; border-radius:99px; background:var(--green-pale); overflow:hidden; }
+.md-demand-bar i { display:block; height:100%; border-radius:inherit; width:0; animation:md-fill 1.2s cubic-bezier(.16,1,.3,1) .6s forwards; }
+@keyframes md-fill { to { width:var(--w,0%); } }
+.md-demand-row.hi i { background:#c2575f; } .md-demand-row.mid i { background:#e3a83f; } .md-demand-row.lo i { background:#6c7d70; }
+.md-facts { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+.md-fact { padding:12px 14px; border-radius:12px; background:var(--green-xpale); border:1px solid var(--green-pale); }
+.md-fact small { display:block; font-size:.72rem; font-weight:600; color:var(--gray); }
+.md-fact b { display:block; margin-top:4px; font-size:.95rem; color:var(--green-deep); font-variant-numeric:tabular-nums; }
+
+/* table */
+.md-table-wrap { overflow-x:auto; }
+.md-table { width:100%; border-collapse:collapse; font-size:.88rem; }
+.md-table th { text-align:left; padding:11px 14px; font-size:.74rem; font-weight:700; letter-spacing:.6px; text-transform:uppercase; color:var(--green-deep); background:var(--green-pale); white-space:nowrap; }
+.md-table th:first-child { border-radius:10px 0 0 10px; } .md-table th:last-child { border-radius:0 10px 10px 0; }
+.md-table td { padding:13px 14px; border-bottom:1px solid var(--green-pale); vertical-align:middle; }
+.md-table tbody tr { transition:background .2s; }
+.md-table tbody tr:hover { background:var(--green-xpale); }
+.md-table tbody tr:last-child td { border-bottom:none; }
+.md-r { text-align:right !important; } .md-c { text-align:center !important; }
+.md-month { font-weight:600; }
+.md-val { font-weight:700; color:var(--green-deep); font-variant-numeric:tabular-nums; }
+.md-bar { min-width:120px; height:6px; border-radius:99px; background:var(--green-pale); overflow:hidden; }
+.md-bar i { display:block; height:100%; border-radius:inherit; background:linear-gradient(90deg,var(--green-mid),var(--green-light)); width:0; animation:md-fill 1.2s cubic-bezier(.16,1,.3,1) .6s forwards; }
+.md-mom.up { color:#2e7d32; font-weight:700; } .md-mom.down { color:#c2575f; font-weight:700; } .md-mom.flat { color:var(--gray); }
+.md-pill { display:inline-block; padding:3px 12px; border-radius:99px; font-size:.74rem; font-weight:700; }
+.md-pill.hi { background:#fdecea; color:#c2575f; } .md-pill.mid { background:var(--wheat-soft); color:#9a6a0d; } .md-pill.lo { background:#eef1ee; color:var(--gray); }
+.md-empty { text-align:center; padding:60px 20px; color:var(--gray); font-weight:600; }
+.md-empty div { font-size:44px; margin-bottom:10px; }
+
+@media (max-width:1180px) { .md-stats { grid-template-columns:repeat(3,minmax(0,1fr)); } .md-main { grid-template-columns:1fr; } .md-side { flex-direction:row; } .md-side > * { flex:1; } }
+@media (max-width:760px) { .md-page { padding:18px 16px 36px; } .md-hero { grid-template-columns:1fr; padding:24px; } .md-now { text-align:left; } .md-stats { grid-template-columns:repeat(2,minmax(0,1fr)); } .md-side { flex-direction:column; } .md-chart { min-height:260px; } }
+@media (max-width:480px) { .md-facts { grid-template-columns:1fr; } }
+@media (prefers-reduced-motion:reduce) { .md-rise, .md-stat::after, .md-bar i, .md-demand-bar i { opacity:1; transform:none; animation:none; } .md-bar i, .md-demand-bar i { width:var(--w,0%); } .md-stat::after { transform:none; } }
+</style>
+
+<div class="md-page">
+
+  {% if history %}
+  {% set first = history[0] %}
+  {% set last = history[-1] %}
+  {% set prev = history[-2] if history|length > 1 else history[-1] %}
+  {% set delta = (last.price_per_kg|float) - (prev.price_per_kg|float) %}
+  {% set delta_pct = (delta / (prev.price_per_kg|float) * 100) if (prev.price_per_kg|float) > 0 else 0 %}
+  {% set total_pct = (((last.price_per_kg|float) - (first.price_per_kg|float)) / (first.price_per_kg|float) * 100) if (first.price_per_kg|float) > 0 else 0 %}
+  {% set rng = (max_price|float) - (min_price|float) %}
+  {% set high_n = history|selectattr('demand_level','equalto','High')|list|length %}
+  {% set mid_n = history|selectattr('demand_level','equalto','Medium')|list|length %}
+  {% set low_n = history|length - high_n - mid_n %}
+  {% set n = history|length %}
+
+  <!-- HERO -->
+  <section class="md-hero md-rise" style="--i:0">
+    <div>
+      <div class="md-eyebrow"><span data-lang="en">Price history</span><span data-lang="ml">വില ചരിത്രം</span></div>
+      <h1>📊 <em>{{ crop.name }}</em></h1>
+      <p><span data-lang="en">Last 6 months of market prices.</span><span data-lang="ml">കഴിഞ്ഞ 6 മാസത്തെ വിപണി വിലകൾ.</span></p>
+      <a class="md-btn" href="{{ url_for('market_page') }}">← <span data-lang="en">All Market Prices</span><span data-lang="ml">എല്ലാ വിപണി വിലകളും</span></a>
+    </div>
+    <div class="md-now">
+      <small><span data-lang="en">Latest price</span><span data-lang="ml">ഏറ്റവും പുതിയ വില</span></small>
+      <div class="md-now-price">₹{{ last.price_per_kg }}<span>/kg</span></div>
+      <div class="md-delta {{ 'up' if delta > 0 else ('down' if delta < 0 else '') }}">
+        {% if delta > 0 %}▲{% elif delta < 0 %}▼{% else %}—{% endif %} {{ '%+.1f'|format(delta_pct) }}%
+        <span data-lang="en">vs last month</span><span data-lang="ml">കഴിഞ്ഞ മാസത്തേക്കാൾ</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- STATS -->
+  <section class="md-stats md-rise" style="--i:1">
+    <div class="md-stat s1" style="--i:2">
+      <div class="md-stat-top"><span class="md-stat-label"><span data-lang="en">Latest</span><span data-lang="ml">ഏറ്റവും പുതിയത്</span></span><span class="md-stat-icon">🏷️</span></div>
+      <div class="md-stat-value">₹{{ last.price_per_kg }}</div>
+      <div class="md-stat-sub">{{ last.date.strftime('%B %Y') if last.date else '—' }}</div>
+    </div>
+    <div class="md-stat s2" style="--i:3">
+      <div class="md-stat-top"><span class="md-stat-label"><span data-lang="en">Highest</span><span data-lang="ml">ഏറ്റവും ഉയർന്നത്</span></span><span class="md-stat-icon">⬆️</span></div>
+      <div class="md-stat-value">₹{{ max_price }}</div>
+      <div class="md-stat-sub"><span data-lang="en">6-month peak</span><span data-lang="ml">6 മാസത്തെ ഉയർന്ന വില</span></div>
+    </div>
+    <div class="md-stat s3" style="--i:4">
+      <div class="md-stat-top"><span class="md-stat-label"><span data-lang="en">Lowest</span><span data-lang="ml">ഏറ്റവും കുറഞ്ഞത്</span></span><span class="md-stat-icon">⬇️</span></div>
+      <div class="md-stat-value">₹{{ min_price }}</div>
+      <div class="md-stat-sub"><span data-lang="en">6-month low</span><span data-lang="ml">6 മാസത്തെ കുറഞ്ഞ വില</span></div>
+    </div>
+    <div class="md-stat s4" style="--i:5">
+      <div class="md-stat-top"><span class="md-stat-label"><span data-lang="en">Average</span><span data-lang="ml">ശരാശരി</span></span><span class="md-stat-icon">⚖️</span></div>
+      <div class="md-stat-value">₹{{ avg_price }}</div>
+      <div class="md-stat-sub"><span data-lang="en">per kg</span><span data-lang="ml">ഓരോ കി.ഗ്രാമിനും</span></div>
+    </div>
+    <div class="md-stat s5" style="--i:6">
+      <div class="md-stat-top"><span class="md-stat-label"><span data-lang="en">Period change</span><span data-lang="ml">കാലയളവിലെ മാറ്റം</span></span><span class="md-stat-icon">📆</span></div>
+      <div class="md-stat-value">{{ '%+.1f'|format(total_pct) }}%</div>
+      <div class="md-stat-sub">{{ first.date.strftime('%b') if first.date else '' }} → {{ last.date.strftime('%b') if last.date else '' }}</div>
+    </div>
+  </section>
+
+  <!-- CHART + SIDE -->
+  <section class="md-main md-rise" style="--i:3">
+    <div class="md-card">
+      <div class="md-card-head">
+        <h3>📈 <span data-lang="en">Price trend</span><span data-lang="ml">വില പ്രവണത</span></h3>
+        <span class="md-tag">₹ / kg</span>
+      </div>
+      <div class="md-chart" id="mdChart" role="img" aria-label="Price trend chart for {{ crop.name }}"></div>
+    </div>
+
+    <div class="md-side">
+      <div class="md-card">
+        <div class="md-card-head"><h3>🔥 <span data-lang="en">Demand mix</span><span data-lang="ml">ഡിമാൻഡ്</span></h3></div>
+        <div class="md-demand">
+          <div class="md-demand-row hi"><span><span data-lang="en">High</span><span data-lang="ml">ഉയർന്നത്</span></span><div class="md-demand-bar"><i style="--w:{{ '%.0f'|format(high_n / n * 100) }}%"></i></div><span>{{ high_n }}/{{ n }}</span></div>
+          <div class="md-demand-row mid"><span><span data-lang="en">Medium</span><span data-lang="ml">ഇടത്തരം</span></span><div class="md-demand-bar"><i style="--w:{{ '%.0f'|format(mid_n / n * 100) }}%"></i></div><span>{{ mid_n }}/{{ n }}</span></div>
+          <div class="md-demand-row lo"><span><span data-lang="en">Low</span><span data-lang="ml">കുറവ്</span></span><div class="md-demand-bar"><i style="--w:{{ '%.0f'|format(low_n / n * 100) }}%"></i></div><span>{{ low_n }}/{{ n }}</span></div>
+        </div>
+      </div>
+
+      <div class="md-card" style="flex:1;">
+        <div class="md-card-head"><h3>💡 <span data-lang="en">Quick insights</span><span data-lang="ml">ഉൾക്കാഴ്ചകൾ</span></h3></div>
+        <div class="md-facts">
+          <div class="md-fact"><small><span data-lang="en">Price range</span><span data-lang="ml">വില പരിധി</span></small><b>₹{{ '%.1f'|format(rng) }}</b></div>
+          <div class="md-fact"><small><span data-lang="en">Volatility</span><span data-lang="ml">ചാഞ്ചാട്ടം</span></small><b>{{ '%.1f'|format(rng / (avg_price|float) * 100 if (avg_price|float) > 0 else 0) }}%</b></div>
+          <div class="md-fact"><small><span data-lang="en">vs average</span><span data-lang="ml">ശരാശരിയേക്കാൾ</span></small><b>{{ '%+.1f'|format(((last.price_per_kg|float) - (avg_price|float)) / (avg_price|float) * 100 if (avg_price|float) > 0 else 0) }}%</b></div>
+          <div class="md-fact"><small><span data-lang="en">From peak</span><span data-lang="ml">ഉയർന്ന വിലയിൽ നിന്ന്</span></small><b>{{ '%+.1f'|format(((last.price_per_kg|float) - (max_price|float)) / (max_price|float) * 100 if (max_price|float) > 0 else 0) }}%</b></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- TABLE -->
+  <section class="md-card md-rise" style="--i:4">
+    <div class="md-card-head"><h3>🗓️ <span data-lang="en">Monthly breakdown</span><span data-lang="ml">പ്രതിമാസ വിശദാംശം</span></h3></div>
+    <div class="md-table-wrap">
+      <table class="md-table">
+        <thead>
+          <tr>
+            <th><span data-lang="en">Month</span><span data-lang="ml">മാസം</span></th>
+            <th class="md-r"><span data-lang="en">Price (₹/kg)</span><span data-lang="ml">വില (₹/കി.ഗ്രാം)</span></th>
+            <th class="md-r"><span data-lang="en">Change</span><span data-lang="ml">മാറ്റം</span></th>
+            <th><span data-lang="en">Vs. peak</span><span data-lang="ml">ഉയർന്ന വിലയുമായി</span></th>
+            <th class="md-c"><span data-lang="en">Demand</span><span data-lang="ml">ഡിമാൻഡ്</span></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for h in history %}
+          {% set pv = loop.previtem.price_per_kg|float if loop.previtem else none %}
+          {% set ch = ((h.price_per_kg|float - pv) / pv * 100) if (pv and pv > 0) else none %}
+          <tr>
+            <td class="md-month">{{ h.date.strftime('%B %Y') if h.date else '—' }}</td>
+            <td class="md-r md-val">₹{{ h.price_per_kg }}</td>
+            <td class="md-r md-mom {{ 'up' if (ch and ch > 0) else ('down' if (ch and ch < 0) else 'flat') }}">
+              {% if ch is none %}—{% else %}{% if ch > 0 %}▲{% elif ch < 0 %}▼{% endif %} {{ '%.1f'|format(ch|abs) }}%{% endif %}
+            </td>
+            <td><div class="md-bar"><i style="--w:{{ '%.0f'|format((h.price_per_kg|float) / (max_price|float) * 100 if (max_price|float) > 0 else 0) }}%"></i></div></td>
+            <td class="md-c">
+              {% if h.demand_level == 'High' %}<span class="md-pill hi">🔥 <span data-lang="en">High</span><span data-lang="ml">ഉയർന്നത്</span></span>
+              {% elif h.demand_level == 'Medium' %}<span class="md-pill mid"><span data-lang="en">Medium</span><span data-lang="ml">ഇടത്തരം</span></span>
+              {% else %}<span class="md-pill lo"><span data-lang="en">Low</span><span data-lang="ml">കുറവ്</span></span>{% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <script>
+  (function () {
+    var data = [
+      {% for h in history %}{ label: "{{ h.date.strftime('%b %Y') if h.date else '' }}", price: {{ h.price_per_kg|float }}, demand: "{{ h.demand_level or '' }}" }{{ ',' if not loop.last }}
+      {% endfor %}
+    ];
+    var box = document.getElementById('mdChart');
+    var NS = 'http://www.w3.org/2000/svg';
+    function el(n, a) { var e = document.createElementNS(NS, n); for (var k in a) e.setAttribute(k, a[k]); return e; }
+    var tip = document.createElement('div'); tip.className = 'md-tip'; box.appendChild(tip);
+
+    function draw() {
+      var old = box.querySelector('svg'); if (old) box.removeChild(old);
+      var W = box.clientWidth, H = box.clientHeight; if (!W || !H) return;
+      var m = { t: 24, r: 24, b: 38, l: 52 }, iw = W - m.l - m.r, ih = H - m.t - m.b;
+      var vals = data.map(function (d) { return d.price; });
+      var lo = Math.min.apply(null, vals), hi = Math.max.apply(null, vals);
+      var pad = (hi - lo) * 0.18 || hi * 0.1 || 1; lo = Math.max(0, lo - pad); hi = hi + pad;
+      var x = function (i) { return m.l + (data.length === 1 ? iw / 2 : i * iw / (data.length - 1)); };
+      var y = function (v) { return m.t + ih - (v - lo) / (hi - lo) * ih; };
+      var s = el('svg', { viewBox: '0 0 ' + W + ' ' + H });
+      var defs = el('defs', {}), g = el('linearGradient', { id: 'mdg', x1: 0, y1: 0, x2: 0, y2: 1 });
+      g.appendChild(el('stop', { offset: '0%', 'stop-color': '#2f7d4f', 'stop-opacity': '.30' }));
+      g.appendChild(el('stop', { offset: '100%', 'stop-color': '#2f7d4f', 'stop-opacity': '0' }));
+      defs.appendChild(g); s.appendChild(defs);
+      for (var t = 0; t <= 4; t++) {
+        var v = lo + (hi - lo) * t / 4, yy = y(v);
+        s.appendChild(el('line', { x1: m.l, x2: W - m.r, y1: yy, y2: yy, stroke: '#d7e9da', 'stroke-dasharray': '4 5' }));
+        var tx = el('text', { x: m.l - 10, y: yy + 4, 'text-anchor': 'end', 'font-size': 11, fill: '#6c7d70', 'font-weight': 600 });
+        tx.textContent = '₹' + v.toFixed(0); s.appendChild(tx);
+      }
+      var pts = data.map(function (d, i) { return [x(i), y(d.price)]; });
+      var line = pts.map(function (p, i) { return (i ? 'L' : 'M') + p[0] + ' ' + p[1]; }).join(' ');
+      s.appendChild(el('path', { d: line + ' L' + pts[pts.length - 1][0] + ' ' + (m.t + ih) + ' L' + pts[0][0] + ' ' + (m.t + ih) + ' Z', fill: 'url(#mdg)' }));
+      var path = el('path', { d: line, fill: 'none', stroke: '#2f7d4f', 'stroke-width': 3, 'stroke-linecap': 'round', 'stroke-linejoin': 'round' });
+      s.appendChild(path);
+      var len = path.getTotalLength ? path.getTotalLength() : 0;
+      if (len && !window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+        path.style.strokeDasharray = len; path.style.strokeDashoffset = len;
+        path.getBoundingClientRect(); path.style.transition = 'stroke-dashoffset 1.4s cubic-bezier(.16,1,.3,1)'; path.style.strokeDashoffset = 0;
+      }
+      var hiIdx = vals.indexOf(Math.max.apply(null, vals)), loIdx = vals.indexOf(Math.min.apply(null, vals));
+      data.forEach(function (d, i) {
+        var lab = el('text', { x: pts[i][0], y: H - 12, 'text-anchor': 'middle', 'font-size': 11, fill: '#6c7d70', 'font-weight': 600 });
+        lab.textContent = d.label; s.appendChild(lab);
+        var c = i === hiIdx ? '#2e7d32' : (i === loIdx ? '#c2575f' : '#2f7d4f');
+        s.appendChild(el('circle', { cx: pts[i][0], cy: pts[i][1], r: 5, fill: '#fff', stroke: c, 'stroke-width': 3 }));
+        var pl = el('text', { x: pts[i][0], y: pts[i][1] - 12, 'text-anchor': 'middle', 'font-size': 11.5, fill: c, 'font-weight': 700 });
+        pl.textContent = '₹' + d.price.toFixed(0); s.appendChild(pl);
+        var hit = el('rect', { x: pts[i][0] - iw / data.length / 2, y: m.t, width: iw / data.length, height: ih, fill: 'transparent' });
+        hit.addEventListener('mouseenter', function () {
+          tip.innerHTML = d.label + '<br><b>₹' + d.price.toFixed(2) + '</b>/kg' + (d.demand ? '<br>' + d.demand + ' demand' : '');
+          tip.style.left = pts[i][0] + 'px'; tip.style.top = (pts[i][1] - 18) + 'px'; tip.style.opacity = 1;
+        });
+        hit.addEventListener('mouseleave', function () { tip.style.opacity = 0; });
+        s.appendChild(hit);
+      });
+      box.appendChild(s);
+    }
+    draw(); var rt; window.addEventListener('resize', function () { clearTimeout(rt); rt = setTimeout(draw, 120); });
+  })();
+  </script>
+
+  {% else %}
+  <section class="md-hero md-rise" style="--i:0">
+    <div>
+      <div class="md-eyebrow"><span data-lang="en">Price history</span><span data-lang="ml">വില ചരിത്രം</span></div>
+      <h1>📊 <em>{{ crop.name }}</em></h1>
+      <p></p>
+      <a class="md-btn" href="{{ url_for('market_page') }}">← <span data-lang="en">All Market Prices</span><span data-lang="ml">എല്ലാ വിപണി വിലകളും</span></a>
+    </div>
+  </section>
+  <div class="md-card md-rise" style="--i:1">
+    <div class="md-empty"><div>📊</div><span data-lang="en">No price history available for this crop.</span><span data-lang="ml">ഈ വിളയ്ക്ക് വില ചരിത്രം ലഭ്യമല്ല.</span></div>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

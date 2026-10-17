@@ -1,0 +1,288 @@
+{% extends "base.html" %}
+{% block title %}Risk Results · AgriVision AI{% endblock %}
+{% block content %}
+
+<style>
+/* =========================================================
+   AgriVision AI · Disease Risk Results
+   Theme variables from your main stylesheet. Prefix: "rr-"
+   Layout: hero → stat strip → [ advisory + risks | plan + CTA ]
+   ========================================================= */
+.rr-page {
+  width: 100%; max-width: 1440px;
+  flex: 1 1 100%; align-self: stretch; grid-column: 1 / -1; min-width: 0;
+  margin: 0 auto; padding: 20px 24px 36px;
+  display: flex; flex-direction: column; gap: 16px;
+}
+.rr-rise { opacity: 0; transform: translateY(14px); animation: rr-rise .7s cubic-bezier(.16,1,.3,1) forwards; animation-delay: calc(var(--i, 0) * 90ms); }
+@keyframes rr-rise { to { opacity: 1; transform: none; } }
+
+/* ---------- Hero ---------- */
+.rr-hero {
+  position: relative; overflow: hidden; isolation: isolate;
+  padding: 24px 30px; border-radius: 18px; color: var(--cream);
+  background:
+    radial-gradient(circle at 10% 20%, rgba(111,207,122,.20), transparent 45%),
+    radial-gradient(circle at 90% 85%, rgba(229,57,53,.22), transparent 42%),
+    linear-gradient(135deg, var(--forest-950) 0%, var(--forest-900) 50%, var(--forest-800) 100%);
+  box-shadow: 0 20px 44px -22px rgba(10,29,19,.55);
+}
+.rr-hero::before {
+  content: ''; position: absolute; inset: 0; z-index: -1;
+  background-image:
+    linear-gradient(rgba(255,255,255,.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,.04) 1px, transparent 1px);
+  background-size: 32px 32px;
+  mask-image: radial-gradient(circle at 70% 50%, #000, transparent 75%);
+}
+.rr-hero h1 { margin: 0 0 14px; font-family: 'Playfair Display', serif; font-weight: 600; font-size: clamp(1.4rem, 2.4vw, 2rem); line-height: 1.2; display: flex; flex-wrap: wrap; gap: 4px 10px; align-items: baseline; }
+.rr-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.rr-chip {
+  display: inline-flex; align-items: center; gap: 6px; padding: 6px 13px; border-radius: 99px;
+  font-size: .8rem; font-weight: 600; color: var(--cream);
+  background: rgba(255,255,255,.10); border: 1px solid rgba(255,255,255,.2);
+}
+
+/* ---------- Stat strip ---------- */
+.rr-stats { display: grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap: 12px; }
+.rr-stat {
+  --accent: var(--green-mid);
+  position: relative; overflow: hidden;
+  display: flex; align-items: center; justify-content: space-between; gap: 10px;
+  padding: 14px 18px; background: var(--white); border: 1px solid var(--border); border-radius: 16px;
+}
+.rr-stat::after {
+  content: ''; position: absolute; left: 0; bottom: 0; width: 100%; height: 3px; background: var(--accent);
+  transform: scaleX(0); transform-origin: left; animation: rr-bar 1s cubic-bezier(.16,1,.3,1) .4s forwards;
+}
+@keyframes rr-bar { to { transform: scaleX(1); } }
+.rr-stat-label { font-size: .74rem; font-weight: 600; color: var(--gray); }
+.rr-stat-value { margin-top: 3px; font-size: 1.8rem; font-weight: 700; line-height: 1.05; color: var(--accent); font-variant-numeric: tabular-nums; letter-spacing: -.5px; }
+.rr-stat-value.text { font-family: 'Playfair Display', serif; font-size: 1.1rem; letter-spacing: 0; line-height: 1.25; padding: 4px 0; }
+.rr-stat-icon { width: 42px; height: 42px; border-radius: 12px; display: grid; place-items: center; font-size: 20px; flex-shrink: 0; background: color-mix(in srgb, var(--accent) 13%, white); }
+.rr-stat.s1 { --accent: #b71c1c; }
+.rr-stat.s2 { --accent: #c98a1a; }
+.rr-stat.s3 { --accent: #2f7d4f; }
+.rr-stat.s4 { --accent: #3b82a0; }
+
+/* ---------- Main grid ---------- */
+.rr-main { display: grid; grid-template-columns: minmax(0, 1.7fr) minmax(0, 1fr); gap: 16px; align-items: start; }
+.rr-col { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+.rr-card { background: var(--white); border: 1px solid var(--border); border-radius: 18px; padding: 22px 24px; }
+.rr-title {
+  margin: 0 0 14px; display: flex; align-items: center; gap: 10px;
+  font-family: 'Playfair Display', serif; font-size: 1.1rem; font-weight: 600; color: var(--green-deep);
+}
+.rr-title::after { content: ''; flex: 1; height: 1px; background: linear-gradient(90deg, var(--border), transparent); }
+
+/* Advisory */
+.rr-advisory { background: linear-gradient(135deg, #fff6e6, #ffe9c7); border-color: #f5d49a; border-left: 5px solid #e65100; }
+.rr-advisory .rr-title { color: #b34100; }
+.rr-advisory p { margin: 0; font-size: .92rem; line-height: 1.8; color: #3d3320; }
+
+/* Risk cards */
+.rr-risks { display: grid; grid-template-columns: repeat(auto-fill, minmax(330px, 1fr)); gap: 12px; }
+.rr-risk {
+  --sev: #66bb6a;
+  position: relative; display: flex; flex-direction: column; gap: 10px;
+  padding: 16px 18px; background: var(--white); border: 1px solid var(--border); border-left: 5px solid var(--sev); border-radius: 14px;
+  transition: transform .25s cubic-bezier(.16,1,.3,1), box-shadow .25s;
+}
+.rr-risk:hover { transform: translateY(-3px); box-shadow: 0 16px 28px -22px color-mix(in srgb, var(--sev) 70%, black); }
+.rr-risk-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; }
+.rr-risk-name { font-weight: 700; font-size: .98rem; color: var(--green-deep); line-height: 1.25; }
+.rr-risk-sub { margin-top: 3px; font-size: .74rem; color: var(--gray); }
+.rr-score { text-align: right; flex-shrink: 0; }
+.rr-score b { display: block; font-size: 1.6rem; font-weight: 800; line-height: 1; color: var(--sev); font-variant-numeric: tabular-nums; }
+.rr-level { display: inline-block; margin-top: 5px; padding: 2px 10px; border-radius: 99px; font-size: .68rem; font-weight: 700; color: #fff; background: var(--sev); }
+.rr-level.m { color: #4a3300; }
+.rr-meter { height: 6px; border-radius: 99px; background: var(--green-pale); overflow: hidden; }
+.rr-meter i { display: block; height: 100%; border-radius: inherit; background: var(--sev); width: 0; animation: rr-fill 1.2s cubic-bezier(.16,1,.3,1) .5s forwards; }
+@keyframes rr-fill { to { width: var(--w, 0%); } }
+.rr-reasons { margin: 0; padding-left: 18px; font-size: .8rem; line-height: 1.6; color: #4b5a50; }
+
+/* 7-day plan */
+.rr-plan { display: flex; flex-direction: column; gap: 8px; }
+.rr-day { display: grid; grid-template-columns: auto 1fr; gap: 12px; align-items: start; padding: 10px 12px; border-radius: 12px; background: var(--green-xpale); border: 1px solid var(--green-pale); transition: background .2s, transform .2s; }
+.rr-day:hover { background: var(--green-pale); transform: translateX(4px); }
+.rr-day-tag { padding: 4px 10px; border-radius: 8px; font-size: .68rem; font-weight: 700; text-transform: uppercase; letter-spacing: .5px; color: #fff; background: var(--green-mid); white-space: nowrap; }
+.rr-day-text { font-size: .84rem; line-height: 1.55; color: var(--text); }
+
+/* CTA */
+.rr-cta { position: relative; overflow: hidden; color: var(--cream); border: none; background: linear-gradient(150deg, var(--forest-900), var(--forest-800)); }
+.rr-cta::after { content: ''; position: absolute; right: -36px; top: -36px; width: 120px; height: 120px; border-radius: 50%; background: var(--wheat-soft); }
+.rr-cta h3 { position: relative; z-index: 1; margin: 0 0 8px; font-family: 'Playfair Display', serif; font-size: 1.05rem; font-weight: 600; }
+.rr-cta p { position: relative; z-index: 1; margin: 0 0 14px; font-size: .84rem; line-height: 1.6; color: rgba(250,248,242,.74); }
+
+/* Buttons */
+.rr-btn {
+  position: relative; z-index: 1; display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  padding: 10px 18px; border-radius: 10px; text-decoration: none; font-size: .84rem; font-weight: 700;
+  transition: transform .2s, background .2s, color .2s, box-shadow .2s;
+}
+.rr-btn:hover { transform: translateY(-2px); }
+.rr-btn:focus-visible { outline: 3px solid var(--wheat); outline-offset: 2px; }
+.rr-btn.solid { color: var(--green-deep); background: var(--cream); }
+.rr-btn.solid:hover { box-shadow: 0 8px 20px rgba(0,0,0,.25); }
+.rr-btn.retry { color: #b71c1c; background: #fdecea; border: 1px solid #ef9a9a; }
+.rr-btn.retry:hover { background: #b71c1c; color: #fff; }
+.rr-btn.back { color: var(--green-mid); background: var(--green-pale); border: 1px solid var(--border); }
+.rr-btn.back:hover { background: var(--green-mid); color: #fff; }
+.rr-actions { display: flex; gap: 10px; flex-wrap: wrap; }
+.rr-actions .rr-btn { flex: 1; }
+
+.rr-empty { padding: 30px 10px; text-align: center; color: var(--gray); font-weight: 600; }
+
+@media (max-width: 1100px) { .rr-main { grid-template-columns: 1fr; } .rr-stats { grid-template-columns: repeat(2, minmax(0,1fr)); } }
+@media (max-width: 640px) {
+  .rr-page { padding: 14px 12px 28px; }
+  .rr-hero { padding: 20px; }
+  .rr-risks { grid-template-columns: minmax(0, 1fr); }
+  .rr-stats { grid-template-columns: 1fr 1fr; gap: 8px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .rr-rise { opacity: 1; transform: none; animation: none; }
+  .rr-stat::after { transform: none; animation: none; }
+  .rr-meter i { width: var(--w, 0%); animation: none; }
+}
+</style>
+
+<div class="rr-page">
+
+  <!-- ================= HERO ================= -->
+  <section class="rr-hero rr-rise" style="--i:0">
+    <h1>
+      🦠 <span data-lang="en">Disease Risk Results</span>
+      <span data-lang="ml">രോഗ സാധ്യത ഫലങ്ങൾ</span>
+    </h1>
+    <div class="rr-chips">
+      <span class="rr-chip">📍 {{ location }}</span>
+      <span class="rr-chip">🌱 {{ crop }}</span>
+      <span class="rr-chip">🌡️ {{ temp }}°C</span>
+      <span class="rr-chip">💧 {{ humidity }}% humidity</span>
+      <span class="rr-chip">☔ {{ rainfall }}mm rain</span>
+    </div>
+  </section>
+
+  <!-- ================= STATS ================= -->
+  <section class="rr-stats rr-rise" style="--i:1">
+    <div class="rr-stat s1">
+      <div>
+        <div class="rr-stat-label"><span data-lang="en">Highest risk</span><span data-lang="ml">ഉയർന്ന സാധ്യത</span></div>
+        <div class="rr-stat-value">{{ risks[0].score if risks else 0 }}%</div>
+      </div>
+      <span class="rr-stat-icon">⚠️</span>
+    </div>
+    <div class="rr-stat s2">
+      <div>
+        <div class="rr-stat-label"><span data-lang="en">Top threat</span><span data-lang="ml">പ്രധാന ഭീഷണി</span></div>
+        <div class="rr-stat-value text">{{ risks[0].display_name if risks else '—' }}</div>
+      </div>
+      <span class="rr-stat-icon">🦠</span>
+    </div>
+    <div class="rr-stat s3">
+      <div>
+        <div class="rr-stat-label"><span data-lang="en">High / Very high</span><span data-lang="ml">ഉയർന്നത്</span></div>
+        <div class="rr-stat-value">{{ risks|selectattr('level', 'in', ['High', 'Very High'])|list|length }}</div>
+      </div>
+      <span class="rr-stat-icon">🔥</span>
+    </div>
+    <div class="rr-stat s4">
+      <div>
+        <div class="rr-stat-label"><span data-lang="en">Risks found</span><span data-lang="ml">കണ്ടെത്തിയവ</span></div>
+        <div class="rr-stat-value">{{ risks|length }}</div>
+      </div>
+      <span class="rr-stat-icon">📊</span>
+    </div>
+  </section>
+
+  <!-- ================= MAIN ================= -->
+  <section class="rr-main rr-rise" style="--i:2">
+
+    <!-- Left: advisory + risks -->
+    <div class="rr-col">
+
+      {% if advisory %}
+      <div class="rr-card rr-advisory">
+        <h2 class="rr-title">🤖 <span data-lang="en">AI Preventive Advisory</span><span data-lang="ml">AI പ്രതിരോധ ഉപദേശം</span></h2>
+        <p>{{ advisory }}</p>
+      </div>
+      {% endif %}
+
+      <div class="rr-card">
+        <h2 class="rr-title">⚠️ <span data-lang="en">Top Disease Risks</span><span data-lang="ml">പ്രധാന രോഗ സാധ്യതകൾ</span></h2>
+
+        {% if risks %}
+        <div class="rr-risks">
+          {% for r in risks %}
+          {% set sev = r.level %}
+          {% set color = '#b71c1c' if sev == 'Very High' else ('#e65100' if sev == 'High' else ('#f9a825' if sev == 'Medium' else '#66bb6a')) %}
+          <div class="rr-risk" style="--sev:{{ color }};">
+            <div class="rr-risk-top">
+              <div>
+                <div class="rr-risk-name">{{ r.display_name }}</div>
+                <div class="rr-risk-sub">{{ r.crop }} · {{ r.type }}</div>
+              </div>
+              <div class="rr-score">
+                <b>{{ r.score }}%</b>
+                <span class="rr-level {{ 'm' if sev == 'Medium' else '' }}">{{ r.level }}</span>
+              </div>
+            </div>
+            <div class="rr-meter"><i style="--w:{{ r.score }}%"></i></div>
+            {% if r.reasons %}
+            <ul class="rr-reasons">
+              {% for reason in r.reasons %}<li>{{ reason }}</li>{% endfor %}
+            </ul>
+            {% endif %}
+          </div>
+          {% endfor %}
+        </div>
+        {% else %}
+          <div class="rr-empty">✅ <span data-lang="en">No significant risks found.</span><span data-lang="ml">പ്രധാന സാധ്യതകളൊന്നുമില്ല.</span></div>
+        {% endif %}
+      </div>
+
+    </div>
+
+    <!-- Right: plan + CTA + actions -->
+    <div class="rr-col">
+
+      {% if plan %}
+      <div class="rr-card">
+        <h2 class="rr-title">📅 <span data-lang="en">7-Day Preventive Plan</span><span data-lang="ml">7 ദിവസത്തെ പ്രതിരോധ പദ്ധതി</span></h2>
+        <div class="rr-plan">
+          {% for item in plan %}
+          <div class="rr-day">
+            <span class="rr-day-tag">{{ item.day }}</span>
+            <span class="rr-day-text">{{ item.action }}</span>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+      {% endif %}
+
+      <div class="rr-card rr-cta">
+        <h3>📸 <span data-lang="en">See spots or discoloration on your leaves?</span><span data-lang="ml">ഇലകളിൽ പാടുകൾ കണ്ടോ?</span></h3>
+        <p>
+          <span data-lang="en">Upload a photo and our AI will identify the exact disease with treatment advice.</span>
+          <span data-lang="ml">ഒരു ഫോട്ടോ അപ്‌ലോഡ് ചെയ്യുക, AI കൃത്യമായ രോഗം തിരിച്ചറിയും.</span>
+        </p>
+        <a class="rr-btn solid" href="{{ url_for('detect_page') }}">
+          🔬 <span data-lang="en">Scan a Leaf</span><span data-lang="ml">ഇല സ്കാൻ ചെയ്യുക</span>
+        </a>
+      </div>
+
+      <div class="rr-actions">
+        <a class="rr-btn retry" href="{{ url_for('disease_risk_page') }}">
+          🔄 <span data-lang="en">Try Different Weather</span><span data-lang="ml">മറ്റ് കാലാവസ്ഥ പരീക്ഷിക്കുക</span>
+        </a>
+        <a class="rr-btn back" href="{{ url_for('dashboard') }}">
+          ← <span data-lang="en">Dashboard</span><span data-lang="ml">ഡാഷ്ബോർഡ്</span>
+        </a>
+      </div>
+
+    </div>
+  </section>
+
+</div>
+{% endblock %}

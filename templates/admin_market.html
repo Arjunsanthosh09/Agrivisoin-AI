@@ -1,0 +1,612 @@
+{% extends "base.html" %}
+{% block title %}Market Manager · Admin{% endblock %}
+{% block content %}
+
+<style>
+/* =========================================================
+   AgriVision AI · Admin Market Manager
+   Full-height app layout: header → stats → [ sidebar | table ]
+   On desktop the page fills the screen exactly, so there are
+   no empty strips under either column; the table and the
+   sidebar scroll inside their own panels.
+   Classes are prefixed "am-" so nothing clashes.
+   ========================================================= */
+:root {
+  --forest-950:#0a1d13; --forest-900:#0f2c1c; --forest-800:#163c26;
+  --green-deep:#123524; --green-mid:#2f7d4f; --green-light:#6fcf7a;
+  --green-pale:#eaf4ec; --green-xpale:#f6faf5; --border:#d7e9da;
+  --cream:#faf8f2; --wheat:#e3a83f; --wheat-soft:rgba(227,168,63,.16);
+  --gray:#6c7d70; --text:#16241b;
+  --error:#e53935; --error-bg:#fdecea; --success:#2e7d32; --success-bg:#e8f5e9;
+}
+
+.am-page {
+  width:100%; max-width:none; flex:1 1 100%; align-self:stretch; grid-column:1 / -1; min-width:0;
+  margin:0; padding:12px 14px 14px;
+  display:flex; flex-direction:column; gap:10px;
+}
+/* Desktop: lock the page to the viewport so panels fill it edge to edge */
+@media (min-width:1181px) and (min-height:700px) {
+  .am-page { flex:none; height:calc(100vh - 68px); height:calc(100dvh - 68px); overflow:hidden; }
+  .am-main { flex:1; min-height:0; }
+}
+
+.am-rise { opacity:0; transform:translateY(12px); animation:am-rise .6s cubic-bezier(.16,1,.3,1) forwards; animation-delay:calc(var(--i,0) * 80ms); }
+@keyframes am-rise { to { opacity:1; transform:none; } }
+
+/* ---------- Header ---------- */
+.am-head {
+  position:relative; overflow:hidden; isolation:isolate;
+  display:flex; align-items:center; justify-content:space-between; gap:16px; flex-wrap:wrap;
+  padding:14px 20px; border-radius:14px; color:var(--cream);
+  background:
+    radial-gradient(circle at 10% 20%, rgba(111,207,122,.20), transparent 45%),
+    radial-gradient(circle at 92% 90%, rgba(227,168,63,.16), transparent 40%),
+    linear-gradient(135deg, var(--forest-950), var(--forest-900) 50%, var(--forest-800));
+  box-shadow:0 14px 30px -18px rgba(10,29,19,.6);
+}
+.am-head::before {
+  content:''; position:absolute; inset:0; z-index:-1;
+  background-image:linear-gradient(rgba(255,255,255,.04) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.04) 1px, transparent 1px);
+  background-size:30px 30px; mask-image:radial-gradient(circle at 70% 50%, #000, transparent 75%);
+}
+.am-head h1 { margin:0; font-family:'Playfair Display',serif; font-weight:600; font-size:1.35rem; line-height:1.2; }
+.am-head p { margin:3px 0 0; font-size:.78rem; color:rgba(250,248,242,.68); }
+
+.am-nav { display:flex; gap:6px; flex-wrap:wrap; }
+.am-nav a {
+  display:inline-flex; align-items:center; gap:6px; padding:7px 14px; border-radius:9px;
+  font-size:.78rem; font-weight:600; text-decoration:none; color:var(--cream);
+  background:rgba(255,255,255,.09); border:1px solid rgba(255,255,255,.18);
+  transition:background .2s, transform .2s;
+}
+.am-nav a:hover { background:rgba(255,255,255,.18); transform:translateY(-1px); }
+.am-nav a.active { background:var(--wheat); color:var(--forest-950); border-color:var(--wheat); }
+.am-nav a:focus-visible { outline:3px solid var(--wheat); outline-offset:2px; }
+
+/* ---------- Flash ---------- */
+.am-flash-wrap { display:flex; flex-direction:column; gap:6px; }
+.am-flash {
+  display:flex; align-items:center; gap:10px; padding:9px 14px; border-radius:10px;
+  font-size:.84rem; font-weight:500; background:var(--success-bg); color:var(--success);
+  border:1px solid var(--border); border-left:4px solid var(--green-light);
+  transition:opacity .5s, transform .5s, max-height .5s, padding .5s, margin .5s;
+  max-height:80px;
+}
+.am-flash.error { background:var(--error-bg); color:var(--error); border-color:#f5c6c3; border-left-color:var(--error); }
+.am-flash.is-hiding { opacity:0; transform:translateY(-6px); max-height:0; padding-top:0; padding-bottom:0; overflow:hidden; }
+
+/* ---------- Stats ---------- */
+.am-stats { display:grid; grid-template-columns:repeat(4, minmax(0,1fr)); gap:10px; }
+.am-stat {
+  --accent:var(--green-mid);
+  position:relative; overflow:hidden; display:flex; align-items:center; justify-content:space-between; gap:10px;
+  padding:12px 16px; background:#fff; border:1px solid var(--border); border-radius:14px;
+  transition:transform .25s, box-shadow .25s;
+}
+.am-stat:hover { transform:translateY(-2px); box-shadow:0 12px 22px -16px rgba(18,53,36,.45); }
+.am-stat::after {
+  content:''; position:absolute; left:0; bottom:0; width:100%; height:3px; background:var(--accent);
+  transform:scaleX(0); transform-origin:left; animation:am-bar 1s cubic-bezier(.16,1,.3,1) .4s forwards;
+}
+@keyframes am-bar { to { transform:scaleX(1); } }
+.am-stat-label { font-size:.72rem; font-weight:600; color:var(--gray); }
+.am-stat-value { margin-top:2px; font-size:1.7rem; font-weight:700; line-height:1.05; color:var(--accent); font-variant-numeric:tabular-nums; letter-spacing:-.5px; }
+.am-stat-value small { font-size:.85rem; color:var(--gray); font-weight:600; letter-spacing:0; }
+.am-stat-value.text { font-size:1.15rem; letter-spacing:0; padding:5px 0 3px; }
+.am-stat-icon { width:38px; height:38px; border-radius:11px; display:grid; place-items:center; font-size:18px; flex-shrink:0; background:color-mix(in srgb, var(--accent) 13%, white); }
+.am-stat.s1 { --accent:#2f7d4f; } .am-stat.s2 { --accent:#123524; } .am-stat.s3 { --accent:#c98a1a; } .am-stat.s4 { --accent:#7a5ea8; }
+
+/* ---------- Main grid ---------- */
+.am-main { display:grid; grid-template-columns:340px minmax(0,1fr); gap:10px; align-items:stretch; }
+.am-side { min-height:0; display:flex; flex-direction:column; gap:10px; overflow-y:auto; scrollbar-width:thin; }
+
+.am-card {
+  flex:1 0 auto; display:flex; flex-direction:column;
+  background:#fff; border:1px solid var(--border); border-radius:14px; padding:14px 16px;
+}
+.am-card h3 { margin:0 0 10px; display:flex; align-items:center; gap:8px; font-family:'Playfair Display',serif; font-size:.98rem; font-weight:600; color:var(--green-deep); }
+.am-card h3::after { content:''; flex:1; height:1px; background:linear-gradient(90deg, var(--border), transparent); }
+.am-note { margin:0 0 10px; font-size:.76rem; line-height:1.5; color:var(--gray); }
+
+/* forms (overrides the global "form" rule from your stylesheet) */
+.am-form { display:flex; flex-direction:column; gap:8px; margin:0; flex:1; }
+.am-form > .am-btn { margin-top:auto; }
+.am-grid { display:grid; grid-template-columns:1fr 1fr; gap:8px; align-content:space-between; flex:1; }
+.am-grid .full { grid-column:1 / -1; }
+.am-f label { display:block; margin-bottom:3px; font-size:.68rem; font-weight:700; color:var(--green-deep); }
+.am-in, .am-sel {
+  width:100%; padding:8px 10px; border:1.5px solid var(--border); border-radius:8px;
+  font-family:inherit; font-size:.82rem; color:var(--text); background:var(--green-xpale);
+  transition:border-color .2s, background .2s, box-shadow .2s;
+}
+.am-in:focus, .am-sel:focus { outline:none; border-color:var(--green-mid); background:#fff; box-shadow:0 0 0 3px var(--green-pale); }
+
+/* upload drop zone (grows to fill spare height) */
+.am-drop {
+  position:relative; flex:1; min-height:84px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3px;
+  text-align:center; padding:12px; cursor:pointer;
+  border:2px dashed #9cc9a8; border-radius:12px; background:var(--green-xpale);
+  transition:border-color .2s, background .2s, transform .2s;
+}
+.am-drop:hover, .am-drop.is-drag { border-color:var(--green-mid); background:var(--green-pale); }
+.am-drop.is-drag { transform:scale(1.015); }
+.am-drop.has-file { border-style:solid; border-color:var(--green-mid); background:#fff; }
+.am-drop input { position:absolute; inset:0; width:100%; height:100%; opacity:0; cursor:pointer; }
+.am-drop:focus-within { outline:3px solid var(--green-light); outline-offset:2px; }
+.am-drop-ico { font-size:24px; transition:transform .3s cubic-bezier(.34,1.56,.64,1); }
+.am-drop:hover .am-drop-ico { transform:translateY(-3px) scale(1.1); }
+.am-drop b { font-size:.82rem; color:var(--green-deep); max-width:100%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.am-drop small { font-size:.7rem; color:var(--gray); }
+
+.am-btn {
+  display:inline-flex; align-items:center; justify-content:center; gap:6px; width:100%; padding:9px 14px;
+  border:none; border-radius:9px; cursor:pointer; font-family:inherit; font-weight:700; font-size:.8rem; color:#fff; background:var(--green-mid);
+  transition:background .2s, transform .2s, box-shadow .2s, opacity .2s;
+}
+.am-btn:hover:not(:disabled) { background:var(--green-deep); transform:translateY(-1px); box-shadow:0 8px 16px -10px rgba(18,53,36,.6); }
+.am-btn:focus-visible { outline:3px solid var(--wheat); outline-offset:2px; }
+.am-btn:disabled { opacity:.45; cursor:not-allowed; }
+.am-btn.gold { background:var(--wheat); color:var(--forest-950); }
+.am-btn.gold:hover:not(:disabled) { background:#c98a1a; color:#fff; }
+.am-btn.danger { background:#b71c1c; }
+.am-btn.danger:hover:not(:disabled) { background:#8e1515; }
+.am-btn.is-busy { pointer-events:none; opacity:.8; }
+.am-btn.is-busy::before { content:''; width:13px; height:13px; border-radius:50%; border:2px solid rgba(0,0,0,.2); border-top-color:currentColor; animation:am-spin .7s linear infinite; }
+@keyframes am-spin { to { transform:rotate(360deg); } }
+
+.am-warn { margin-top:8px; padding:7px 10px; border-radius:8px; font-size:.72rem; line-height:1.45; background:#fff8e1; color:#8a6100; border:1px solid #f3e2a8; }
+.am-card.danger { border-left:4px solid #ef5350; }
+.am-card.danger h3 { color:#b71c1c; }
+.am-card.danger .am-form { justify-content:center; }
+.am-danger-row { display:flex; gap:6px; }
+.am-danger-row .am-in { flex:1; border-color:#ef9a9a; background:#fff; }
+.am-danger-row .am-btn { width:auto; white-space:nowrap; }
+
+/* ---------- Table panel ---------- */
+.am-table-card { min-height:0; min-width:0; display:flex; flex-direction:column; background:#fff; border:1px solid var(--border); border-radius:14px; overflow:hidden; }
+.am-toolbar { display:flex; align-items:center; gap:8px; padding:10px 12px; border-bottom:1px solid var(--green-pale); background:var(--green-xpale); }
+.am-toolbar form { flex:1; display:flex; flex-direction:row; gap:6px; margin:0; }
+.am-toolbar .am-in { background:#fff; }
+.am-toolbar .am-btn { width:auto; padding:8px 16px; }
+.am-clear { display:inline-flex; align-items:center; padding:8px 14px; border-radius:9px; border:1px solid var(--border); background:#fff; color:var(--gray); font-size:.8rem; font-weight:600; text-decoration:none; white-space:nowrap; }
+.am-clear:hover { color:var(--error); border-color:#f5c6c3; }
+.am-count { font-size:.74rem; font-weight:700; color:var(--green-mid); padding:5px 11px; border-radius:99px; background:var(--green-pale); white-space:nowrap; }
+
+.am-scroll { flex:1; min-height:0; overflow:auto; scrollbar-width:thin; }
+.am-table { width:100%; min-width:820px; border-collapse:collapse; font-size:.82rem; }
+.am-table thead th {
+  position:sticky; top:0; z-index:2; padding:10px 12px; text-align:left; white-space:nowrap;
+  font-size:.72rem; font-weight:700; color:var(--green-deep); background:var(--green-pale); border-bottom:1px solid var(--border);
+}
+.am-table th[data-sort] { cursor:pointer; user-select:none; transition:background .2s; }
+.am-table th[data-sort]:hover { background:#dcecdf; }
+.am-table th[data-sort]:focus-visible { outline:3px solid var(--green-mid); outline-offset:-3px; }
+.am-arrow { margin-left:4px; font-size:.65rem; color:var(--gray); opacity:.5; }
+.am-arrow::before { content:'↕'; }
+th[aria-sort="ascending"] .am-arrow::before { content:'▲'; }
+th[aria-sort="descending"] .am-arrow::before { content:'▼'; }
+th[aria-sort] .am-arrow { opacity:1; color:var(--green-mid); }
+
+.am-table td { padding:8px 12px; border-bottom:1px solid var(--green-pale); vertical-align:middle; }
+.am-grp { animation:am-row .45s ease both; animation-delay:calc(var(--n,0) * 30ms); }
+.am-grp.am-done { animation:none; }
+@keyframes am-row { from { opacity:0; } to { opacity:1; } }
+.am-grp:nth-of-type(even) .am-data { background:#fbfdfb; }
+.am-data { transition:background .15s; }
+.am-grp .am-data:hover { background:var(--green-pale); }
+.am-r { text-align:right !important; } .am-c { text-align:center !important; }
+
+.am-crop-cell { display:flex; align-items:center; gap:10px; }
+.am-avatar { width:32px; height:32px; border-radius:10px; flex-shrink:0; display:grid; place-items:center; font-size:.85rem; font-weight:700; color:#fff; background:linear-gradient(135deg, var(--green-mid), var(--green-light)); }
+.am-crop { font-weight:600; color:var(--green-deep); line-height:1.2; }
+.am-sub { font-size:.7rem; color:var(--gray); line-height:1.25; }
+.am-price { font-weight:700; color:var(--green-deep); font-variant-numeric:tabular-nums; white-space:nowrap; }
+.am-price i { font-style:normal; color:var(--green-mid); }
+.am-date { color:var(--gray); font-size:.78rem; white-space:nowrap; }
+
+.am-chip { display:inline-flex; align-items:center; gap:5px; padding:3px 10px; border-radius:99px; font-size:.68rem; font-weight:700; white-space:nowrap; background:#eef0ee; color:var(--gray); }
+.am-chip.high, .am-chip.increasing { background:#e1f3e4; color:#1f6b3a; }
+.am-chip.medium { background:var(--wheat-soft); color:#8a5a00; }
+.am-chip.low, .am-chip.decreasing { background:#fdecea; color:#b3261e; }
+.am-chip.stable { background:#eef0ee; color:var(--gray); }
+.am-chip.high::before, .am-chip.medium::before, .am-chip.low::before { content:''; width:6px; height:6px; border-radius:50%; background:currentColor; }
+
+.am-act { display:inline-flex; gap:5px; }
+.am-inline-form { display:inline-flex !important; margin:0 !important; }
+.am-ibtn { padding:5px 10px; border:none; border-radius:7px; cursor:pointer; font-family:inherit; font-size:.74rem; font-weight:700; transition:transform .15s, background .15s; }
+.am-ibtn:hover { transform:translateY(-1px); }
+.am-ibtn.edit { background:#e3f2fd; color:#0d47a1; } .am-ibtn.edit:hover { background:#cfe6fb; }
+.am-ibtn.del  { background:#fdecea; color:#b71c1c; } .am-ibtn.del:hover  { background:#f9d3cf; }
+
+.am-edit-row { display:none; background:var(--green-xpale); }
+.am-edit-row.open { display:table-row; animation:am-row .25s ease; }
+.am-edit-row td { padding:10px 12px; }
+.am-edit-row form { display:flex; flex-direction:row; align-items:flex-end; gap:8px; flex-wrap:wrap; margin:0; }
+.am-edit-row .am-f { flex:1 1 130px; }
+.am-edit-row .am-btn { width:auto; padding:8px 16px; }
+.am-edit-row .am-btn.ghost { background:#fff; color:var(--gray); border:1px solid var(--border); }
+.am-edit-row .am-btn.ghost:hover { background:var(--green-pale); transform:none; box-shadow:none; }
+
+.am-empty { text-align:center; padding:60px 10px !important; color:var(--gray); font-weight:600; }
+.am-empty span { display:block; font-size:36px; margin-bottom:6px; }
+
+.am-foot { display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap; padding:8px 14px; border-top:1px solid var(--green-pale); background:var(--green-xpale); font-size:.72rem; color:var(--gray); }
+.am-foot b { color:var(--green-deep); }
+
+/* ---------- Responsive ---------- */
+@media (max-width:1180px) {
+  .am-main { grid-template-columns:1fr; }
+  .am-side { overflow:visible; display:grid; grid-template-columns:1fr 1fr; }
+  .am-side .am-card.danger { grid-column:1 / -1; }
+  .am-scroll { max-height:70vh; }
+  .am-stats { grid-template-columns:repeat(2, minmax(0,1fr)); }
+}
+@media (max-width:700px) {
+  .am-page { padding:8px; }
+  .am-side { grid-template-columns:1fr; }
+  .am-head { padding:12px 14px; }
+  .am-toolbar { flex-wrap:wrap; }
+  .am-danger-row { flex-direction:column; } .am-danger-row .am-btn { width:100%; }
+}
+@media (max-width:480px) { .am-grid { grid-template-columns:1fr; } }
+@media (prefers-reduced-motion:reduce) {
+  .am-rise, .am-grp { opacity:1; transform:none; animation:none; }
+  .am-stat::after { transform:none; animation:none; }
+}
+</style>
+
+<div class="am-page">
+
+  <!-- ================= HEADER + ADMIN NAV ================= -->
+  <header class="am-head am-rise" style="--i:0">
+    <div>
+      <h1>🛒 Market prices manager</h1>
+      <p>Upload Agmarknet CSVs, edit prices and manage the market data farmers see.</p>
+    </div>
+    <nav class="am-nav" aria-label="Admin sections">
+      <a href="{{ url_for('admin_dashboard') }}">📊 Dashboard</a>
+      <a href="{{ url_for('admin_users') }}">👥 Users</a>
+      <a href="{{ url_for('admin_detections') }}">🔬 Detections</a>
+      <a href="{{ url_for('admin_messages') }}">✉️ Messages</a>
+      <a href="{{ url_for('admin_market') }}" class="active" aria-current="page">🛒 Market</a>
+    </nav>
+  </header>
+
+  <!-- ================= FLASH ================= -->
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      <div class="am-flash-wrap">
+        {% for cat, msg in messages %}
+          <div class="am-flash {{ 'error' if cat=='error' else '' }}" role="status">
+            <span>{{ '⚠️' if cat=='error' else '✅' }}</span>
+            <span>{{ msg }}</span>
+          </div>
+        {% endfor %}
+      </div>
+    {% endif %}
+  {% endwith %}
+
+  <!-- ================= STATS ================= -->
+  <section class="am-stats am-rise" style="--i:1">
+    <div class="am-stat s1">
+      <div>
+        <div class="am-stat-label">Total rows</div>
+        <div class="am-stat-value"><span data-count="{{ summary.total_rows or 0 }}">{{ summary.total_rows or 0 }}</span></div>
+      </div>
+      <span class="am-stat-icon">📊</span>
+    </div>
+    <div class="am-stat s2">
+      <div>
+        <div class="am-stat-label">Crops tracked</div>
+        <div class="am-stat-value"><span data-count="{{ summary.crops_tracked or 0 }}">{{ summary.crops_tracked or 0 }}</span> <small>/ {{ summary.total_crops or 0 }}</small></div>
+      </div>
+      <span class="am-stat-icon">🌾</span>
+    </div>
+    <div class="am-stat s3">
+      <div>
+        <div class="am-stat-label">Latest date</div>
+        <div class="am-stat-value text">{{ summary.last_date.strftime('%d %b %Y') if summary.last_date else 'No data' }}</div>
+      </div>
+      <span class="am-stat-icon">📅</span>
+    </div>
+    <div class="am-stat s4">
+      <div>
+        <div class="am-stat-label">Rows shown</div>
+        <div class="am-stat-value"><span data-count="{{ rows|length }}">{{ rows|length }}</span></div>
+      </div>
+      <span class="am-stat-icon">🔎</span>
+    </div>
+  </section>
+
+  <!-- ================= MAIN: SIDEBAR + TABLE ================= -->
+  <section class="am-main am-rise" style="--i:2">
+
+    <!-- ---------- Sidebar ---------- -->
+    <aside class="am-side">
+
+      <div class="am-card">
+        <h3>📤 Upload Agmarknet CSV</h3>
+        <p class="am-note">Download the latest CSV from <b>agmarknet.gov.in</b> and upload it here. Prices in the file replace the current market data.</p>
+        <form class="am-form" id="amUploadForm" method="POST" action="{{ url_for('admin_market_upload') }}" enctype="multipart/form-data">
+          <label class="am-drop" id="amDrop">
+            <input type="file" name="csv_file" id="amCsv" accept=".csv" required>
+            <span class="am-drop-ico">📄</span>
+            <b id="amDropText">Choose CSV file</b>
+            <small>or drag it here · .csv only</small>
+          </label>
+          <button type="submit" class="am-btn gold">⬆ Upload &amp; import</button>
+        </form>
+        <div class="am-warn">⚠️ Uploading <b>replaces all existing rows</b>. The importer runs automatically.</div>
+      </div>
+
+      <div class="am-card">
+        <h3>➕ Add manual entry</h3>
+        <form class="am-form" method="POST" action="{{ url_for('admin_market_add') }}">
+          <div class="am-grid">
+            <div class="am-f full">
+              <label for="amCrop">Crop *</label>
+              <select class="am-sel" id="amCrop" name="crop_id" required>
+                <option value="">— Select crop —</option>
+                {% for c in crops %}
+                  <option value="{{ c.id }}">{{ c.name }} ({{ c.category }})</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="am-f">
+              <label for="amPrice">Price (₹/kg) *</label>
+              <input class="am-in" id="amPrice" type="number" step="0.01" min="0.01" name="price_per_kg" required placeholder="e.g. 22.50">
+            </div>
+            <div class="am-f">
+              <label for="amDate">Date *</label>
+              <input class="am-in" id="amDate" type="date" name="date" required>
+            </div>
+            <div class="am-f">
+              <label for="amLoc">Location</label>
+              <input class="am-in" id="amLoc" type="text" name="location" value="Kerala">
+            </div>
+            <div class="am-f">
+              <label for="amMkt">Market</label>
+              <input class="am-in" id="amMkt" type="text" name="market_name" value="Kerala State Mandi">
+            </div>
+            <div class="am-f">
+              <label for="amDem">Demand</label>
+              <select class="am-sel" id="amDem" name="demand_level">
+                <option value="Low">Low</option>
+                <option value="Medium" selected>Medium</option>
+                <option value="High">High</option>
+              </select>
+            </div>
+            <div class="am-f">
+              <label for="amTrend">Trend</label>
+              <select class="am-sel" id="amTrend" name="price_trend">
+                <option value="Stable" selected>Stable</option>
+                <option value="Increasing">Increasing</option>
+                <option value="Decreasing">Decreasing</option>
+              </select>
+            </div>
+          </div>
+          <button type="submit" class="am-btn">➕ Add row</button>
+        </form>
+      </div>
+
+      <div class="am-card danger">
+        <h3>⚠️ Danger zone</h3>
+        <p class="am-note">Delete all market price rows. Type <b>DELETE</b> to enable the button.</p>
+        <form class="am-form" method="POST" action="{{ url_for('admin_market_clear') }}">
+          <div class="am-danger-row">
+            <input class="am-in" id="amConfirm" type="text" name="confirm" placeholder="Type DELETE" autocomplete="off">
+            <button type="submit" class="am-btn danger" id="amClear" disabled>🗑️ Clear all</button>
+          </div>
+        </form>
+      </div>
+
+    </aside>
+
+    <!-- ---------- Price table ---------- -->
+    <div class="am-table-card">
+      <div class="am-toolbar">
+        <form method="GET">
+          <input class="am-in" type="text" name="q" value="{{ search }}" placeholder="Search by crop name or location…" aria-label="Search prices">
+          <button type="submit" class="am-btn">🔍 Search</button>
+          {% if search %}
+            <a class="am-clear" href="{{ url_for('admin_market') }}">✕ Clear</a>
+          {% endif %}
+        </form>
+        <span class="am-count">{{ rows|length }} rows</span>
+      </div>
+
+      <div class="am-scroll">
+        <table class="am-table" id="amTable">
+          <thead>
+            <tr>
+              <th data-sort="text" tabindex="0">Crop <span class="am-arrow"></span></th>
+              <th data-sort="text" tabindex="0">Location / market <span class="am-arrow"></span></th>
+              <th data-sort="num"  tabindex="0" class="am-r">Price (₹/kg) <span class="am-arrow"></span></th>
+              <th data-sort="text" tabindex="0">Demand <span class="am-arrow"></span></th>
+              <th data-sort="text" tabindex="0">Trend <span class="am-arrow"></span></th>
+              <th data-sort="text" tabindex="0">Date <span class="am-arrow"></span></th>
+              <th class="am-c">Actions</th>
+            </tr>
+          </thead>
+
+          {% for r in rows %}
+          <tbody class="am-grp" style="--n:{{ [loop.index0, 14]|min }}">
+            <tr class="am-data">
+              <td data-v="{{ (r.crop_name or '')|lower }}">
+                <div class="am-crop-cell">
+                  <span class="am-avatar">{{ (r.crop_name or '?')[0]|upper }}</span>
+                  <div>
+                    <div class="am-crop">{{ r.crop_name }}</div>
+                    <div class="am-sub">{{ r.crop_category or '' }}</div>
+                  </div>
+                </div>
+              </td>
+              <td data-v="{{ (r.location or '')|lower }}">
+                <div>{{ r.location or '—' }}</div>
+                <div class="am-sub">{{ r.market_name or '' }}</div>
+              </td>
+              <td class="am-r am-price" data-v="{{ r.price_per_kg or 0 }}"><i>₹</i>{{ "%.2f"|format(r.price_per_kg or 0) }}</td>
+              <td data-v="{{ r.demand_level or '' }}">{% if r.demand_level %}<span class="am-chip {{ r.demand_level|lower }}">{{ r.demand_level }}</span>{% else %}—{% endif %}</td>
+              <td data-v="{{ r.price_trend or '' }}">{% if r.price_trend %}<span class="am-chip {{ r.price_trend|lower }}">{{ '↑' if r.price_trend == 'Increasing' else ('↓' if r.price_trend == 'Decreasing' else '→') }} {{ r.price_trend }}</span>{% else %}—{% endif %}</td>
+              <td class="am-date" data-v="{{ r.date.strftime('%Y-%m-%d') if r.date else '' }}">{{ r.date.strftime('%d %b %Y') if r.date else '—' }}</td>
+              <td class="am-c" style="white-space:nowrap;">
+                <span class="am-act">
+                  <button type="button" class="am-ibtn edit" onclick="amToggleEdit({{ r.id }})">✏️ Edit</button>
+                  <form class="am-inline-form" method="POST" action="{{ url_for('admin_market_delete', rid=r.id) }}"
+                        onsubmit="return confirm('Delete this price row?');">
+                    <button type="submit" class="am-ibtn del" aria-label="Delete row">🗑️</button>
+                  </form>
+                </span>
+              </td>
+            </tr>
+
+            <!-- Inline edit row -->
+            <tr id="editRow{{ r.id }}" class="am-edit-row">
+              <td colspan="7">
+                <form method="POST" action="{{ url_for('admin_market_update', rid=r.id) }}">
+                  <div class="am-f">
+                    <label>Price (₹/kg)</label>
+                    <input class="am-in" type="number" step="0.01" min="0.01" name="price_per_kg" value="{{ r.price_per_kg }}" required>
+                  </div>
+                  <div class="am-f">
+                    <label>Location</label>
+                    <input class="am-in" type="text" name="location" value="{{ r.location }}">
+                  </div>
+                  <div class="am-f">
+                    <label>Demand</label>
+                    <select class="am-sel" name="demand_level">
+                      <option value="Low"    {% if r.demand_level=='Low'    %}selected{% endif %}>Low</option>
+                      <option value="Medium" {% if r.demand_level=='Medium' %}selected{% endif %}>Medium</option>
+                      <option value="High"   {% if r.demand_level=='High'   %}selected{% endif %}>High</option>
+                    </select>
+                  </div>
+                  <div class="am-f">
+                    <label>Trend</label>
+                    <select class="am-sel" name="price_trend">
+                      <option value="Stable"     {% if r.price_trend=='Stable'     %}selected{% endif %}>Stable</option>
+                      <option value="Increasing" {% if r.price_trend=='Increasing' %}selected{% endif %}>Increasing</option>
+                      <option value="Decreasing" {% if r.price_trend=='Decreasing' %}selected{% endif %}>Decreasing</option>
+                    </select>
+                  </div>
+                  <button type="submit" class="am-btn">Save</button>
+                  <button type="button" class="am-btn ghost" onclick="amToggleEdit({{ r.id }})">Cancel</button>
+                </form>
+              </td>
+            </tr>
+          </tbody>
+          {% endfor %}
+
+          {% if not rows %}
+          <tbody>
+            <tr><td colspan="7" class="am-empty"><span>🛒</span>No price rows found. Upload a CSV or add an entry.</td></tr>
+          </tbody>
+          {% endif %}
+        </table>
+      </div>
+
+      <div class="am-foot">
+        <span>Showing <b>{{ rows|length }}</b> rows{% if search %} for “<b>{{ search }}</b>”{% endif %}</span>
+        <span>Click a column heading to sort · prices in ₹ per kg</span>
+      </div>
+    </div>
+
+  </section>
+</div>
+
+<script>
+/* ---- inline edit toggle ---- */
+function amToggleEdit(id) {
+  var row = document.getElementById('editRow' + id);
+  if (row) row.classList.toggle('open');
+}
+
+(function () {
+  var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  /* default "Add entry" date to today */
+  var d = document.getElementById('amDate');
+  if (d && !d.value) {
+    var t = new Date();
+    d.value = t.getFullYear() + '-' + String(t.getMonth() + 1).padStart(2, '0') + '-' + String(t.getDate()).padStart(2, '0');
+  }
+
+  /* ---- stat count-up ---- */
+  document.querySelectorAll('[data-count]').forEach(function (el) {
+    var target = parseFloat(el.dataset.count) || 0;
+    if (reduce || target === 0) return;
+    var start = null, dur = 1100;
+    el.textContent = '0';
+    requestAnimationFrame(function tick(ts) {
+      if (start === null) start = ts;
+      var p = Math.min((ts - start) / dur, 1);
+      el.textContent = Math.round(target * (1 - Math.pow(1 - p, 4)));
+      if (p < 1) requestAnimationFrame(tick);
+    });
+  });
+
+  /* ---- flash messages fade out ---- */
+  document.querySelectorAll('.am-flash').forEach(function (f) {
+    setTimeout(function () {
+      f.classList.add('is-hiding');
+      setTimeout(function () { f.remove(); }, 600);
+    }, 6000);
+  });
+
+  /* ---- upload drop zone ---- */
+  var drop = document.getElementById('amDrop'), csv = document.getElementById('amCsv'), txt = document.getElementById('amDropText');
+  if (drop && csv) {
+    ['dragenter', 'dragover'].forEach(function (e) { drop.addEventListener(e, function () { drop.classList.add('is-drag'); }); });
+    ['dragleave', 'drop'].forEach(function (e) { drop.addEventListener(e, function () { drop.classList.remove('is-drag'); }); });
+    csv.addEventListener('change', function () {
+      var f = csv.files && csv.files[0];
+      drop.classList.toggle('has-file', !!f);
+      txt.textContent = f ? f.name : 'Choose CSV file';
+    });
+  }
+  var upForm = document.getElementById('amUploadForm');
+  if (upForm) {
+    upForm.addEventListener('submit', function (e) {
+      if (!confirm('This will replace ALL existing market rows with the uploaded file. Continue?')) { e.preventDefault(); return; }
+      var b = upForm.querySelector('button[type=submit]');
+      b.classList.add('is-busy');
+    });
+  }
+
+  /* ---- danger zone: enable button only when DELETE is typed ---- */
+  var conf = document.getElementById('amConfirm'), clr = document.getElementById('amClear');
+  if (conf && clr) {
+    conf.addEventListener('input', function () { clr.disabled = conf.value.trim() !== 'DELETE'; });
+  }
+
+  /* ---- column sorting (client side) ---- */
+  var table = document.getElementById('amTable');
+  if (table) {
+    var ths = table.querySelectorAll('th[data-sort]');
+    ths.forEach(function (th) {
+      function sortBy() {
+        var idx = th.cellIndex, type = th.dataset.sort;
+        var dir = th.getAttribute('aria-sort') === 'ascending' ? 'descending' : 'ascending';
+        ths.forEach(function (o) { o.removeAttribute('aria-sort'); });
+        th.setAttribute('aria-sort', dir);
+        var groups = [].slice.call(table.querySelectorAll('tbody.am-grp'));
+        groups.sort(function (a, b) {
+          var x = a.querySelector('tr.am-data').cells[idx].dataset.v || '';
+          var y = b.querySelector('tr.am-data').cells[idx].dataset.v || '';
+          var r = type === 'num' ? (parseFloat(x) || 0) - (parseFloat(y) || 0) : x.localeCompare(y);
+          return dir === 'ascending' ? r : -r;
+        });
+        groups.forEach(function (g) { g.classList.add('am-done'); table.appendChild(g); });
+      }
+      th.addEventListener('click', sortBy);
+      th.addEventListener('keydown', function (e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); sortBy(); } });
+    });
+    /* stop the row entrance animation from replaying later */
+    setTimeout(function () {
+      table.querySelectorAll('tbody.am-grp').forEach(function (g) { g.classList.add('am-done'); });
+    }, 1500);
+  }
+})();
+</script>
+
+{% endblock %}

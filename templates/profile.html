@@ -1,0 +1,227 @@
+{% extends "base.html" %}
+{% block title %}Profile · AgriVision AI{% endblock %}
+{% block content %}
+
+<style>
+/* AgriVision AI · Profile  (classes prefixed "pv-") */
+.pv-page {
+  width: 100%; max-width: 1440px; flex: 1 1 100%; align-self: stretch; grid-column: 1 / -1; min-width: 0;
+  margin: 0 auto; padding: 28px 32px 48px; display: flex; flex-direction: column; gap: 20px;
+}
+.pv-rise { opacity: 0; transform: translateY(16px); animation: pv-rise .7s cubic-bezier(.16,1,.3,1) forwards; animation-delay: calc(var(--i,0) * 90ms); }
+@keyframes pv-rise { to { opacity: 1; transform: none; } }
+
+/* header band */
+.pv-head {
+  position: relative; overflow: hidden; isolation: isolate; border-radius: 22px; padding: 28px 36px;
+  display: flex; align-items: center; justify-content: space-between; gap: 24px; flex-wrap: wrap; color: var(--cream);
+  background:
+    radial-gradient(circle at 10% 20%, rgba(111,207,122,.20), transparent 45%),
+    radial-gradient(circle at 92% 85%, rgba(227,168,63,.16), transparent 42%),
+    linear-gradient(135deg, var(--forest-950) 0%, var(--forest-900) 50%, var(--forest-800) 100%);
+  box-shadow: 0 24px 50px -24px rgba(10,29,19,.55);
+}
+.pv-head::before {
+  content: ''; position: absolute; inset: 0; z-index: -1;
+  background-image: linear-gradient(rgba(255,255,255,.04) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.04) 1px, transparent 1px);
+  background-size: 34px 34px; mask-image: radial-gradient(circle at 70% 50%, #000, transparent 75%);
+}
+.pv-head h1 { margin: 0; font-family: 'Playfair Display', serif; font-weight: 600; font-size: clamp(1.5rem, 2.4vw, 2.1rem); line-height: 1.2; }
+.pv-head p { margin: 6px 0 0; font-size: .95rem; color: rgba(250,248,242,.72); }
+.pv-btn {
+  display: inline-flex; align-items: center; gap: 8px; padding: 11px 22px; border-radius: 10px; font-weight: 600; font-size: .86rem;
+  text-decoration: none; color: var(--cream); background: rgba(255,255,255,.10); border: 1px solid rgba(255,255,255,.28);
+  transition: transform .2s, background .2s;
+}
+.pv-btn:hover { transform: translateY(-2px); background: rgba(255,255,255,.18); }
+.pv-btn:focus-visible { outline: 3px solid var(--wheat); outline-offset: 2px; }
+
+/* flash */
+.pv-flash { display: flex; align-items: center; gap: 12px; padding: 13px 18px; border-radius: 12px; font-size: .9rem; font-weight: 500;
+  border: 1px solid var(--border); border-left: 4px solid var(--green-light); background: var(--success-bg); color: var(--success); }
+.pv-flash.error { background: var(--error-bg); color: var(--error); border-color: #f5c6c3; border-left-color: var(--error); }
+
+/* layout: identity | form */
+.pv-grid { display: grid; grid-template-columns: 340px minmax(0, 1fr); gap: 18px; align-items: stretch; }
+.pv-card { background: var(--white); border: 1px solid var(--border); border-radius: 18px; padding: 26px; display: flex; flex-direction: column; }
+
+/* identity card */
+.pv-id { align-items: center; text-align: center; gap: 6px; }
+.pv-avatar {
+  position: relative; width: 92px; height: 92px; border-radius: 50%; display: grid; place-items: center;
+  font-size: 2.3rem; font-weight: 700; color: #fff; margin-bottom: 8px;
+  background: linear-gradient(135deg, var(--green-mid), var(--green-light));
+}
+.pv-avatar::after { content: ''; position: absolute; inset: -6px; border-radius: 50%; border: 2px solid var(--green-light); opacity: 0; animation: pv-ring 3s ease-out infinite; }
+@keyframes pv-ring { 0% { transform: scale(.85); opacity: 0; } 25% { opacity: .9; } 100% { transform: scale(1.12); opacity: 0; } }
+.pv-name { font-weight: 700; color: var(--green-deep); font-size: 1.15rem; word-break: break-word; }
+.pv-mail { font-size: .82rem; color: var(--gray); word-break: break-all; }
+.pv-facts { width: 100%; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 18px; text-align: left; }
+.pv-fact { padding: 12px 14px; border-radius: 12px; background: var(--green-xpale); border: 1px solid var(--green-pale); }
+.pv-fact small { display: block; font-size: .72rem; font-weight: 600; color: var(--gray); }
+.pv-fact b { display: block; margin-top: 4px; font-size: .88rem; color: var(--green-deep); word-break: break-word; }
+.pv-tip { margin-top: auto; padding-top: 18px; font-size: .8rem; line-height: 1.6; color: var(--gray); }
+
+/* form */
+.pv-form { display: flex; flex-direction: column; gap: 22px; }
+.pv-sec-title {
+  display: flex; align-items: center; gap: 10px; margin: 0 0 12px;
+  font-family: 'Playfair Display', serif; font-size: 1.1rem; font-weight: 600; color: var(--green-deep);
+}
+.pv-sec-title::after { content: ''; flex: 1; height: 1px; background: linear-gradient(90deg, var(--border), transparent); }
+.pv-fields { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
+.pv-field { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.pv-field.wide { grid-column: 1 / -1; }
+.pv-field label { font-size: .78rem; font-weight: 600; color: var(--green-deep); }
+.pv-field input, .pv-field select {
+  width: 100%; border: 1.5px solid var(--border); border-radius: 10px; padding: 11px 14px; font: inherit; font-size: .9rem;
+  color: var(--text); background: var(--green-xpale); transition: border-color .2s, background .2s, box-shadow .2s;
+}
+.pv-field input:focus, .pv-field select:focus { outline: none; border-color: var(--green-mid); background: #fff; box-shadow: 0 0 0 4px var(--green-pale); }
+.pv-field input:disabled { background: #f1f3f1; color: var(--gray); cursor: not-allowed; }
+.pv-field input::placeholder { color: #9ca3af; }
+.pv-actions { display: flex; justify-content: flex-end; align-items: center; gap: 12px; flex-wrap: wrap; padding-top: 16px; border-top: 1px solid var(--green-pale); margin-top: auto; }
+.pv-save {
+  padding: 12px 30px; border: none; border-radius: 10px; cursor: pointer; font: inherit; font-weight: 600; font-size: .92rem;
+  color: #fff; background: var(--green-mid); box-shadow: 0 4px 18px rgba(18,53,36,.22); transition: background .2s, transform .2s;
+}
+.pv-save:hover { background: var(--green-deep); transform: translateY(-2px); }
+.pv-save:focus-visible { outline: 3px solid var(--wheat); outline-offset: 2px; }
+.pv-link { font-size: .84rem; font-weight: 700; color: var(--green-mid); text-decoration: none; padding: 10px 16px; border-radius: 10px; background: var(--green-pale); transition: background .2s, color .2s; }
+.pv-link:hover { background: var(--green-mid); color: #fff; }
+
+@media (max-width: 1100px) { .pv-grid { grid-template-columns: 1fr; } .pv-fields { grid-template-columns: repeat(2, minmax(0,1fr)); } .pv-facts { grid-template-columns: repeat(4, 1fr); } }
+@media (max-width: 760px) {
+  .pv-page { padding: 18px 16px 36px; } .pv-head { padding: 22px 20px; } .pv-card { padding: 20px 16px; }
+  .pv-facts { grid-template-columns: 1fr 1fr; } .pv-fields { grid-template-columns: 1fr; }
+  .pv-save, .pv-link { width: 100%; text-align: center; }
+}
+@media (prefers-reduced-motion: reduce) { .pv-rise { opacity: 1; transform: none; animation: none; } .pv-avatar::after { animation: none; } }
+</style>
+
+<div class="pv-page">
+
+  <!-- HEADER -->
+  <section class="pv-head pv-rise" style="--i:0">
+    <div>
+      <h1>👤 <span data-lang="en">My profile</span><span data-lang="ml">എന്റെ പ്രൊഫൈൽ</span></h1>
+      <p>
+        <span data-lang="en">Keep your details up to date for better AI recommendations.</span>
+        <span data-lang="ml">മികച്ച AI ശുപാർശകൾക്ക് വിവരങ്ങൾ പുതുക്കി സൂക്ഷിക്കുക.</span>
+      </p>
+    </div>
+    <a class="pv-btn" href="{{ url_for('dashboard') }}">← <span data-lang="en">Dashboard</span><span data-lang="ml">ഡാഷ്ബോർഡ്</span></a>
+  </section>
+
+  <!-- FLASH -->
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      <div class="pv-rise" style="--i:1;display:flex;flex-direction:column;gap:10px;">
+        {% for cat, msg in messages %}
+          <div class="pv-flash {{ 'error' if cat=='error' else '' }}">
+            <span>{{ '⚠️' if cat=='error' else '✅' }}</span><span>{{ msg }}</span>
+          </div>
+        {% endfor %}
+      </div>
+    {% endif %}
+  {% endwith %}
+
+  <section class="pv-grid pv-rise" style="--i:2">
+
+    <!-- IDENTITY -->
+    <aside class="pv-card pv-id">
+      <div class="pv-avatar">{{ user.username[0]|upper }}</div>
+      <div class="pv-name">{{ user.username }}</div>
+      <div class="pv-mail">{{ user.email }}</div>
+      <div class="pv-facts">
+        <div class="pv-fact"><small>📍 <span data-lang="en">Location</span><span data-lang="ml">സ്ഥലം</span></small><b>{{ user.location or '—' }}</b></div>
+        <div class="pv-fact"><small>🌱 <span data-lang="en">Experience</span><span data-lang="ml">അനുഭവം</span></small>
+          <b>{{ user.farming_experience or 0 }} <span data-lang="en">years</span><span data-lang="ml">വർഷം</span></b></div>
+        <div class="pv-fact"><small>🗣️ <span data-lang="en">Language</span><span data-lang="ml">ഭാഷ</span></small>
+          <b>{{ 'മലയാളം' if user.preferred_language == 'ml' else 'English' }}</b></div>
+        <div class="pv-fact"><small>🗓️ <span data-lang="en">Member since</span><span data-lang="ml">അംഗമായത്</span></small>
+          <b>{{ user.created_at.strftime('%d %b %Y') if user.created_at else '—' }}</b></div>
+      </div>
+      <p class="pv-tip">
+        <span data-lang="en">Soil, irrigation and crop preferences help the crop advisor give more accurate suggestions.</span>
+        <span data-lang="ml">മണ്ണ്, ജലസേചനം, വിള മുൻഗണനകൾ എന്നിവ കൂടുതൽ കൃത്യമായ ശുപാർശകൾ നൽകാൻ സഹായിക്കും.</span>
+      </p>
+    </aside>
+
+    <!-- FORM -->
+    <div class="pv-card">
+      <form method="POST" class="pv-form" style="height:100%;">
+
+        <div>
+          <h3 class="pv-sec-title"><span data-lang="en">Account info</span><span data-lang="ml">അക്കൗണ്ട് വിവരങ്ങൾ</span></h3>
+          <div class="pv-fields">
+            <div class="pv-field">
+              <label><span data-lang="en">Username</span><span data-lang="ml">ഉപയോക്തൃനാമം</span></label>
+              <input type="text" value="{{ user.username }}" disabled>
+            </div>
+            <div class="pv-field" style="grid-column: span 2;">
+              <label><span data-lang="en">Email</span><span data-lang="ml">ഇമെയിൽ</span></label>
+              <input type="email" value="{{ user.email }}" disabled>
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <h3 class="pv-sec-title"><span data-lang="en">Farm details</span><span data-lang="ml">കൃഷിസ്ഥല വിവരങ്ങൾ</span></h3>
+          <div class="pv-fields">
+            <div class="pv-field">
+              <label><span data-lang="en">Location</span><span data-lang="ml">സ്ഥലം</span></label>
+              <input type="text" name="location" value="{{ user.location or '' }}" placeholder="e.g., Kottayam">
+            </div>
+            <div class="pv-field">
+              <label><span data-lang="en">Farming experience (years)</span><span data-lang="ml">കൃഷി പരിചയം (വർഷങ്ങൾ)</span></label>
+              <input type="number" name="farming_experience" min="0" value="{{ user.farming_experience or '' }}">
+            </div>
+            <div class="pv-field">
+              <label><span data-lang="en">Farm size (acres)</span><span data-lang="ml">കൃഷിഭൂമി വലിപ്പം (ഏക്കർ)</span></label>
+              <input type="number" step="0.1" min="0" name="farm_size" value="{{ prefs.farm_size or '' }}">
+            </div>
+            <div class="pv-field">
+              <label><span data-lang="en">Soil type</span><span data-lang="ml">മണ്ണിന്റെ തരം</span></label>
+              <select name="soil_type">
+                {% set st = prefs.soil_type or '' %}
+                <option value="">—</option>
+                {% for o in ['Sandy','Loamy','Clay','Silt','Laterite','Alluvial'] %}
+                <option value="{{ o }}" {% if st==o %}selected{% endif %}>{{ o }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="pv-field">
+              <label><span data-lang="en">Irrigation type</span><span data-lang="ml">ജലസേചന തരം</span></label>
+              <select name="irrigation_type">
+                {% set it = prefs.irrigation_type or '' %}
+                <option value="">—</option>
+                {% for o in ['Drip','Sprinkler','Flood','Rainfed','Borewell'] %}
+                <option value="{{ o }}" {% if it==o %}selected{% endif %}>{{ o }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="pv-field">
+              <label><span data-lang="en">Preferred language</span><span data-lang="ml">ഇഷ്ട ഭാഷ</span></label>
+              <select name="preferred_language">
+                <option value="en" {% if user.preferred_language=='en' %}selected{% endif %}>English</option>
+                <option value="ml" {% if user.preferred_language=='ml' %}selected{% endif %}>മലയാളം</option>
+              </select>
+            </div>
+            <div class="pv-field wide">
+              <label><span data-lang="en">Preferred crops (comma-separated)</span><span data-lang="ml">ഇഷ്ട വിളകൾ (കോമയാൽ വേർതിരിച്ചത്)</span></label>
+              <input type="text" name="preferred_crops" value="{{ prefs.preferred_crops or '' }}" placeholder="e.g., Rice, Banana, Coconut">
+            </div>
+          </div>
+        </div>
+
+        <div class="pv-actions">
+          <a class="pv-link" href="{{ url_for('dashboard') }}">← <span data-lang="en">Back to dashboard</span><span data-lang="ml">ഡാഷ്ബോർഡിലേക്ക്</span></a>
+          <button type="submit" class="pv-save"><span data-lang="en">Save changes</span><span data-lang="ml">മാറ്റങ്ങൾ സേവ് ചെയ്യുക</span></button>
+        </div>
+      </form>
+    </div>
+
+  </section>
+</div>
+{% endblock %}

@@ -1,0 +1,185 @@
+{% extends "base.html" %}
+{% block title %}Crop Recommendation · AgriVision AI{% endblock %}
+{% block content %}
+
+<style>
+/* AgriVision AI · Crop recommendation
+   Classes are prefixed "cr-". Elements with data-lang get no display rule,
+   so the language toggle keeps working. */
+.cr-page {
+  width:100%; max-width:980px; flex:1 1 100%; align-self:stretch; grid-column:1 / -1; min-width:0;
+  margin:0 auto; padding:32px 24px 56px;
+}
+
+.cr-shell {
+  display:grid; grid-template-columns:340px 1fr;
+  border:1px solid var(--border); border-radius:20px; overflow:hidden; background:#fff;
+  box-shadow:0 24px 48px -28px rgba(18,53,36,.35);
+  animation:cr-in .6s cubic-bezier(.16,1,.3,1) both;
+}
+@keyframes cr-in { from { opacity:0; transform:translateY(12px); } to { opacity:1; transform:none; } }
+
+/* ---------- Left panel ---------- */
+.cr-intro {
+  position:relative; isolation:isolate; color:var(--cream); padding:36px 32px;
+  display:flex; flex-direction:column; justify-content:space-between; gap:24px;
+  background:
+    radial-gradient(circle at 12% 12%, rgba(111,207,122,.20), transparent 45%),
+    radial-gradient(circle at 90% 92%, rgba(227,168,63,.16), transparent 42%),
+    linear-gradient(160deg, var(--forest-950), var(--forest-900) 55%, var(--forest-800));
+}
+.cr-intro::before {
+  content:''; position:absolute; inset:0; z-index:-1;
+  background-image:linear-gradient(rgba(255,255,255,.04) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.04) 1px, transparent 1px);
+  background-size:34px 34px; mask-image:radial-gradient(circle at 60% 30%, #000, transparent 75%);
+}
+.cr-intro h1 { margin:0 0 12px; font-family:'Playfair Display',serif; font-weight:600; font-size:clamp(1.6rem,2.4vw,2.1rem); line-height:1.2; }
+.cr-intro p { margin:0; font-size:.92rem; line-height:1.7; color:rgba(250,248,242,.74); }
+
+.cr-uses { list-style:none; margin:0; padding:0; display:grid; gap:10px; }
+.cr-uses li { display:flex; align-items:center; gap:10px; font-size:.85rem; color:rgba(250,248,242,.86); }
+.cr-uses li::before { content:''; width:6px; height:6px; border-radius:50%; background:var(--green-light); flex-shrink:0; }
+
+/* ---------- Form ---------- */
+.cr-form-side { padding:36px 36px 32px; background:#fff; min-width:0; }
+.cr-form { display:grid; grid-template-columns:1fr 1fr; gap:16px; margin:0; }
+.cr-full { grid-column:1 / -1; }
+
+.cr-field { display:flex; flex-direction:column; gap:6px; min-width:0; }
+.cr-field label { font-size:.8rem; font-weight:600; color:var(--green-deep); }
+
+.cr-input { position:relative; }
+.cr-input input, .cr-input select {
+  width:100%; padding:12px 14px; border:1.5px solid var(--border); border-radius:10px;
+  font-family:inherit; font-size:.92rem; color:var(--text); background:var(--green-xpale);
+  transition:border-color .2s, background .2s, box-shadow .2s;
+}
+.cr-input select { appearance:none; -webkit-appearance:none; padding-right:38px; cursor:pointer;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5l5 5 5-5' fill='none' stroke='%232f7d4f' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat:no-repeat; background-position:right 14px center; }
+.cr-input input::placeholder { color:#9ca3af; }
+.cr-input input:focus, .cr-input select:focus { outline:none; border-color:var(--green-mid); background-color:#fff; box-shadow:0 0 0 4px var(--green-pale); }
+.cr-input.has-unit input { padding-right:56px; }
+.cr-unit { position:absolute; right:14px; top:50%; transform:translateY(-50%); font-size:.8rem; font-weight:600; color:var(--gray); pointer-events:none; }
+
+/* ---------- Flash ---------- */
+.cr-flash { grid-column:1 / -1; padding:10px 14px; border-radius:10px; font-size:.86rem; font-weight:500; }
+.cr-flash.error { background:#fdecea; color:#b71c1c; border:1px solid #f5c6c3; }
+.cr-flash.ok { background:#e8f5e9; color:#1b5e20; border:1px solid var(--border); }
+
+/* ---------- Submit ---------- */
+.cr-submit {
+  grid-column:1 / -1; margin-top:4px; padding:14px 20px; border:none; border-radius:10px; cursor:pointer;
+  font-family:inherit; font-weight:600; font-size:.95rem; color:#fff; background:var(--green-mid);
+  display:inline-flex; align-items:center; justify-content:center; gap:8px;
+  box-shadow:0 4px 18px rgba(18,53,36,.22); transition:background .2s, transform .2s;
+}
+.cr-submit:hover { background:var(--green-deep); transform:translateY(-1px); }
+.cr-submit:focus-visible { outline:3px solid var(--wheat); outline-offset:2px; }
+
+/* ---------- Responsive ---------- */
+@media (max-width:860px) {
+  .cr-shell { grid-template-columns:1fr; }
+  .cr-intro { padding:28px 24px; gap:18px; }
+  .cr-uses { display:none; }
+}
+@media (max-width:520px) {
+  .cr-page { padding:18px 14px 40px; }
+  .cr-form-side { padding:26px 20px; }
+  .cr-form { grid-template-columns:1fr; }
+}
+</style>
+
+<div class="cr-page">
+  <div class="cr-shell">
+
+    <!-- ============ Intro panel ============ -->
+    <section class="cr-intro">
+      <div>
+        <h1>
+          <span data-lang="en">🌾 Crop Recommendation</span>
+          <span data-lang="ml">🌾 വിള ശുപാർശ</span>
+        </h1>
+        <p>
+          <span data-lang="en">Enter your farm conditions and we'll recommend the best crops for this season.</span>
+          <span data-lang="ml">നിങ്ങളുടെ കൃഷിസ്ഥലത്തിലെ സാഹചര്യങ്ങൾ നൽകുക; ഈ സീസണിലെ മികച്ച വിളകൾ ഞങ്ങൾ ശുപാർശ ചെയ്യും.</span>
+        </p>
+      </div>
+      <ul class="cr-uses">
+        <li><span data-lang="en">Matched to your location and season</span><span data-lang="ml">നിങ്ങളുടെ സ്ഥലത്തിനും സീസണിനും അനുയോജ്യം</span></li>
+        <li><span data-lang="en">Based on soil pH, temperature and rainfall</span><span data-lang="ml">മണ്ണിന്റെ pH, താപനില, മഴ എന്നിവ അടിസ്ഥാനമാക്കി</span></li>
+      </ul>
+    </section>
+
+    <!-- ============ Form ============ -->
+    <section class="cr-form-side">
+      <form method="POST" class="cr-form">
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+          {% for category, msg in messages %}
+            <div class="cr-flash {{ 'error' if category == 'error' else 'ok' }}">{{ msg }}</div>
+          {% endfor %}
+        {% endwith %}
+
+        <div class="cr-field cr-full">
+          <label for="cr-location">
+            <span data-lang="en">Location</span><span data-lang="ml">സ്ഥലം</span>
+          </label>
+          <div class="cr-input">
+            <input id="cr-location" type="text" name="location" required placeholder="e.g., Kottayam, Kerala" autocomplete="address-level2">
+          </div>
+        </div>
+
+        <div class="cr-field">
+          <label for="cr-season">
+            <span data-lang="en">Season</span><span data-lang="ml">സീസൺ</span>
+          </label>
+          <div class="cr-input">
+            <select id="cr-season" name="season" required>
+              <option value="Kharif">Kharif (June – October)</option>
+              <option value="Rabi">Rabi (November – March)</option>
+              <option value="Zaid">Zaid (April – June)</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="cr-field">
+          <label for="cr-ph">
+            <span data-lang="en">Soil pH</span><span data-lang="ml">മണ്ണിന്റെ pH</span>
+          </label>
+          <div class="cr-input">
+            <input id="cr-ph" type="number" step="0.1" min="0" max="14" name="soil_ph" required placeholder="e.g., 6.5" value="6.5">
+          </div>
+        </div>
+
+        <div class="cr-field">
+          <label for="cr-temp">
+            <span data-lang="en">Average temperature</span><span data-lang="ml">ശരാശരി താപനില</span>
+          </label>
+          <div class="cr-input has-unit">
+            <input id="cr-temp" type="number" step="0.1" name="temperature" required placeholder="e.g., 25" value="25">
+            <span class="cr-unit">°C</span>
+          </div>
+        </div>
+
+        <div class="cr-field">
+          <label for="cr-rain">
+            <span data-lang="en">Average rainfall</span><span data-lang="ml">ശരാശരി മഴ</span>
+          </label>
+          <div class="cr-input has-unit">
+            <input id="cr-rain" type="number" step="1" name="rainfall" required placeholder="e.g., 700" value="700">
+            <span class="cr-unit">mm</span>
+          </div>
+        </div>
+
+        <button type="submit" class="cr-submit">
+          🌱 <span data-lang="en">Get Recommendations</span><span data-lang="ml">ശുപാർശകൾ നേടുക</span>
+        </button>
+
+      </form>
+    </section>
+
+  </div>
+</div>
+
+{% endblock %}

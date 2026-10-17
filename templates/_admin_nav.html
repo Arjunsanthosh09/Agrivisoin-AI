@@ -1,0 +1,7 @@
+<nav class="ad-nav ad-rise" style="--i:1" aria-label="Admin sections">
+  <a class="ad-tab{% if active == 'dashboard' %} is-on{% endif %}" href="{{ url_for('admin_dashboard') }}">📊 Dashboard</a>
+  <a class="ad-tab{% if active == 'users' %} is-on{% endif %}" href="{{ url_for('admin_users') }}">👥 Users</a>
+  <a class="ad-tab{% if active == 'detections' %} is-on{% endif %}" href="{{ url_for('admin_detections') }}">🔬 Detections</a>
+  <a class="ad-tab{% if active == 'messages' %} is-on{% endif %}" href="{{ url_for('admin_messages') }}">✉️ Messages{% if stats is defined and stats.unread_messages %} <span class="ad-pill">{{ stats.unread_messages }}</span>{% endif %}</a>
+  <a class="ad-tab{% if active == 'market' %} is-on{% endif %}" href="{{ url_for('admin_market') }}">🛒 Market</a>
+</nav>

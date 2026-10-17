@@ -1,0 +1,300 @@
+{% extends "base.html" %}
+{% block title %}Market Prices · AgriVision AI{% endblock %}
+{% block content %}
+
+<style>
+/* AgriVision AI · Market prices (prefix "mk-") — uses theme variables from your main stylesheet */
+.mk-page { width:100%; max-width:1440px; flex:1 1 100%; align-self:stretch; grid-column:1/-1; min-width:0; margin:0 auto; padding:28px 32px 48px; display:flex; flex-direction:column; gap:22px; }
+.mk-rise { opacity:0; transform:translateY(16px); animation:mk-rise .7s cubic-bezier(.16,1,.3,1) forwards; animation-delay:calc(var(--i,0)*90ms); }
+@keyframes mk-rise { to { opacity:1; transform:none; } }
+
+/* HERO */
+.mk-hero { position:relative; overflow:hidden; isolation:isolate; border-radius:22px; padding:30px 36px; color:var(--cream);
+  display:grid; grid-template-columns:1fr auto; gap:24px; align-items:center;
+  background:radial-gradient(circle at 12% 18%, rgba(111,207,122,.20), transparent 45%), radial-gradient(circle at 88% 85%, rgba(227,168,63,.16), transparent 42%), linear-gradient(135deg,var(--forest-950),var(--forest-900) 50%,var(--forest-800));
+  box-shadow:0 24px 50px -22px rgba(10,29,19,.55); }
+.mk-hero::before { content:''; position:absolute; inset:0; z-index:-1; background-image:linear-gradient(rgba(255,255,255,.04) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.04) 1px,transparent 1px); background-size:34px 34px; mask-image:radial-gradient(circle at 70% 50%,#000,transparent 75%); }
+.mk-eyebrow { display:inline-flex; align-items:center; gap:8px; font-size:.72rem; font-weight:700; letter-spacing:1.4px; text-transform:uppercase; color:var(--wheat); margin-bottom:10px; }
+.mk-eyebrow::before { content:''; width:7px; height:7px; border-radius:50%; background:var(--wheat); box-shadow:0 0 0 4px var(--wheat-soft); }
+.mk-hero h1 { margin:0; font-family:'Playfair Display',serif; font-weight:600; font-size:clamp(1.6rem,2.6vw,2.3rem); }
+.mk-hero p { margin:8px 0 0; font-size:.95rem; color:rgba(250,248,242,.72); }
+.mk-hero-btn { display:inline-flex; align-items:center; gap:8px; padding:11px 22px; border-radius:10px; font-weight:600; font-size:.86rem; text-decoration:none; color:var(--cream); background:rgba(255,255,255,.10); border:1px solid rgba(255,255,255,.28); transition:transform .2s, background .2s; }
+.mk-hero-btn:hover { transform:translateY(-2px); background:rgba(255,255,255,.18); }
+
+/* STATS */
+.mk-stats { display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:16px; }
+.mk-stat { --accent:var(--green-mid); position:relative; overflow:hidden; background:var(--white); border:1px solid var(--border); border-radius:18px; padding:18px 20px 20px; display:flex; flex-direction:column; gap:8px; transition:transform .3s cubic-bezier(.16,1,.3,1), box-shadow .3s; }
+.mk-stat:hover { transform:translateY(-4px); box-shadow:0 18px 32px -20px rgba(18,53,36,.35); }
+.mk-stat::after { content:''; position:absolute; left:0; bottom:0; height:4px; width:100%; background:var(--accent); transform:scaleX(0); transform-origin:left; animation:mk-bar 1.1s cubic-bezier(.16,1,.3,1) forwards; animation-delay:calc(var(--i,0)*90ms + 400ms); }
+@keyframes mk-bar { to { transform:scaleX(1); } }
+.mk-stat-top { display:flex; justify-content:space-between; align-items:center; }
+.mk-stat-label { font-size:.8rem; font-weight:600; color:var(--gray); }
+.mk-stat-icon { width:36px; height:36px; border-radius:10px; display:grid; place-items:center; font-size:18px; background:color-mix(in srgb,var(--accent) 13%,white); }
+.mk-stat-value { font-size:2rem; font-weight:700; line-height:1.05; color:var(--accent); font-variant-numeric:tabular-nums; letter-spacing:-.5px; }
+.mk-stat-value.text { font-family:'Playfair Display',serif; font-size:1.35rem; letter-spacing:0; padding:5px 0 2px; }
+.mk-stat-sub { font-size:.76rem; color:var(--gray); font-weight:600; }
+.mk-stat.s1 { --accent:#2f7d4f; } .mk-stat.s2 { --accent:#2e7d32; } .mk-stat.s3 { --accent:#c2575f; } .mk-stat.s4 { --accent:#7a5ea8; } .mk-stat.s5 { --accent:#c98a1a; }
+
+/* MAIN GRID */
+.mk-main { display:grid; grid-template-columns:minmax(0,1fr) 340px; gap:18px; align-items:start; }
+.mk-card { background:var(--white); border:1px solid var(--border); border-radius:18px; padding:22px; display:flex; flex-direction:column; }
+.mk-card-head { display:flex; justify-content:space-between; align-items:center; gap:12px; margin-bottom:14px; flex-wrap:wrap; }
+.mk-card-head h3 { margin:0; display:flex; align-items:center; gap:10px; font-family:'Playfair Display',serif; font-size:1.1rem; font-weight:600; color:var(--green-deep); }
+
+/* AI insight */
+.mk-insight { display:grid; grid-template-columns:auto 1fr; gap:16px; align-items:start; padding:20px 22px; border-radius:18px; border:1px solid var(--border); border-left:5px solid var(--wheat); background:linear-gradient(135deg,var(--green-xpale),#fff8ea); }
+.mk-insight-icon { width:44px; height:44px; border-radius:12px; display:grid; place-items:center; font-size:22px; background:var(--wheat-soft); }
+.mk-insight b { display:block; font-family:'Playfair Display',serif; color:var(--green-deep); font-size:1.02rem; margin-bottom:6px; }
+.mk-insight p { margin:0; color:var(--text); line-height:1.7; font-size:.9rem; }
+
+/* toolbar */
+.mk-toolbar { display:flex; gap:12px; flex-wrap:wrap; align-items:center; margin-bottom:16px; }
+.mk-search { position:relative; flex:1 1 220px; min-width:0; }
+.mk-search input { width:100%; border:1.5px solid var(--border); border-radius:10px; padding:10px 14px 10px 38px; font-size:.88rem; font-family:inherit; background:var(--green-xpale); color:var(--text); transition:border-color .2s, box-shadow .2s, background .2s; }
+.mk-search input:focus { outline:none; border-color:var(--green-mid); background:#fff; box-shadow:0 0 0 4px var(--green-pale); }
+.mk-search::before { content:'🔍'; position:absolute; left:12px; top:50%; transform:translateY(-50%); font-size:14px; }
+.mk-chips { display:flex; gap:8px; flex-wrap:wrap; }
+.mk-chip { border:1px solid var(--border); background:var(--white); color:var(--green-deep); border-radius:99px; padding:7px 14px; font:600 .78rem 'DM Sans',sans-serif; cursor:pointer; transition:all .2s; }
+.mk-chip:hover { border-color:var(--green-mid); }
+.mk-chip.on { background:var(--green-mid); border-color:var(--green-mid); color:#fff; }
+.mk-chip:focus-visible, .mk-sort:focus-visible { outline:3px solid var(--wheat); outline-offset:2px; }
+.mk-sort { border:1.5px solid var(--border); border-radius:10px; padding:9px 12px; font:600 .8rem 'DM Sans',sans-serif; color:var(--green-deep); background:var(--white); cursor:pointer; }
+
+/* crop grid */
+.mk-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(250px,1fr)); gap:14px; }
+.mk-crop { --accent:#6c7d70; position:relative; overflow:hidden; display:flex; flex-direction:column; gap:12px; padding:18px; text-decoration:none; color:inherit; background:var(--white); border:1px solid var(--border); border-radius:16px; transition:transform .3s cubic-bezier(.16,1,.3,1), box-shadow .3s, border-color .3s; }
+.mk-crop.up { --accent:#2e7d32; } .mk-crop.down { --accent:#c2575f; }
+.mk-crop::before { content:''; position:absolute; left:0; top:0; bottom:0; width:4px; background:var(--accent); }
+.mk-crop:hover { transform:translateY(-4px); border-color:var(--accent); box-shadow:0 16px 28px -16px color-mix(in srgb,var(--accent) 60%,transparent); }
+.mk-crop:focus-visible { outline:3px solid var(--accent); outline-offset:2px; }
+.mk-crop-top { display:flex; justify-content:space-between; align-items:flex-start; gap:10px; }
+.mk-crop-name { font-weight:700; font-size:1rem; color:var(--green-deep); }
+.mk-crop-cat { font-size:.74rem; color:var(--gray); margin-top:3px; font-weight:600; }
+.mk-badge { flex-shrink:0; display:inline-flex; align-items:center; gap:4px; padding:3px 10px; border-radius:99px; font-size:.7rem; font-weight:700; background:color-mix(in srgb,var(--accent) 13%,white); color:var(--accent); }
+.mk-price-row { display:flex; align-items:baseline; justify-content:space-between; gap:8px; }
+.mk-price { font-size:1.8rem; font-weight:700; color:var(--green-deep); font-variant-numeric:tabular-nums; letter-spacing:-.5px; }
+.mk-price small { font-size:.75rem; color:var(--gray); font-weight:600; letter-spacing:0; }
+.mk-change { font-weight:700; font-size:.95rem; color:var(--accent); font-variant-numeric:tabular-nums; }
+.mk-meter { height:5px; border-radius:99px; background:var(--green-pale); overflow:hidden; }
+.mk-meter i { display:block; height:100%; border-radius:inherit; background:var(--accent); width:0; animation:mk-fill 1.2s cubic-bezier(.16,1,.3,1) .6s forwards; }
+@keyframes mk-fill { to { width:var(--w,0%); } }
+.mk-crop-foot { display:flex; justify-content:space-between; align-items:center; font-size:.76rem; font-weight:700; color:var(--green-mid); }
+.mk-crop-foot span:last-child { transition:transform .2s; }
+.mk-crop:hover .mk-crop-foot span:last-child { transform:translateX(4px); }
+
+/* side lists */
+.mk-side { display:flex; flex-direction:column; gap:18px; }
+.mk-row { display:grid; grid-template-columns:auto 1fr auto; gap:12px; align-items:center; padding:11px 10px; margin:0 -10px; border-bottom:1px solid var(--green-pale); border-radius:10px; text-decoration:none; color:inherit; transition:background .2s, transform .2s; }
+.mk-row:last-child { border-bottom:none; }
+.mk-row:hover { background:var(--green-xpale); transform:translateX(4px); }
+.mk-rank { width:26px; height:26px; border-radius:8px; display:grid; place-items:center; font-size:.76rem; font-weight:700; background:var(--green-pale); color:var(--green-deep); }
+.mk-row-title { font-weight:600; font-size:.9rem; }
+.mk-row-sub { font-size:.74rem; color:var(--gray); margin-top:2px; }
+.mk-row-val { text-align:right; font-weight:700; font-size:.92rem; font-variant-numeric:tabular-nums; }
+.mk-row-val.up { color:#2e7d32; } .mk-row-val.down { color:#c2575f; }
+.mk-row-val small { display:block; font-size:.72rem; color:var(--gray); font-weight:600; }
+.mk-note { text-align:center; font-size:.76rem; color:var(--gray); font-weight:600; margin-top:16px; }
+.mk-empty { text-align:center; padding:56px 20px; color:var(--gray); font-weight:600; }
+.mk-empty div { font-size:44px; margin-bottom:10px; }
+.mk-none { display:none; text-align:center; padding:36px 10px; color:var(--gray); font-weight:600; }
+
+@media (max-width:1180px) { .mk-stats { grid-template-columns:repeat(3,minmax(0,1fr)); } .mk-main { grid-template-columns:1fr; } .mk-side { flex-direction:row; } .mk-side > * { flex:1; } }
+@media (max-width:760px) { .mk-page { padding:18px 16px 36px; } .mk-hero { grid-template-columns:1fr; padding:24px; } .mk-stats { grid-template-columns:repeat(2,minmax(0,1fr)); } .mk-side { flex-direction:column; } .mk-insight { grid-template-columns:1fr; } }
+@media (max-width:480px) { .mk-grid { grid-template-columns:1fr; } }
+@media (prefers-reduced-motion:reduce) { .mk-rise, .mk-stat::after, .mk-meter i { opacity:1; transform:none; animation:none; } .mk-meter i { width:var(--w,0%); } .mk-stat::after { transform:none; } }
+</style>
+
+<div class="mk-page">
+
+  <!-- HERO -->
+  <section class="mk-hero mk-rise" style="--i:0">
+    <div>
+      <div class="mk-eyebrow"><span data-lang="en">Live market</span><span data-lang="ml">വിപണി</span></div>
+      <h1>📈 <span data-lang="en">Market Prices</span><span data-lang="ml">വിപണി വിലകൾ</span></h1>
+      <p>
+        <span data-lang="en">Current prices &amp; 6-month trends for major crops.</span>
+        <span data-lang="ml">പ്രധാന വിളകളുടെ നിലവിലെ വിലകളും 6 മാസത്തെ പ്രവണതകളും.</span>
+      </p>
+    </div>
+    <a class="mk-hero-btn" href="{{ url_for('dashboard') }}">← <span data-lang="en">Dashboard</span><span data-lang="ml">ഡാഷ്ബോർഡ്</span></a>
+  </section>
+
+  {% if prices %}
+  {% set total = prices|length %}
+  {% set rising = prices|selectattr('trend','equalto','Increasing')|list|length %}
+  {% set falling = prices|selectattr('trend','equalto','Decreasing')|list|length %}
+  {% set stable = total - rising - falling %}
+  {% set avg_change = (prices|sum(attribute='change_pct')|float / total) %}
+  {% set by_change = prices|sort(attribute='change_pct', reverse=true)|list %}
+  {% set top = by_change[0] %}
+  {% set max_abs = (by_change|map(attribute='change_pct')|map('float')|map('abs')|max) or 1 %}
+
+  <!-- STATS -->
+  <section class="mk-stats mk-rise" style="--i:1">
+    <div class="mk-stat s1" style="--i:2">
+      <div class="mk-stat-top"><span class="mk-stat-label"><span data-lang="en">Crops tracked</span><span data-lang="ml">വിളകൾ</span></span><span class="mk-stat-icon">🌾</span></div>
+      <div class="mk-stat-value">{{ total }}</div>
+      <div class="mk-stat-sub"><span data-lang="en">{{ stable }} stable</span><span data-lang="ml">{{ stable }} സ്ഥിരം</span></div>
+    </div>
+    <div class="mk-stat s2" style="--i:3">
+      <div class="mk-stat-top"><span class="mk-stat-label"><span data-lang="en">Rising</span><span data-lang="ml">ഉയരുന്നു</span></span><span class="mk-stat-icon">📈</span></div>
+      <div class="mk-stat-value">{{ rising }}</div>
+      <div class="mk-stat-sub">{{ '%.0f'|format(rising / total * 100) }}%</div>
+    </div>
+    <div class="mk-stat s3" style="--i:4">
+      <div class="mk-stat-top"><span class="mk-stat-label"><span data-lang="en">Falling</span><span data-lang="ml">കുറയുന്നു</span></span><span class="mk-stat-icon">📉</span></div>
+      <div class="mk-stat-value">{{ falling }}</div>
+      <div class="mk-stat-sub">{{ '%.0f'|format(falling / total * 100) }}%</div>
+    </div>
+    <div class="mk-stat s4" style="--i:5">
+      <div class="mk-stat-top"><span class="mk-stat-label"><span data-lang="en">Avg. change</span><span data-lang="ml">ശരാശരി മാറ്റം</span></span><span class="mk-stat-icon">📊</span></div>
+      <div class="mk-stat-value">{{ '%+.1f'|format(avg_change) }}%</div>
+      <div class="mk-stat-sub"><span data-lang="en">across all crops</span><span data-lang="ml">എല്ലാ വിളകളും</span></div>
+    </div>
+    <div class="mk-stat s5" style="--i:6">
+      <div class="mk-stat-top"><span class="mk-stat-label"><span data-lang="en">Top gainer</span><span data-lang="ml">മുന്നിൽ</span></span><span class="mk-stat-icon">🏆</span></div>
+      <div class="mk-stat-value text">{{ top.crop_name }}</div>
+      <div class="mk-stat-sub">{{ '%+.1f'|format(top.change_pct|float) }}% · ₹{{ top.current_price }}/kg</div>
+    </div>
+  </section>
+
+  <!-- AI INSIGHT -->
+  {% if ai_insight %}
+  <section class="mk-insight mk-rise" style="--i:2">
+    <div class="mk-insight-icon">🤖</div>
+    <div>
+      <b><span data-lang="en">AI Market Insight</span><span data-lang="ml">AI വിപണി ഉൾക്കാഴ്ച</span></b>
+      <p>{{ ai_insight }}</p>
+    </div>
+  </section>
+  {% endif %}
+
+  <!-- CROPS + MOVERS -->
+  <section class="mk-main mk-rise" style="--i:3">
+
+    <div class="mk-card">
+      <div class="mk-card-head">
+        <h3>🌾 <span data-lang="en">All crops</span><span data-lang="ml">എല്ലാ വിളകളും</span></h3>
+      </div>
+
+      <div class="mk-toolbar">
+        <div class="mk-search">
+          <input type="search" id="mkSearch" placeholder="Search crop…" aria-label="Search crop">
+        </div>
+        <div class="mk-chips" id="mkTrend" role="group" aria-label="Trend filter">
+          <button class="mk-chip on" data-v="all" type="button"><span data-lang="en">All</span><span data-lang="ml">എല്ലാം</span></button>
+          <button class="mk-chip" data-v="Increasing" type="button">📈 <span data-lang="en">Rising</span><span data-lang="ml">ഉയരുന്നു</span></button>
+          <button class="mk-chip" data-v="Decreasing" type="button">📉 <span data-lang="en">Falling</span><span data-lang="ml">കുറയുന്നു</span></button>
+          <button class="mk-chip" data-v="Stable" type="button">➡️ <span data-lang="en">Stable</span><span data-lang="ml">സ്ഥിരം</span></button>
+        </div>
+        <select class="mk-sort" id="mkSort" aria-label="Sort">
+          <option value="name">A → Z</option>
+          <option value="price">Price: high → low</option>
+          <option value="change">Change: high → low</option>
+        </select>
+      </div>
+
+      <div class="mk-chips" id="mkCats" style="margin-bottom:16px;" role="group" aria-label="Category filter">
+        <button class="mk-chip on" data-v="all" type="button"><span data-lang="en">All categories</span><span data-lang="ml">എല്ലാ വിഭാഗവും</span></button>
+        {% for c in prices|map(attribute='category')|select|unique|sort %}
+        <button class="mk-chip" data-v="{{ c }}" type="button">{{ c }}</button>
+        {% endfor %}
+      </div>
+
+      <div class="mk-grid" id="mkGrid">
+        {% for p in prices %}
+        {% set cls = 'up' if p.change_pct > 0 else ('down' if p.change_pct < 0 else '') %}
+        <a class="mk-crop {{ cls }}" href="{{ url_for('market_detail', crop_id=p.crop_id) }}"
+           data-name="{{ p.crop_name|lower }}" data-cat="{{ p.category or '' }}" data-trend="{{ p.trend or 'Stable' }}"
+           data-price="{{ p.current_price|float }}" data-change="{{ p.change_pct|float }}">
+          <div class="mk-crop-top">
+            <div>
+              <div class="mk-crop-name">{{ p.crop_name }}</div>
+              <div class="mk-crop-cat">{{ p.category or '—' }}</div>
+            </div>
+            <span class="mk-badge">
+              {% if p.trend == 'Increasing' %}📈 <span data-lang="en">Rising</span><span data-lang="ml">ഉയരുന്നു</span>
+              {% elif p.trend == 'Decreasing' %}📉 <span data-lang="en">Falling</span><span data-lang="ml">കുറയുന്നു</span>
+              {% else %}➡️ <span data-lang="en">Stable</span><span data-lang="ml">സ്ഥിരം</span>{% endif %}
+            </span>
+          </div>
+          <div class="mk-price-row">
+            <div class="mk-price">₹{{ p.current_price }}<small>/kg</small></div>
+            <div class="mk-change">{% if p.change_pct > 0 %}▲{% elif p.change_pct < 0 %}▼{% else %}—{% endif %} {{ p.change_pct }}%</div>
+          </div>
+          <div class="mk-meter"><i style="--w:{{ '%.0f'|format((p.change_pct|float|abs) / max_abs * 100) }}%"></i></div>
+          <div class="mk-crop-foot"><span data-lang="en">View chart</span><span data-lang="ml">ചാർട്ട് കാണുക</span><span>→</span></div>
+        </a>
+        {% endfor %}
+      </div>
+      <div class="mk-none" id="mkNone"><span data-lang="en">No crops match your filters.</span><span data-lang="ml">ഫിൽട്ടറിന് അനുയോജ്യമായ വിളകളില്ല.</span></div>
+
+      <div class="mk-note"><span data-lang="en">Prices in ₹ per kg. Updated monthly.</span><span data-lang="ml">വില ₹/കി.ഗ്രാം. പ്രതിമാസം അപ്ഡേറ്റ് ചെയ്യുന്നു.</span></div>
+    </div>
+
+    <div class="mk-side">
+      <div class="mk-card">
+        <div class="mk-card-head"><h3>🚀 <span data-lang="en">Top gainers</span><span data-lang="ml">ഏറ്റവും ഉയർന്നവ</span></h3></div>
+        {% for p in by_change[:5] %}
+        <a class="mk-row" href="{{ url_for('market_detail', crop_id=p.crop_id) }}">
+          <span class="mk-rank">{{ loop.index }}</span>
+          <div><div class="mk-row-title">{{ p.crop_name }}</div><div class="mk-row-sub">₹{{ p.current_price }}/kg</div></div>
+          <div class="mk-row-val {{ 'up' if p.change_pct > 0 else '' }}">{{ '%+.1f'|format(p.change_pct|float) }}%</div>
+        </a>
+        {% endfor %}
+      </div>
+      <div class="mk-card">
+        <div class="mk-card-head"><h3>⚠️ <span data-lang="en">Top decliners</span><span data-lang="ml">ഏറ്റവും കുറഞ്ഞവ</span></h3></div>
+        {% for p in (by_change|reverse|list)[:5] %}
+        <a class="mk-row" href="{{ url_for('market_detail', crop_id=p.crop_id) }}">
+          <span class="mk-rank">{{ loop.index }}</span>
+          <div><div class="mk-row-title">{{ p.crop_name }}</div><div class="mk-row-sub">₹{{ p.current_price }}/kg</div></div>
+          <div class="mk-row-val {{ 'down' if p.change_pct < 0 else '' }}">{{ '%+.1f'|format(p.change_pct|float) }}%</div>
+        </a>
+        {% endfor %}
+      </div>
+    </div>
+  </section>
+
+  {% else %}
+  <div class="mk-card mk-rise" style="--i:1">
+    <div class="mk-empty"><div>📈</div><span data-lang="en">No market data available</span><span data-lang="ml">വിപണി ഡാറ്റ ലഭ്യമല്ല</span></div>
+  </div>
+  {% endif %}
+</div>
+
+<script>
+(function () {
+  var grid = document.getElementById('mkGrid'); if (!grid) return;
+  var cards = Array.prototype.slice.call(grid.children);
+  var state = { q: '', trend: 'all', cat: 'all', sort: 'name' };
+  function apply() {
+    var shown = 0;
+    cards.forEach(function (c) {
+      var ok = (!state.q || c.dataset.name.indexOf(state.q) > -1) &&
+               (state.trend === 'all' || c.dataset.trend === state.trend) &&
+               (state.cat === 'all' || c.dataset.cat === state.cat);
+      c.style.display = ok ? '' : 'none'; if (ok) shown++;
+    });
+    var sorted = cards.slice().sort(function (a, b) {
+      if (state.sort === 'price') return b.dataset.price - a.dataset.price;
+      if (state.sort === 'change') return b.dataset.change - a.dataset.change;
+      return a.dataset.name.localeCompare(b.dataset.name);
+    });
+    sorted.forEach(function (c) { grid.appendChild(c); });
+    document.getElementById('mkNone').style.display = shown ? 'none' : 'block';
+  }
+  function chips(id, key) {
+    document.getElementById(id).addEventListener('click', function (e) {
+      var b = e.target.closest('.mk-chip'); if (!b) return;
+      this.querySelectorAll('.mk-chip').forEach(function (x) { x.classList.remove('on'); });
+      b.classList.add('on'); state[key] = b.dataset.v; apply();
+    });
+  }
+  chips('mkTrend', 'trend'); chips('mkCats', 'cat');
+  document.getElementById('mkSearch').addEventListener('input', function () { state.q = this.value.trim().toLowerCase(); apply(); });
+  document.getElementById('mkSort').addEventListener('change', function () { state.sort = this.value; apply(); });
+  apply();
+})();
+</script>
+{% endblock %}

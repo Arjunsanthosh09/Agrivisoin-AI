@@ -1,0 +1,379 @@
+{% extends "base.html" %}
+{% block title %}Top Crop Recommendations · AgriVision AI{% endblock %}
+{% block content %}
+
+<style>
+/* AgriVision AI · Crop recommendation results
+   Classes are prefixed "rr-". Elements with data-lang get no display rule,
+   so the language toggle keeps working. */
+.rr-page {
+  width:100%; max-width:980px; flex:1 1 100%; align-self:stretch; grid-column:1 / -1; min-width:0;
+  margin:0 auto; padding:32px 24px 56px;
+}
+
+/* One joined shell: header, advisor, results and actions touch edge to edge */
+.rr-shell {
+  border:1px solid var(--border); border-radius:20px; overflow:hidden; background:#fff;
+  box-shadow:0 24px 48px -28px rgba(18,53,36,.35);
+  animation:rr-in .6s cubic-bezier(.16,1,.3,1) both;
+}
+@keyframes rr-in { from { opacity:0; transform:translateY(12px); } to { opacity:1; transform:none; } }
+
+/* ---------- Header ---------- */
+.rr-hero {
+  position:relative; isolation:isolate; color:var(--cream); padding:30px 36px;
+  background:
+    radial-gradient(circle at 10% 20%, rgba(111,207,122,.20), transparent 45%),
+    radial-gradient(circle at 92% 85%, rgba(227,168,63,.16), transparent 42%),
+    linear-gradient(135deg, var(--forest-950), var(--forest-900) 50%, var(--forest-800));
+}
+.rr-hero::before {
+  content:''; position:absolute; inset:0; z-index:-1;
+  background-image:linear-gradient(rgba(255,255,255,.04) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.04) 1px, transparent 1px);
+  background-size:34px 34px; mask-image:radial-gradient(circle at 75% 40%, #000, transparent 75%);
+}
+.rr-hero h1 { margin:0 0 14px; font-family:'Playfair Display',serif; font-weight:600; font-size:clamp(1.6rem,2.8vw,2.3rem); line-height:1.2; }
+.rr-meta { display:flex; flex-wrap:wrap; gap:8px; }
+.rr-meta span { padding:5px 12px; border-radius:99px; font-size:.8rem; font-weight:600; color:var(--cream); background:rgba(255,255,255,.10); border:1px solid rgba(255,255,255,.22); }
+
+/* ---------- AI advisor ---------- */
+.rr-advisor { display:flex; gap:14px; align-items:flex-start; padding:20px 36px; background:var(--green-xpale); border-bottom:1px solid var(--border); border-left:5px solid var(--green-mid); }
+.rr-advisor-ico { width:38px; height:38px; flex-shrink:0; display:grid; place-items:center; border-radius:12px; font-size:19px; background:var(--green-pale); }
+.rr-advisor b { display:block; margin-bottom:4px; font-size:.92rem; color:var(--green-deep); }
+.rr-advisor p { margin:0; font-size:.9rem; line-height:1.75; color:#34443a; }
+
+/* ---------- Result rows (divided, not spaced) ---------- */
+.rr-item { padding:24px 36px; border-bottom:1px solid var(--border); }
+.rr-item.top { background:linear-gradient(180deg, #f3faf3, #fff); border-left:5px solid var(--green-mid); padding-left:31px; }
+
+.rr-head { display:flex; justify-content:space-between; align-items:flex-start; gap:16px; flex-wrap:wrap; }
+.rr-name { margin:0; font-family:'Playfair Display',serif; font-weight:600; font-size:1.3rem; color:var(--green-deep); }
+.rr-sub { margin:4px 0 0; font-size:.84rem; color:var(--gray); }
+.rr-score { text-align:right; min-width:96px; }
+.rr-score b { display:block; font-size:1.7rem; line-height:1; color:var(--green-mid); font-variant-numeric:tabular-nums; }
+.rr-score small { display:block; margin-top:4px; font-size:.75rem; font-weight:600; color:var(--gray); }
+.rr-bar { height:6px; margin:14px 0 16px; border-radius:99px; background:var(--green-pale); overflow:hidden; }
+.rr-bar i { display:block; height:100%; width:0; border-radius:99px; background:linear-gradient(90deg, var(--green-light), var(--green-mid)); animation:rr-fill 1.1s cubic-bezier(.16,1,.3,1) .3s forwards; }
+@keyframes rr-fill { to { width:var(--w, 0%); } }
+
+/* ---------- Profit range section ---------- */
+.rr-profit-box {
+  padding:18px;
+  background:linear-gradient(135deg, #f3faf3 0%, #eaf5eb 100%);
+  border:1px solid var(--green-pale);
+  border-radius:14px;
+}
+.rr-profit-title {
+  display:flex; align-items:center; justify-content:space-between;
+  flex-wrap:wrap; gap:8px; margin-bottom:12px;
+}
+.rr-profit-title b {
+  display:flex; align-items:center; gap:8px;
+  font-size:.85rem; font-weight:700; color:var(--green-deep);
+  text-transform:uppercase; letter-spacing:.5px;
+}
+.rr-profit-title small {
+  font-size:.72rem; color:var(--gray); font-weight:500;
+  letter-spacing:0; text-transform:none;
+}
+.rr-range {
+  display:grid; grid-template-columns:repeat(3, minmax(0,1fr)); gap:10px;
+}
+.rr-range-item {
+  padding:14px 16px; background:#fff; border-radius:10px;
+  border:1px solid var(--green-pale);
+  transition:transform .25s, box-shadow .25s;
+}
+.rr-range-item:hover {
+  transform:translateY(-2px);
+  box-shadow:0 8px 20px -12px rgba(18,53,36,.28);
+}
+.rr-range-item small {
+  display:flex; align-items:center; gap:6px;
+  font-size:.7rem; font-weight:700; text-transform:uppercase;
+  letter-spacing:.5px;
+}
+.rr-range-item b {
+  display:block; margin-top:6px;
+  font-size:1.15rem; font-weight:700; line-height:1;
+  font-variant-numeric:tabular-nums;
+}
+.rr-range-item.low  { border-left:4px solid #ef5350; }
+.rr-range-item.low  small { color:#c62828; }
+.rr-range-item.low  b { color:#b71c1c; }
+.rr-range-item.mid  { border-left:4px solid var(--green-mid); }
+.rr-range-item.mid  small { color:var(--green-deep); }
+.rr-range-item.mid  b { color:var(--green-deep); font-size:1.25rem; }
+.rr-range-item.high { border-left:4px solid #66bb6a; }
+.rr-range-item.high small { color:#2e7d32; }
+.rr-range-item.high b { color:#2e7d32; }
+
+/* ---------- Price trend ---------- */
+.rr-trend {
+  margin-top:14px; padding:14px 16px;
+  background:#fff; border:1px solid var(--green-pale);
+  border-radius:10px;
+}
+.rr-trend-head {
+  display:flex; justify-content:space-between;
+  align-items:center; gap:10px; margin-bottom:10px;
+}
+.rr-trend-head b {
+  display:flex; align-items:center; gap:6px;
+  font-size:.78rem; font-weight:700; color:var(--green-deep);
+  text-transform:uppercase; letter-spacing:.5px;
+}
+.rr-trend-tag {
+  padding:3px 10px; border-radius:99px;
+  font-size:.72rem; font-weight:700;
+}
+.rr-trend-tag.up   { background:#e8f5e9; color:#2e7d32; }
+.rr-trend-tag.down { background:#ffebee; color:#c62828; }
+.rr-trend-tag.flat { background:#f5f5f5; color:#666; }
+
+.rr-trend-bars {
+  display:flex; align-items:flex-end; gap:5px; height:74px;
+  padding:0 2px;
+}
+.rr-trend-bar {
+  flex:1; display:flex; flex-direction:column;
+  align-items:center; justify-content:flex-end; height:100%;
+}
+.rr-trend-bar i {
+  display:block; width:100%; min-height:5px;
+  border-radius:4px 4px 0 0;
+  background:linear-gradient(180deg, #a5d6a7, var(--green-mid));
+  animation:rr-grow .8s cubic-bezier(.16,1,.3,1) both;
+}
+.rr-trend-bar:last-child i {
+  background:linear-gradient(180deg, #ffd54f, var(--wheat));
+}
+@keyframes rr-grow { from { height:0; } }
+.rr-trend-foot {
+  display:flex; justify-content:space-between;
+  font-size:.7rem; color:var(--gray); margin-top:8px;
+}
+.rr-trend-foot b { color:var(--green-deep); }
+
+/* ---------- Stats row (compact) ---------- */
+.rr-stats { display:grid; grid-template-columns:repeat(2, minmax(0,1fr)); gap:10px; margin-top:14px; }
+.rr-stat { padding:11px 14px; border-radius:12px; background:var(--green-xpale); border:1px solid var(--green-pale); }
+.rr-stat small { display:block; font-size:.75rem; font-weight:600; color:var(--gray); }
+.rr-stat b { display:block; margin-top:3px; font-size:.98rem; color:var(--green-deep); }
+.rr-risk { display:inline-block; margin-top:3px; padding:3px 12px; border-radius:99px; font-size:.78rem; font-weight:700; }
+.rr-risk.very_high { background:#ffe3e3; color:#b71c1c; }
+.rr-risk.high      { background:#ffe8cc; color:#b45309; }
+.rr-risk.medium    { background:#fff3d6; color:#8a6100; }
+.rr-risk.low       { background:#dff3e4; color:#1b5e20; }
+
+.rr-why { margin-top:16px; }
+.rr-why h4 { margin:0 0 8px; font-size:.85rem; font-weight:700; color:var(--green-deep); }
+.rr-why ul { list-style:none; margin:0; padding:0; display:grid; gap:6px; }
+.rr-why li { position:relative; padding-left:24px; font-size:.88rem; line-height:1.6; color:#2c3a31; }
+.rr-why li::before { content:'✓'; position:absolute; left:0; top:2px; width:16px; height:16px; border-radius:50%; display:grid; place-items:center; font-size:9px; font-weight:700; color:#fff; background:var(--green-mid); }
+
+/* ---------- Actions ---------- */
+.rr-actions { display:flex; gap:10px; flex-wrap:wrap; padding:20px 36px; background:var(--cream); }
+.rr-btn {
+  display:inline-flex; align-items:center; gap:8px; padding:11px 20px; border-radius:10px; cursor:pointer;
+  font-family:inherit; font-weight:600; font-size:.86rem; text-decoration:none; border:1px solid var(--green-mid);
+  background:#fff; color:var(--green-mid); transition:transform .2s, background .2s;
+}
+.rr-btn:hover { transform:translateY(-2px); background:var(--green-pale); }
+.rr-btn:focus-visible { outline:3px solid var(--wheat); outline-offset:2px; }
+.rr-btn.primary { background:var(--green-mid); color:#fff; }
+.rr-btn.primary:hover { background:var(--green-deep); }
+
+.rr-empty { padding:40px 36px; text-align:center; color:var(--gray); font-size:.92rem; }
+
+/* ---------- Responsive ---------- */
+@media (max-width:720px) {
+  .rr-page { padding:18px 14px 40px; }
+  .rr-hero, .rr-advisor, .rr-actions { padding-left:22px; padding-right:22px; }
+  .rr-item { padding:20px 22px; }
+  .rr-item.top { padding-left:17px; }
+  .rr-stats { grid-template-columns:1fr; }
+  .rr-range { grid-template-columns:1fr; }
+  .rr-score { text-align:left; }
+}
+
+/* ---------- Print ---------- */
+@media print {
+  nav, .rr-actions { display:none !important; }
+  .rr-page { padding:0; max-width:100%; }
+  .rr-shell { box-shadow:none; animation:none; }
+  .rr-hero { background:#fff; color:#000; border-bottom:1px solid #ccc; }
+  .rr-meta span { color:#333; border-color:#ccc; background:#fff; }
+  .rr-item { break-inside:avoid; }
+  .rr-bar i, .rr-trend-bar i { animation:none; }
+  .rr-bar i { width:var(--w, 0%); }
+}
+@media (prefers-reduced-motion:reduce) {
+  .rr-bar i, .rr-trend-bar i { animation:none; }
+  .rr-bar i { width:var(--w, 0%); }
+}
+</style>
+
+<div class="rr-page">
+  <div class="rr-shell">
+
+    <!-- ============ Header ============ -->
+    <section class="rr-hero">
+      <h1>
+        <span data-lang="en">🌾 Top Crop Recommendations</span>
+        <span data-lang="ml">🌾 മികച്ച വിള ശുപാർശകൾ</span>
+      </h1>
+      <div class="rr-meta">
+        <span>📍 {{ location }}</span>
+        <span>{{ season }}</span>
+        <span>pH {{ soil_ph }}</span>
+        <span>{{ temperature }}°C</span>
+        <span>{{ rainfall }} mm</span>
+      </div>
+    </section>
+
+    <!-- ============ AI advisor ============ -->
+    {% if ai_narrative %}
+    <section class="rr-advisor">
+      <div class="rr-advisor-ico">🤖</div>
+      <div>
+        <b><span data-lang="en">AI Advisor</span><span data-lang="ml">AI ഉപദേശകൻ</span></b>
+        <p>{{ ai_narrative }}</p>
+      </div>
+    </section>
+    {% endif %}
+
+    <!-- ============ Results ============ -->
+    {% for r in results %}
+    <article class="rr-item{% if loop.index == 1 %} top{% endif %}">
+
+      <div class="rr-head">
+        <div>
+          <h2 class="rr-name">
+            {% if loop.index == 1 %}🥇{% elif loop.index == 2 %}🥈{% elif loop.index == 3 %}🥉{% else %}🌱{% endif %}
+            {{ r.crop.name }}
+          </h2>
+          <p class="rr-sub">
+            {{ r.crop.category }} ·
+            <span data-lang="en">Harvest in {{ r.crop.harvest_days }} days</span><span data-lang="ml">{{ r.crop.harvest_days }} ദിവസത്തിൽ വിളവെടുപ്പ്</span> ·
+            ₹{{ r.crop.market_price }}/kg
+          </p>
+        </div>
+        <div class="rr-score">
+          <b>{{ r.score }}%</b>
+          <small><span data-lang="en">Suitability</span><span data-lang="ml">അനുയോജ്യത</span></small>
+        </div>
+      </div>
+
+      <div class="rr-bar" aria-hidden="true"><i style="--w:{{ r.score }}%"></i></div>
+
+      <!-- ============ PROFIT RANGE ============ -->
+      <div class="rr-profit-box">
+        <div class="rr-profit-title">
+          <b>
+            💰 <span data-lang="en">Expected Profit Range</span>
+            <span data-lang="ml">പ്രതീക്ഷിത ലാഭ പരിധി</span>
+          </b>
+          <small>
+            <span data-lang="en">per acre · 2000 kg yield</span>
+            <span data-lang="ml">ഒരു ഏക്കറിന് · 2000 കി.ഗ്രാം വിളവ്</span>
+          </small>
+        </div>
+
+        <div class="rr-range">
+          <div class="rr-range-item low">
+            <small>📉 <span data-lang="en">Conservative</span><span data-lang="ml">കുറഞ്ഞത്</span></small>
+            <b>₹{{ "{:,.0f}".format(r.profit_conservative or 0) }}</b>
+          </div>
+          <div class="rr-range-item mid">
+            <small>🎯 <span data-lang="en">Expected</span><span data-lang="ml">പ്രതീക്ഷിതം</span></small>
+            <b>₹{{ "{:,.0f}".format(r.expected_profit or 0) }}</b>
+          </div>
+          <div class="rr-range-item high">
+            <small>🚀 <span data-lang="en">Optimistic</span><span data-lang="ml">ഉയർന്നത്</span></small>
+            <b>₹{{ "{:,.0f}".format(r.profit_optimistic or 0) }}</b>
+          </div>
+        </div>
+
+        <!-- Price trend mini-chart -->
+        {% if r.price_trend and r.price_trend.history %}
+        <div class="rr-trend">
+          <div class="rr-trend-head">
+            <b>📈 <span data-lang="en">6-Month Price Trend</span><span data-lang="ml">6 മാസ വില പ്രവണത</span></b>
+            {% if r.price_trend.momentum == 'up' %}
+              <span class="rr-trend-tag up">▲ +{{ r.price_trend.trend_pct }}%</span>
+            {% elif r.price_trend.momentum == 'down' %}
+              <span class="rr-trend-tag down">▼ {{ r.price_trend.trend_pct }}%</span>
+            {% else %}
+              <span class="rr-trend-tag flat">— <span data-lang="en">Stable</span><span data-lang="ml">സ്ഥിരം</span></span>
+            {% endif %}
+          </div>
+
+          {% set history = r.price_trend.history %}
+          {% set max_p = history|max %}
+          {% set min_p = history|min %}
+
+          <div class="rr-trend-bars">
+            {% for price in history %}
+              {% set pct = ((price - min_p) / (max_p - min_p) * 80 + 20) if (max_p - min_p) > 0 else 55 %}
+              <div class="rr-trend-bar">
+                <i style="height:{{ pct }}%; animation-delay:{{ loop.index0 * 60 }}ms;"></i>
+              </div>
+            {% endfor %}
+          </div>
+
+          <div class="rr-trend-foot">
+            <span>6 mo ago</span>
+            <span>
+              <span data-lang="en">Current:</span><span data-lang="ml">നിലവിലെ:</span>
+              <b>₹{{ r.price_trend.current }}/kg</b>
+            </span>
+            <span><span data-lang="en">Now</span><span data-lang="ml">ഇപ്പോൾ</span></span>
+          </div>
+        </div>
+        {% endif %}
+      </div>
+
+      <!-- ============ Risk + Loss (compact) ============ -->
+      <div class="rr-stats">
+        <div class="rr-stat">
+          <small>⚠️ <span data-lang="en">Disease risk</span><span data-lang="ml">രോഗ സാധ്യത</span></small>
+          <span class="rr-risk {{ r.risk if r.risk in ['very_high','high','medium'] else 'low' }}">{{ r.risk|replace('_',' ')|upper }}</span>
+        </div>
+        <div class="rr-stat">
+          <small>📊 <span data-lang="en">Historical loss</span><span data-lang="ml">ചരിത്ര നഷ്ടം</span></small>
+          <b>{{ r.historical_loss }}%</b>
+        </div>
+      </div>
+
+      {% if r.reasons %}
+      <div class="rr-why">
+        <h4><span data-lang="en">Why this crop?</span><span data-lang="ml">എന്തുകൊണ്ട് ഈ വിള?</span></h4>
+        <ul>{% for reason in r.reasons %}<li>{{ reason }}</li>{% endfor %}</ul>
+      </div>
+      {% endif %}
+    </article>
+    {% else %}
+    <div class="rr-empty">
+      <span data-lang="en">No crops matched these conditions. Try adjusting the values.</span>
+      <span data-lang="ml">ഈ സാഹചര്യങ്ങൾക്ക് അനുയോജ്യമായ വിളകളില്ല. മൂല്യങ്ങൾ മാറ്റി നോക്കുക.</span>
+    </div>
+    {% endfor %}
+
+    <!-- ============ Actions ============ -->
+    <div class="rr-actions">
+      <a class="rr-btn primary" href="{{ url_for('recommend_page') }}">
+        <span data-lang="en">Try different conditions</span><span data-lang="ml">മറ്റ് സാഹചര്യങ്ങൾ പരീക്ഷിക്കുക</span>
+      </a>
+      <a class="rr-btn" href="{{ url_for('dashboard') }}">
+        <span data-lang="en">← Back to dashboard</span><span data-lang="ml">← ഡാഷ്ബോർഡിലേക്ക്</span>
+      </a>
+      <button type="button" class="rr-btn" onclick="window.print()">
+        🖨️ <span data-lang="en">Print / Save PDF</span><span data-lang="ml">പ്രിന്റ് / PDF സേവ്</span>
+      </button>
+    </div>
+
+  </div>
+</div>
+
+{% endblock %}

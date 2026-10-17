@@ -1,0 +1,361 @@
+{% extends "base.html" %}
+{% block title %}Weather · AgriVision AI{% endblock %}
+{% block content %}
+
+<style>
+/* AgriVision AI · Weather
+   Classes are prefixed "wx-". Elements with data-lang get no display rule,
+   so the language toggle keeps working. */
+.wx-page {
+  width:100%; max-width:1180px; flex:1 1 100%; align-self:stretch; grid-column:1 / -1; min-width:0;
+  margin:0 auto; padding:28px 24px 48px;
+}
+.wx-shell { border:1px solid var(--border); border-radius:20px; overflow:hidden; background:#fff; box-shadow:0 24px 48px -28px rgba(18,53,36,.35); animation:wx-in .6s cubic-bezier(.16,1,.3,1) both; }
+@keyframes wx-in { from { opacity:0; transform:translateY(12px); } to { opacity:1; transform:none; } }
+@keyframes spin { from { transform:rotate(0); } to { transform:rotate(360deg); } }
+
+/* ---------- Hero ---------- */
+.wx-hero {
+  position:relative; isolation:isolate; color:var(--cream); padding:30px 36px;
+  display:flex; justify-content:space-between; align-items:center; gap:20px; flex-wrap:wrap;
+  background:
+    radial-gradient(circle at 10% 20%, rgba(111,207,122,.20), transparent 45%),
+    radial-gradient(circle at 92% 85%, rgba(227,168,63,.18), transparent 42%),
+    linear-gradient(135deg, var(--forest-950), var(--forest-900) 50%, var(--forest-800));
+}
+.wx-hero::before {
+  content:''; position:absolute; inset:0; z-index:-1;
+  background-image:linear-gradient(rgba(255,255,255,.04) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.04) 1px, transparent 1px);
+  background-size:34px 34px; mask-image:radial-gradient(circle at 75% 40%, #000, transparent 75%);
+}
+.wx-kicker { display:inline-flex; align-items:center; gap:9px; margin-bottom:10px; font-size:.82rem; font-weight:600; color:var(--wheat); }
+.wx-kicker::before { content:''; width:8px; height:8px; border-radius:50%; background:var(--wheat); box-shadow:0 0 0 4px var(--wheat-soft); animation:wx-pulse 2s ease-in-out infinite; }
+@keyframes wx-pulse { 50% { box-shadow:0 0 0 8px rgba(227,168,63,0); } }
+.wx-hero h1 { margin:0 0 8px; font-family:'Playfair Display',serif; font-weight:600; font-size:clamp(1.7rem,3vw,2.5rem); line-height:1.15; }
+.wx-hero p { margin:0; font-size:.95rem; line-height:1.7; color:rgba(250,248,242,.74); }
+
+.wx-btn {
+  display:inline-flex; align-items:center; justify-content:center; gap:8px; padding:11px 20px; border-radius:10px; cursor:pointer; text-decoration:none;
+  font-family:inherit; font-weight:600; font-size:.86rem; border:1px solid var(--green-mid); background:#fff; color:var(--green-mid);
+  transition:transform .2s, background .2s, box-shadow .2s;
+}
+.wx-btn:hover { transform:translateY(-2px); background:var(--green-pale); }
+.wx-btn:focus-visible { outline:3px solid var(--wheat); outline-offset:2px; }
+.wx-btn.ghost { color:var(--cream); background:rgba(255,255,255,.10); border-color:rgba(255,255,255,.28); }
+.wx-btn.ghost:hover { background:rgba(255,255,255,.18); }
+.wx-btn.solid { color:#fff; background:var(--green-mid); }
+.wx-btn.solid:hover { background:var(--green-deep); }
+.wx-btn.amber { color:#fff; background:#f08c00; border-color:#f08c00; box-shadow:0 4px 14px rgba(240,140,0,.3); }
+.wx-btn.amber:hover { background:#d97f00; }
+
+/* ---------- Status bar ---------- */
+.wx-status { display:none; padding:12px 36px; font-size:.88rem; font-weight:500; border-bottom:1px solid var(--border); border-left:5px solid; }
+.wx-status.ok    { background:var(--success-bg, #e8f5e9); color:#1b5e20; border-left-color:var(--green-mid); }
+.wx-status.warn  { background:#fff8e1; color:#8a6100; border-left-color:#f9a825; }
+.wx-status.error { background:#fdecea; color:#b71c1c; border-left-color:#ef5350; }
+
+/* ---------- Loading ---------- */
+.wx-loading { padding:48px 20px; text-align:center; background:var(--green-xpale); }
+.wx-loading .spin { display:inline-block; font-size:2.8rem; animation:spin 1.5s linear infinite; }
+.wx-loading b { display:block; margin-top:12px; font-size:.95rem; color:var(--green-deep); }
+.wx-loading small { display:block; margin-top:4px; font-size:.8rem; color:var(--gray); }
+
+/* ---------- Current weather ---------- */
+.wx-current { padding:26px 36px; display:grid; grid-template-columns:minmax(240px,1fr) minmax(0,2fr); gap:24px; align-items:center; border-left:5px solid var(--green-mid); }
+#locName { margin-bottom:8px; font-size:.76rem; font-weight:700; letter-spacing:.8px; text-transform:uppercase; color:var(--gray); }
+.wx-now { display:flex; align-items:center; gap:16px; }
+#curEmoji { font-size:3.6rem; line-height:1; }
+#curTemp { font-family:'Playfair Display',serif; font-size:2.9rem; font-weight:700; line-height:1; color:var(--green-deep); }
+#curLabel { margin-top:6px; font-size:.92rem; font-weight:600; color:#4b5b50; }
+
+.wx-tiles { display:grid; grid-template-columns:repeat(4, minmax(0,1fr)); gap:10px; }
+.wx-tile { padding:12px 14px; border-radius:14px; background:#fff; border:1px solid var(--border); }
+.wx-tile small { display:block; font-size:.72rem; font-weight:700; letter-spacing:.4px; text-transform:uppercase; color:var(--gray); }
+.wx-tile b { display:block; margin-top:4px; font-size:1.2rem; line-height:1.2; color:var(--green-deep); font-variant-numeric:tabular-nums; }
+#curToday { font-size:1rem; }
+
+/* ---------- CTA band ---------- */
+.wx-cta { padding:16px 36px; display:flex; justify-content:space-between; align-items:center; gap:14px; flex-wrap:wrap; background:#fff4e5; border-top:1px solid #ffd8a8; border-left:5px solid #f08c00; }
+.wx-cta b { display:block; font-size:.92rem; color:#b45309; }
+.wx-cta small { display:block; margin-top:3px; font-size:.8rem; color:#8a6100; }
+
+/* ---------- Forecast ---------- */
+.wx-forecast { padding:24px 36px 28px; border-top:1px solid var(--border); }
+.wx-forecast h2 { margin:0 0 14px; display:flex; align-items:center; gap:10px; font-family:'Playfair Display',serif; font-weight:600; font-size:1.1rem; color:var(--green-deep); }
+.wx-grid { display:grid; grid-template-columns:repeat(auto-fit, minmax(150px,1fr)); gap:12px; }
+.wx-day {
+  --c:var(--green-mid); padding:16px 12px; border-radius:16px; text-align:center; background:var(--green-xpale);
+  border:1px solid var(--green-pale); border-top:4px solid var(--c);
+  transition:transform .3s cubic-bezier(.16,1,.3,1), box-shadow .3s;
+}
+.wx-day:hover { transform:translateY(-4px); box-shadow:0 16px 28px -18px rgba(18,53,36,.5); }
+.wx-day .d { font-size:.72rem; font-weight:700; letter-spacing:.5px; text-transform:uppercase; color:var(--gray); }
+.wx-day .e { margin:8px 0; font-size:2.4rem; line-height:1; }
+.wx-day .l { min-height:32px; font-size:.82rem; font-weight:600; line-height:1.4; color:#34443a; }
+.wx-day .t { margin-top:8px; font-size:1rem; font-weight:800; color:var(--green-deep); }
+.wx-day .t span { font-weight:500; color:var(--gray); }
+.wx-day .m { margin-top:8px; display:flex; justify-content:center; gap:10px; font-size:.74rem; color:var(--gray); }
+
+/* ---------- Manual search ---------- */
+.wx-manual { display:none; padding:22px 36px; border-top:1px solid var(--border); background:var(--green-xpale); }
+.wx-manual h2 { margin:0 0 12px; font-family:'Playfair Display',serif; font-weight:600; font-size:1rem; color:var(--green-deep); }
+.wx-manual form { display:flex; gap:10px; flex-wrap:wrap; margin:0; }
+.wx-manual input {
+  flex:1; min-width:220px; padding:12px 16px; border:1.5px solid var(--border); border-radius:12px; background:#fff;
+  font-family:inherit; font-size:.92rem; color:var(--text); transition:border-color .2s, box-shadow .2s;
+}
+.wx-manual input:focus { outline:none; border-color:var(--green-mid); box-shadow:0 0 0 4px var(--green-pale); }
+.wx-manual .wx-btn { height:48px; padding:0 24px; }
+
+/* ---------- Footer ---------- */
+.wx-foot { padding:16px 36px; border-top:1px solid var(--border); background:var(--cream); }
+
+/* ---------- Responsive ---------- */
+@media (max-width:900px) {
+  .wx-current { grid-template-columns:1fr; }
+  .wx-tiles { grid-template-columns:repeat(2, minmax(0,1fr)); }
+}
+@media (max-width:600px) {
+  .wx-page { padding:16px 12px 36px; }
+  .wx-hero, .wx-status, .wx-current, .wx-cta, .wx-forecast, .wx-manual, .wx-foot { padding-left:20px; padding-right:20px; }
+  .wx-cta .wx-btn { width:100%; }
+}
+@media (prefers-reduced-motion:reduce) {
+  .wx-shell, .wx-loading .spin, .wx-kicker::before { animation:none; }
+}
+</style>
+
+<div class="wx-page">
+  <div class="wx-shell">
+
+    <!-- ============ Hero ============ -->
+    <header class="wx-hero">
+      <div>
+        <div class="wx-kicker">🌤️ <span data-lang="en">Weather</span><span data-lang="ml">കാലാവസ്ഥ</span></div>
+        <h1>
+          <span data-lang="en">Weather at Your Farm</span>
+          <span data-lang="ml">നിങ്ങളുടെ കൃഷിസ്ഥലത്തെ കാലാവസ്ഥ</span>
+        </h1>
+        <p>
+          <span data-lang="en">Auto-detected from your device's GPS.</span>
+          <span data-lang="ml">നിങ്ങളുടെ ഉപകരണത്തിന്റെ GPS-ൽ നിന്ന് സ്വയം കണ്ടെത്തി.</span>
+        </p>
+      </div>
+      <button type="button" class="wx-btn ghost" onclick="refreshLocation()">
+        📍 <span data-lang="en">Refresh Location</span><span data-lang="ml">വീണ്ടും കണ്ടെത്തുക</span>
+      </button>
+    </header>
+
+    <!-- Status bar -->
+    <div id="statusBar" class="wx-status" role="status"></div>
+
+    <!-- Loading -->
+    <div id="loading" class="wx-loading">
+      <span class="spin">🌤️</span>
+      <b><span data-lang="en">Detecting your location…</span><span data-lang="ml">നിങ്ങളുടെ സ്ഥലം കണ്ടെത്തുന്നു…</span></b>
+      <small><span data-lang="en">Your browser may ask for permission.</span><span data-lang="ml">നിങ്ങളുടെ ബ്രൗസർ അനുമതി ചോദിച്ചേക്കാം.</span></small>
+    </div>
+
+    <!-- Weather content (hidden until loaded) -->
+    <div id="weatherContent" style="display:none;">
+
+      <section id="currentCard" class="wx-current">
+        <div>
+          <div id="locName">📍 Loading…</div>
+          <div class="wx-now">
+            <div id="curEmoji">🌡️</div>
+            <div>
+              <div id="curTemp">—°C</div>
+              <div id="curLabel">Loading…</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="wx-tiles">
+          <div class="wx-tile">
+            <small>💧 <span data-lang="en">Humidity</span><span data-lang="ml">ഈർപ്പം</span></small>
+            <b id="curHumidity">—%</b>
+          </div>
+          <div class="wx-tile">
+            <small>🌧️ <span data-lang="en">Rainfall</span><span data-lang="ml">മഴ</span></small>
+            <b id="curRain">— mm</b>
+          </div>
+          <div class="wx-tile">
+            <small>💨 <span data-lang="en">Wind</span><span data-lang="ml">കാറ്റ്</span></small>
+            <b id="curWind">— km/h</b>
+          </div>
+          <div class="wx-tile">
+            <small>📅 <span data-lang="en">Today</span><span data-lang="ml">ഇന്ന്</span></small>
+            <b id="curToday">—</b>
+          </div>
+        </div>
+      </section>
+
+      <!-- Auto-fill CTA -->
+      <section id="autoFillCta" class="wx-cta">
+        <div>
+          <b>⚡ <span data-lang="en">Use this weather for disease risk?</span><span data-lang="ml">ഈ കാലാവസ്ഥ രോഗ സാധ്യതയ്ക്കായി ഉപയോഗിക്കാമോ?</span></b>
+          <small>
+            <span data-lang="en">Skip manual entry — auto-fill the risk prediction form.</span>
+            <span data-lang="ml">സ്വയം പൂരിപ്പിക്കുക — ഫോം പൂരിപ്പിക്കേണ്ടതില്ല.</span>
+          </small>
+        </div>
+        <a id="autoFillBtn" class="wx-btn amber" href="#">
+          🦠 <span data-lang="en">Check Disease Risk →</span><span data-lang="ml">രോഗ സാധ്യത പരിശോധിക്കുക →</span>
+        </a>
+      </section>
+
+      <!-- Forecast -->
+      <section class="wx-forecast">
+        <h2>📅 <span data-lang="en">5-Day Forecast</span><span data-lang="ml">5 ദിവസത്തെ പ്രവചനം</span></h2>
+        <div id="forecastGrid" class="wx-grid"></div>
+      </section>
+
+    </div>
+
+    <!-- Manual fallback (only shown if geolocation fails) -->
+    <section id="manualForm" class="wx-manual">
+      <h2>🔍 <span data-lang="en">Or search for a city manually</span><span data-lang="ml">അല്ലെങ്കിൽ നഗരം സ്വയം തിരയുക</span></h2>
+      <form method="GET" action="{{ url_for('weather_page') }}">
+        <input type="text" name="place" required placeholder="e.g., Kottayam, Kochi, Thrissur" aria-label="City">
+        <button type="submit" class="wx-btn solid">
+          🔍 <span data-lang="en">Search</span><span data-lang="ml">തിരയുക</span>
+        </button>
+      </form>
+    </section>
+
+    <!-- Footer -->
+    <div class="wx-foot">
+      <a class="wx-btn" href="{{ url_for('dashboard') }}">
+        ← <span data-lang="en">Back to Dashboard</span><span data-lang="ml">ഡാഷ്ബോർഡിലേക്ക്</span>
+      </a>
+    </div>
+
+  </div>
+</div>
+
+<script>
+function showStatus(msg, type) {
+  const bar = document.getElementById('statusBar');
+  bar.style.display = 'block';
+  bar.textContent = msg;
+  bar.className = 'wx-status ' + (type === 'error' ? 'error' : type === 'warn' ? 'warn' : 'ok');
+}
+
+function hideLoading() {
+  document.getElementById('loading').style.display = 'none';
+}
+
+function showManualForm() {
+  document.getElementById('manualForm').style.display = 'block';
+}
+
+function fetchWeatherFor(lat, lon) {
+  fetch(`/weather/my-location?lat=${lat}&lon=${lon}`)
+    .then(r => r.json())
+    .then(data => {
+      if (data.error) {
+        showStatus('❌ ' + data.error, 'error');
+        hideLoading();
+        showManualForm();
+        return;
+      }
+      renderWeather(data);
+    })
+    .catch(err => {
+      console.error(err);
+      showStatus('❌ Network error. Please try again.', 'error');
+      hideLoading();
+      showManualForm();
+    });
+}
+
+function renderWeather(w) {
+  hideLoading();
+  document.getElementById('weatherContent').style.display = 'block';
+  showStatus('✅ ' + (w.location_name || 'Location detected'), 'ok');
+
+  // Current
+  document.getElementById('locName').textContent = '📍 ' + (w.location_name || '');
+  document.getElementById('curEmoji').textContent = w.current.emoji;
+  document.getElementById('curTemp').innerHTML =
+    `${w.current.temperature}<span style="font-size:1.4rem;">°C</span>`;
+  document.getElementById('curLabel').textContent = w.current.label;
+  document.getElementById('curHumidity').textContent = w.current.humidity + '%';
+  document.getElementById('curRain').textContent = w.current.precipitation + ' mm';
+  document.getElementById('curWind').textContent = w.current.wind_speed + ' km/h';
+  if (w.forecast && w.forecast.length) {
+    document.getElementById('curToday').textContent =
+      `${w.forecast[0].temp_min}° – ${w.forecast[0].temp_max}°`;
+  }
+
+  // Current card accent colour from the weather condition
+  const card = document.getElementById('currentCard');
+  const accent = w.current.color || '#2f7d4f';
+  card.style.borderLeftColor = accent;
+  card.style.background = `linear-gradient(135deg, ${accent}22, #ffffff 60%)`;
+
+  // Auto-fill CTA link
+  const btn = document.getElementById('autoFillBtn');
+  const params = new URLSearchParams({
+    temp: w.current.temperature,
+    humidity: w.current.humidity,
+    rain: w.current.precipitation,
+    location: w.location_name || ''
+  });
+  btn.href = '/disease-risk?' + params.toString();
+
+  // Forecast grid
+  const grid = document.getElementById('forecastGrid');
+  grid.innerHTML = '';
+  (w.forecast || []).forEach(day => {
+    const div = document.createElement('div');
+    div.className = 'wx-day';
+    div.style.setProperty('--c', day.color || '#2f7d4f');
+    div.innerHTML = `
+      <div class="d">${day.date}</div>
+      <div class="e">${day.emoji}</div>
+      <div class="l">${day.label}</div>
+      <div class="t">${day.temp_max}° <span>/ ${day.temp_min}°</span></div>
+      <div class="m"><span>🌧️ ${day.precipitation}mm</span><span>💧 ${day.humidity}%</span></div>`;
+    grid.appendChild(div);
+  });
+}
+
+function refreshLocation() {
+  document.getElementById('weatherContent').style.display = 'none';
+  document.getElementById('loading').style.display = 'block';
+  document.getElementById('manualForm').style.display = 'none';
+  document.getElementById('statusBar').style.display = 'none';
+  detectLocation();
+}
+
+function detectLocation() {
+  if (!navigator.geolocation) {
+    showStatus('⚠️ Your browser does not support geolocation.', 'warn');
+    hideLoading();
+    showManualForm();
+    return;
+  }
+
+  navigator.geolocation.getCurrentPosition(
+    pos => {
+      fetchWeatherFor(pos.coords.latitude, pos.coords.longitude);
+    },
+    err => {
+      console.warn('Geolocation error:', err);
+      let msg = '⚠️ Could not detect your location.';
+      if (err.code === 1) msg = '⚠️ Location permission denied.';
+      else if (err.code === 2) msg = '⚠️ Location unavailable.';
+      else if (err.code === 3) msg = '⚠️ Location request timed out.';
+      showStatus(msg + ' Please search manually below.', 'warn');
+      hideLoading();
+      showManualForm();
+    },
+    { enableHighAccuracy: false, timeout: 10000, maximumAge: 60000 }
+  );
+}
+
+document.addEventListener('DOMContentLoaded', detectLocation);
+</script>
+{% endblock %}

@@ -1,0 +1,108 @@
+{% extends "base.html" %}
+{% block title %}{{ store.name }} · Agri Store{% endblock %}
+{% block content %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/agrivision.css') }}">
+
+<div class="ag ag-detail">
+
+  <div class="ag-hero">
+    <span class="ag-tag">
+      <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s7-6.2 7-11.5A7 7 0 005 9.5C5 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></svg>
+      {{ store.store_type }} · {{ store.district }}
+    </span>
+    <h1>{{ store.name }}</h1>
+
+    <div class="ag-meta">
+      <span class="ag-chip star">
+        <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1L3.2 9.5l6.1-.9L12 3z"/></svg>
+        {{ store.rating }}
+      </span>
+      {% if store.is_verified %}
+      <span class="ag-chip ok">
+        <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>
+        <span data-lang="en">Verified</span><span data-lang="ml">സ്ഥിരീകരിച്ചു</span>
+      </span>
+      {% endif %}
+    </div>
+
+    <div class="ag-actions">
+      {% if store.phone %}
+      <a href="tel:{{ store.phone }}" class="ag-btn ag-btn-primary">
+        <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4h4l2 5-2.5 1.5a11 11 0 005 5L15 13l5 2v4a2 2 0 01-2 2A16 16 0 013 6a2 2 0 012-2z"/></svg>
+        <span data-lang="en">Call Now</span><span data-lang="ml">വിളിക്കുക</span>
+      </a>
+      {% endif %}
+      {% if store.maps_url %}
+      <a href="{{ store.maps_url }}" target="_blank" rel="noopener" class="ag-btn ag-btn-light">
+        <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 4L3 6v14l6-2 6 2 6-2V4l-6 2-6-2zM9 4v14M15 6v14"/></svg>
+        <span data-lang="en">Open in Maps</span><span data-lang="ml">മാപ്പിൽ തുറക്കുക</span>
+      </a>
+      {% endif %}
+      <a href="{{ url_for('stores_page') }}" class="ag-btn ag-btn-glass">
+        <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M19 12H5M11 6l-6 6 6 6"/></svg>
+        <span data-lang="en">All Stores</span><span data-lang="ml">എല്ലാ കടകളും</span>
+      </a>
+    </div>
+  </div>
+
+  <div class="ag-body {% if not store.products %}single{% endif %}">
+
+    <div class="ag-card">
+      <h2>
+        <span class="ic"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 8v4l3 2"/></svg></span>
+        <span data-lang="en">Store details</span><span data-lang="ml">കടയുടെ വിവരങ്ങൾ</span>
+      </h2>
+      <div class="ag-rows">
+        <div class="ag-row">
+          <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s7-6.2 7-11.5A7 7 0 005 9.5C5 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></svg>
+          <div>
+            <div class="ag-label"><span data-lang="en">Address</span><span data-lang="ml">വിലാസം</span></div>
+            <div class="ag-value">{{ store.address or '—' }}{% if store.district %}<br><b>{{ store.district }}</b>{% endif %}</div>
+          </div>
+        </div>
+
+        {% if store.phone %}
+        <div class="ag-row">
+          <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4h4l2 5-2.5 1.5a11 11 0 005 5L15 13l5 2v4a2 2 0 01-2 2A16 16 0 013 6a2 2 0 012-2z"/></svg>
+          <div>
+            <div class="ag-label"><span data-lang="en">Phone</span><span data-lang="ml">ഫോൺ</span></div>
+            <div class="ag-value"><a href="tel:{{ store.phone }}">{{ store.phone }}</a></div>
+          </div>
+        </div>
+        {% endif %}
+
+        {% if store.hours %}
+        <div class="ag-row">
+          <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+          <div>
+            <div class="ag-label"><span data-lang="en">Hours</span><span data-lang="ml">സമയം</span></div>
+            <div class="ag-value">{{ store.hours }}</div>
+          </div>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+
+    {% if store.products %}
+    <div class="ag-card">
+      <h2>
+        <span class="ic"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 4h2l2.4 11h11L20 7H6M9 20a1 1 0 100-2 1 1 0 000 2zM17 20a1 1 0 100-2 1 1 0 000 2z"/></svg></span>
+        <span data-lang="en">Available products</span><span data-lang="ml">ലഭ്യമായ ഉൽപ്പന്നങ്ങൾ</span>
+      </h2>
+      <div class="ag-products">
+        {% for p in store.products.split(',') %}{% if p.strip() %}
+        <span class="ag-product">{{ p.strip() }}</span>
+        {% endif %}{% endfor %}
+      </div>
+    </div>
+    {% endif %}
+  </div>
+
+  <div class="ag-back">
+    <a href="{{ url_for('stores_page') }}" class="ag-btn ag-btn-ghost">
+      <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M19 12H5M11 6l-6 6 6 6"/></svg>
+      <span data-lang="en">Back to all stores</span><span data-lang="ml">എല്ലാ കടകളിലേക്കും</span>
+    </a>
+  </div>
+</div>
+{% endblock %}

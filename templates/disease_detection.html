@@ -1,0 +1,309 @@
+{% extends "base.html" %}
+{% block title %}Detect Disease · AgriVision AI{% endblock %}
+{% block content %}
+
+<style>
+/* =========================================================
+   AgriVision AI · Leaf detection (upload)
+   Classes are prefixed "dt-" so they never clash with other pages.
+   ========================================================= */
+:root {
+  --forest-950:#0a1d13; --forest-900:#0f2c1c; --forest-800:#163c26;
+  --green-deep:#123524; --green-mid:#2f7d4f; --green-light:#6fcf7a;
+  --green-pale:#eaf4ec; --green-xpale:#f6faf5; --border:#d7e9da;
+  --cream:#faf8f2; --wheat:#e3a83f; --wheat-soft:rgba(227,168,63,.16);
+  --scan-line:#9be79f; --gray:#6c7d70; --text:#16241b;
+  --error:#e53935; --error-bg:#fdecea; --success:#2e7d32; --success-bg:#e8f5e9;
+}
+
+.dt-page {
+  width:100%; max-width:1200px; flex:1 1 100%; align-self:stretch; grid-column:1 / -1; min-width:0;
+  margin:0 auto; padding:28px 32px 48px;
+  display:flex; flex-direction:column; gap:22px;
+}
+
+/* one orchestrated entrance */
+.dt-rise { opacity:0; transform:translateY(16px); animation:dt-rise .7s cubic-bezier(.16,1,.3,1) forwards; animation-delay:calc(var(--i,0) * 100ms); }
+@keyframes dt-rise { to { opacity:1; transform:none; } }
+
+/* ---------- Banner ---------- */
+.dt-banner {
+  position:relative; overflow:hidden; isolation:isolate;
+  border-radius:22px; padding:34px 40px; color:var(--cream);
+  display:grid; grid-template-columns:1fr auto; gap:28px; align-items:center;
+  background:
+    radial-gradient(circle at 10% 20%, rgba(111,207,122,.20), transparent 45%),
+    radial-gradient(circle at 90% 85%, rgba(227,168,63,.16), transparent 42%),
+    linear-gradient(135deg, var(--forest-950), var(--forest-900) 50%, var(--forest-800));
+  box-shadow:0 24px 50px -22px rgba(10,29,19,.55);
+}
+.dt-banner::before {
+  content:''; position:absolute; inset:0; z-index:-1;
+  background-image:linear-gradient(rgba(255,255,255,.04) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.04) 1px, transparent 1px);
+  background-size:34px 34px; mask-image:radial-gradient(circle at 75% 50%, #000, transparent 75%);
+}
+.dt-banner h1 { margin:0 0 10px; font-family:'Playfair Display',serif; font-weight:600; font-size:clamp(1.6rem,2.6vw,2.3rem); line-height:1.2; }
+.dt-banner p { margin:0; max-width:560px; font-size:.95rem; line-height:1.7; color:rgba(250,248,242,.74); }
+
+.dt-scan { position:relative; width:130px; height:130px; display:flex; align-items:center; justify-content:center; }
+.dt-ring { position:absolute; border-radius:50%; border:1px solid rgba(155,231,159,.32); animation:dt-ring 3.6s ease-out infinite; }
+.dt-ring.r1 { width:70px; height:70px; } .dt-ring.r2 { width:100px; height:100px; animation-delay:1.2s; } .dt-ring.r3 { width:130px; height:130px; animation-delay:2.4s; }
+@keyframes dt-ring { 0% { transform:scale(.7); opacity:0; } 25% { opacity:.9; } 100% { transform:scale(1); opacity:0; } }
+.dt-leaf { position:relative; z-index:2; width:62px; height:62px; filter:drop-shadow(0 8px 16px rgba(0,0,0,.4)); animation:dt-float 5s ease-in-out infinite; }
+@keyframes dt-float { 0%,100% { transform:translateY(0); } 50% { transform:translateY(-5px); } }
+.dt-leaf svg { width:100%; height:100%; overflow:visible; }
+.dt-sweep { position:absolute; left:8%; right:8%; height:2px; z-index:3; background:linear-gradient(90deg, transparent, var(--scan-line), transparent); box-shadow:0 0 12px 1px var(--scan-line); animation:dt-sweep 3.2s ease-in-out infinite; }
+@keyframes dt-sweep { 0% { top:24%; opacity:0; } 10% { opacity:1; } 50% { top:76%; opacity:1; } 60%,100% { top:76%; opacity:0; } }
+
+/* ---------- Layout ---------- */
+.dt-grid { display:grid; grid-template-columns:1.25fr 1fr; gap:20px; align-items:stretch; }
+
+.dt-card { background:#fff; border:1px solid var(--border); border-radius:20px; padding:28px; display:flex; flex-direction:column; }
+.dt-card h2 { margin:0 0 6px; font-family:'Playfair Display',serif; font-size:1.2rem; font-weight:600; color:var(--green-deep); }
+.dt-card .dt-sub { margin:0 0 20px; font-size:.88rem; color:var(--gray); line-height:1.6; }
+
+/* flash */
+.dt-flash { padding:12px 16px; margin-bottom:16px; border-radius:12px; font-size:.88rem; font-weight:500; background:var(--success-bg); color:var(--success); border:1px solid var(--border); border-left:4px solid var(--green-light); }
+.dt-flash.error { background:var(--error-bg); color:var(--error); border-color:#f5c6c3; border-left-color:var(--error); }
+
+/* ---------- Drop zone ---------- */
+.dt-form { display:flex; flex-direction:column; gap:18px; flex:1; }
+.dt-zone {
+  position:relative; flex:1; min-height:300px; overflow:hidden;
+  border:2px dashed #9cc9a8; border-radius:16px; background:var(--green-xpale);
+  display:flex; align-items:center; justify-content:center; text-align:center;
+  transition:border-color .25s, background .25s, transform .25s;
+}
+.dt-zone:hover { border-color:var(--green-mid); background:#fff; }
+.dt-zone.is-drag { border-color:var(--green-mid); background:var(--green-pale); transform:scale(1.01); }
+.dt-zone.has-file { border-style:solid; border-color:var(--green-mid); background:var(--forest-950); }
+.dt-zone input[type=file] { position:absolute; inset:0; width:100%; height:100%; opacity:0; cursor:pointer; z-index:5; }
+.dt-zone:focus-within { outline:3px solid var(--green-light); outline-offset:3px; }
+
+.dt-empty { padding:24px; display:flex; flex-direction:column; align-items:center; gap:12px; pointer-events:none; }
+.dt-empty-icon { width:76px; height:76px; border-radius:22px; display:grid; place-items:center; font-size:34px; background:#fff; border:1px solid var(--border); box-shadow:0 12px 24px -14px rgba(18,53,36,.4); animation:dt-float 4s ease-in-out infinite; }
+.dt-empty strong { color:var(--green-deep); font-size:1rem; }
+.dt-empty span.dt-hint { font-size:.82rem; color:var(--gray); }
+.dt-pick { margin-top:4px; padding:9px 18px; border-radius:10px; font-size:.84rem; font-weight:600; color:var(--green-mid); background:#fff; border:1px solid var(--border); }
+.dt-zone.has-file .dt-empty { display:none; }
+
+.dt-preview { display:none; position:absolute; inset:0; }
+.dt-zone.has-file .dt-preview { display:block; }
+.dt-preview img { width:100%; height:100%; object-fit:contain; display:block; }
+.dt-frame { position:absolute; inset:14px; pointer-events:none; }
+.dt-frame i { position:absolute; width:22px; height:22px; border:3px solid var(--scan-line); }
+.dt-frame i:nth-child(1) { top:0; left:0; border-right:0; border-bottom:0; border-radius:8px 0 0 0; }
+.dt-frame i:nth-child(2) { top:0; right:0; border-left:0; border-bottom:0; border-radius:0 8px 0 0; }
+.dt-frame i:nth-child(3) { bottom:0; left:0; border-right:0; border-top:0; border-radius:0 0 0 8px; }
+.dt-frame i:nth-child(4) { bottom:0; right:0; border-left:0; border-top:0; border-radius:0 0 8px 0; }
+.dt-preview-sweep { position:absolute; left:14px; right:14px; height:3px; top:14px; opacity:0; background:linear-gradient(90deg, transparent, var(--scan-line), transparent); box-shadow:0 0 18px 3px var(--scan-line); }
+.dt-zone.is-analyzing .dt-preview-sweep { opacity:1; animation:dt-scan-down 1.8s ease-in-out infinite alternate; }
+.dt-zone.is-analyzing { pointer-events:none; }
+@keyframes dt-scan-down { from { top:14px; } to { top:calc(100% - 17px); } }
+.dt-fileinfo { position:absolute; left:14px; right:14px; bottom:14px; z-index:4; display:flex; align-items:center; justify-content:space-between; gap:10px; padding:10px 14px; border-radius:12px; background:rgba(10,29,19,.82); backdrop-filter:blur(6px); color:var(--cream); font-size:.8rem; pointer-events:none; }
+.dt-fileinfo b { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-weight:600; }
+.dt-fileinfo em { font-style:normal; color:var(--scan-line); white-space:nowrap; }
+
+/* ---------- Button ---------- */
+.dt-btn {
+  position:relative; overflow:hidden; height:54px; border:none; border-radius:12px; cursor:pointer;
+  font-family:inherit; font-weight:600; font-size:.98rem; color:#fff; background:var(--green-mid);
+  box-shadow:0 8px 20px -8px rgba(47,125,79,.6); transition:background .25s, transform .2s, box-shadow .25s, opacity .25s;
+}
+.dt-btn:hover:not(:disabled) { background:var(--green-deep); transform:translateY(-2px); }
+.dt-btn:focus-visible { outline:3px solid var(--wheat); outline-offset:3px; }
+.dt-btn:disabled { cursor:not-allowed; opacity:.55; box-shadow:none; }
+.dt-btn .dt-busy { display:none; align-items:center; justify-content:center; gap:10px; }
+.dt-btn.is-busy { opacity:1; cursor:progress; background:var(--forest-900); }
+.dt-btn.is-busy .dt-idle { display:none; }
+.dt-btn.is-busy .dt-busy { display:flex; }
+.dt-spinner { width:18px; height:18px; border-radius:50%; border:2.5px solid rgba(255,255,255,.25); border-top-color:var(--scan-line); animation:dt-spin .8s linear infinite; }
+@keyframes dt-spin { to { transform:rotate(360deg); } }
+.dt-idle { display:inline-flex; align-items:center; justify-content:center; gap:8px; }
+
+/* ---------- Tips panel ---------- */
+.dt-side { display:flex; flex-direction:column; gap:20px; }
+.dt-tips { background:linear-gradient(155deg, var(--forest-900), var(--forest-800)); border-color:transparent; color:var(--cream); position:relative; overflow:hidden; }
+.dt-tips::after { content:''; position:absolute; right:-50px; top:-50px; width:160px; height:160px; border-radius:50%; background:var(--wheat-soft); animation:dt-float 6s ease-in-out infinite; }
+.dt-tips h2 { color:var(--cream); position:relative; z-index:1; }
+.dt-tip-list { list-style:none; margin:14px 0 0; padding:0; display:flex; flex-direction:column; gap:12px; position:relative; z-index:1; }
+.dt-tip-list li { display:grid; grid-template-columns:42px 1fr; gap:14px; align-items:center; padding:12px 14px; border-radius:14px; background:rgba(255,255,255,.07); border:1px solid rgba(255,255,255,.12); transition:transform .25s, background .25s; }
+.dt-tip-list li:hover { transform:translateX(5px); background:rgba(255,255,255,.12); }
+.dt-tip-ico { width:42px; height:42px; border-radius:12px; display:grid; place-items:center; font-size:20px; background:var(--wheat-soft); }
+.dt-tip-list b { display:block; font-size:.9rem; margin-bottom:2px; }
+.dt-tip-list small { font-size:.78rem; color:rgba(250,248,242,.68); line-height:1.5; }
+
+.dt-get { flex:1; }
+.dt-get ul { list-style:none; margin:4px 0 0; padding:0; display:grid; gap:10px; }
+.dt-get li { display:flex; align-items:center; gap:12px; padding:11px 14px; border-radius:12px; background:var(--green-xpale); border:1px solid var(--green-pale); font-size:.88rem; font-weight:600; color:var(--green-deep); transition:transform .25s, border-color .25s; }
+.dt-get li:hover { transform:translateX(5px); border-color:var(--green-light); }
+.dt-get li span.dt-check { width:24px; height:24px; border-radius:50%; flex-shrink:0; display:grid; place-items:center; font-size:12px; color:#fff; background:var(--green-mid); }
+
+/* ---------- Responsive ---------- */
+@media (max-width:980px) { .dt-grid { grid-template-columns:1fr; } }
+@media (max-width:640px) {
+  .dt-page { padding:18px 16px 36px; }
+  .dt-banner { grid-template-columns:1fr; padding:26px 22px; } .dt-scan { display:none; }
+  .dt-card { padding:22px 18px; } .dt-zone { min-height:240px; }
+}
+@media (prefers-reduced-motion:reduce) {
+  .dt-rise { opacity:1; transform:none; animation:none; }
+}
+</style>
+
+<div class="dt-page">
+
+  <!-- ============ Banner ============ -->
+  <section class="dt-banner dt-rise" style="--i:0">
+    <div>
+      <h1>
+        <span data-lang="en">Leaf disease detection</span>
+        <span data-lang="ml">ഇല രോഗ കണ്ടെത്തൽ</span>
+      </h1>
+      <p>
+        <span data-lang="en">Upload a clear photo of a single leaf. Best results in daylight with a plain background.</span>
+        <span data-lang="ml">ഒരു ഇലയുടെ വ്യക്തമായ ഫോട്ടോ അപ്‌ലോഡ് ചെയ്യുക. പകൽ വെളിച്ചത്തിൽ വെളുത്ത പശ്ചാത്തലത്തിൽ എടുത്തത് മികച്ച ഫലം നൽകും.</span>
+      </p>
+    </div>
+    <div class="dt-scan" aria-hidden="true">
+      <div class="dt-ring r1"></div><div class="dt-ring r2"></div><div class="dt-ring r3"></div>
+      <div class="dt-leaf">
+        <svg viewBox="0 0 100 100">
+          <path d="M50 8 C82 24 90 58 50 92 C10 58 18 24 50 8 Z" fill="#163c26" stroke="#6fcf7a" stroke-width="1.6"/>
+          <path d="M50 14 L50 88 M50 38 L68 28 M50 56 L72 44 M50 38 L32 28 M50 56 L28 44" stroke="rgba(155,231,159,.55)" stroke-width="1.2" fill="none"/>
+          <circle cx="62" cy="62" r="3.4" fill="#e3a83f"/>
+        </svg>
+      </div>
+      <div class="dt-sweep"></div>
+    </div>
+  </section>
+
+  <!-- ============ Upload + tips ============ -->
+  <section class="dt-grid dt-rise" style="--i:1">
+
+    <div class="dt-card">
+      <h2><span data-lang="en">Upload your leaf photo</span><span data-lang="ml">ഇലയുടെ ഫോട്ടോ അപ്‌ലോഡ് ചെയ്യുക</span></h2>
+      <p class="dt-sub">
+        <span data-lang="en">Drag a photo into the box or tap it to choose one from your device.</span>
+        <span data-lang="ml">ഫോട്ടോ ബോക്സിലേക്ക് വലിച്ചിടുക അല്ലെങ്കിൽ ഉപകരണത്തിൽ നിന്ന് തിരഞ്ഞെടുക്കാൻ ടാപ്പ് ചെയ്യുക.</span>
+      </p>
+
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% for category, msg in messages %}
+          <div class="dt-flash {{ 'error' if category=='error' else '' }}">{{ '⚠️' if category=='error' else '✅' }} {{ msg }}</div>
+        {% endfor %}
+      {% endwith %}
+
+      <form method="POST" enctype="multipart/form-data" class="dt-form" id="dtForm">
+        <div class="dt-zone" id="dtZone">
+          <input type="file" name="leaf_image" id="dtFile" accept="image/*" required
+                 aria-label="Choose a leaf photo">
+
+          <div class="dt-empty">
+            <div class="dt-empty-icon">🍃</div>
+            <strong><span data-lang="en">Drop your leaf photo here</span><span data-lang="ml">ഇലയുടെ ഫോട്ടോ ഇവിടെ ഇടുക</span></strong>
+            <span class="dt-hint"><span data-lang="en">JPG, PNG or WEBP</span><span data-lang="ml">JPG, PNG അല്ലെങ്കിൽ WEBP</span></span>
+            <span class="dt-pick"><span data-lang="en">Choose photo</span><span data-lang="ml">ഫോട്ടോ തിരഞ്ഞെടുക്കുക</span></span>
+          </div>
+
+          <div class="dt-preview" aria-hidden="true">
+            <img id="dtImg" alt="">
+            <div class="dt-frame"><i></i><i></i><i></i><i></i></div>
+            <div class="dt-preview-sweep"></div>
+            <div class="dt-fileinfo"><b id="dtName"></b><em id="dtSize"></em></div>
+          </div>
+        </div>
+
+        <button type="submit" class="dt-btn" id="dtBtn" disabled>
+          <span class="dt-idle">🔬 <span data-lang="en">Analyze leaf</span><span data-lang="ml">ഇല പരിശോധിക്കുക</span></span>
+          <span class="dt-busy"><span class="dt-spinner"></span><span data-lang="en">Analyzing your leaf…</span><span data-lang="ml">ഇല പരിശോധിക്കുന്നു…</span></span>
+        </button>
+      </form>
+    </div>
+
+    <div class="dt-side">
+      <div class="dt-card dt-tips">
+        <h2><span data-lang="en">For the best result</span><span data-lang="ml">മികച്ച ഫലത്തിന്</span></h2>
+        <ul class="dt-tip-list">
+          <li><span class="dt-tip-ico">☀️</span><div>
+            <b><span data-lang="en">Use daylight</span><span data-lang="ml">പകൽ വെളിച്ചം ഉപയോഗിക്കുക</span></b>
+            <small><span data-lang="en">Natural light shows true leaf colour.</span><span data-lang="ml">സ്വാഭാവിക വെളിച്ചം ഇലയുടെ ശരിയായ നിറം കാണിക്കും.</span></small></div></li>
+          <li><span class="dt-tip-ico">📄</span><div>
+            <b><span data-lang="en">Plain background</span><span data-lang="ml">വെളുത്ത പശ്ചാത്തലം</span></b>
+            <small><span data-lang="en">Place the leaf on white paper or a flat surface.</span><span data-lang="ml">ഇല വെളുത്ത കടലാസിലോ നിരപ്പായ പ്രതലത്തിലോ വയ്ക്കുക.</span></small></div></li>
+          <li><span class="dt-tip-ico">🍃</span><div>
+            <b><span data-lang="en">One leaf, in focus</span><span data-lang="ml">ഒരു ഇല, വ്യക്തമായി</span></b>
+            <small><span data-lang="en">Fill the frame and show the spots or damage.</span><span data-lang="ml">ഫ്രെയിം നിറയെ എടുക്കുക, പാടുകൾ വ്യക്തമാകണം.</span></small></div></li>
+        </ul>
+      </div>
+
+      <div class="dt-card dt-get">
+        <h2><span data-lang="en">What you'll get</span><span data-lang="ml">നിങ്ങൾക്ക് ലഭിക്കുന്നത്</span></h2>
+        <ul>
+          <li><span class="dt-check">✓</span><span data-lang="en">Condition and confidence score</span><span data-lang="ml">അവസ്ഥയും വിശ്വാസ്യതാ സ്കോറും</span></li>
+          <li><span class="dt-check">✓</span><span data-lang="en">Immediate actions and home remedies</span><span data-lang="ml">ഉടനടി നടപടികളും വീട്ടുപരിഹാരങ്ങളും</span></li>
+          <li><span class="dt-check">✓</span><span data-lang="en">Prevention tips for future seasons</span><span data-lang="ml">ഭാവി സീസണുകൾക്കുള്ള പ്രതിരോധ മാർഗ്ഗങ്ങൾ</span></li>
+        </ul>
+      </div>
+    </div>
+
+  </section>
+</div>
+
+<script>
+(function () {
+  var zone = document.getElementById('dtZone');
+  var input = document.getElementById('dtFile');
+  var img = document.getElementById('dtImg');
+  var nameEl = document.getElementById('dtName');
+  var sizeEl = document.getElementById('dtSize');
+  var btn = document.getElementById('dtBtn');
+  var form = document.getElementById('dtForm');
+  var objectUrl = null;
+
+  ['dragenter', 'dragover'].forEach(function (e) {
+    zone.addEventListener(e, function () { zone.classList.add('is-drag'); });
+  });
+  ['dragleave', 'drop'].forEach(function (e) {
+    zone.addEventListener(e, function () { zone.classList.remove('is-drag'); });
+  });
+
+  function fmt(bytes) {
+    return bytes > 1048576 ? (bytes / 1048576).toFixed(1) + ' MB' : Math.max(1, Math.round(bytes / 1024)) + ' KB';
+  }
+
+  input.addEventListener('change', function () {
+    var f = input.files && input.files[0];
+    if (objectUrl) { URL.revokeObjectURL(objectUrl); objectUrl = null; }
+    if (!f || f.type.indexOf('image/') !== 0) {
+      input.value = '';
+      zone.classList.remove('has-file');
+      btn.disabled = true;
+      return;
+    }
+    objectUrl = URL.createObjectURL(f);
+    img.src = objectUrl;
+    nameEl.textContent = f.name;
+    sizeEl.textContent = fmt(f.size);
+    zone.classList.add('has-file');
+    btn.disabled = false;
+  });
+
+  form.addEventListener('submit', function () {
+    zone.classList.add('is-analyzing');
+    btn.classList.add('is-busy');
+    setTimeout(function () { btn.disabled = true; }, 0);
+  });
+
+  /* if the user comes back with the browser's back button */
+  window.addEventListener('pageshow', function (e) {
+    if (e.persisted) {
+      zone.classList.remove('is-analyzing');
+      btn.classList.remove('is-busy');
+      btn.disabled = !(input.files && input.files.length);
+    }
+  });
+})();
+</script>
+
+{% endblock %}

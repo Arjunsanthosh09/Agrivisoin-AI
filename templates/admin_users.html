@@ -1,0 +1,284 @@
+{% extends "base.html" %}
+{% block title %}Users · Admin{% endblock %}
+{% block content %}
+
+<style>
+/* =========================================================
+   AgriVision AI · Admin Users
+   Theme variables from your main stylesheet. Prefix: "au-"
+   ========================================================= */
+.au-page {
+  width: 100%; max-width: none;
+  flex: 1 1 100%; align-self: stretch; grid-column: 1 / -1; min-width: 0;
+  margin: 0; padding: 12px 14px 14px;
+  display: flex; flex-direction: column; gap: 10px;
+}
+
+/* ---------- Header + nav ---------- */
+.au-head {
+  position: relative; overflow: hidden; isolation: isolate;
+  display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap;
+  padding: 14px 20px; border-radius: 14px; color: var(--cream);
+  background:
+    radial-gradient(circle at 10% 20%, rgba(111,207,122,.20), transparent 45%),
+    radial-gradient(circle at 92% 90%, rgba(227,168,63,.16), transparent 40%),
+    linear-gradient(135deg, var(--forest-950) 0%, var(--forest-900) 50%, var(--forest-800) 100%);
+  box-shadow: 0 14px 30px -18px rgba(10,29,19,.6);
+}
+.au-head::before {
+  content: ''; position: absolute; inset: 0; z-index: -1;
+  background-image:
+    linear-gradient(rgba(255,255,255,.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,.04) 1px, transparent 1px);
+  background-size: 30px 30px;
+  mask-image: radial-gradient(circle at 70% 50%, #000, transparent 75%);
+}
+.au-head h1 { margin: 0; font-family: 'Playfair Display', serif; font-weight: 600; font-size: 1.35rem; line-height: 1.2; }
+.au-head p { margin: 3px 0 0; font-size: .78rem; color: rgba(250,248,242,.68); }
+.au-nav { display: flex; gap: 6px; flex-wrap: wrap; }
+.au-nav a {
+  display: inline-flex; align-items: center; gap: 6px; padding: 7px 14px; border-radius: 9px;
+  font-size: .78rem; font-weight: 600; text-decoration: none; color: var(--cream);
+  background: rgba(255,255,255,.09); border: 1px solid rgba(255,255,255,.18);
+  transition: background .2s, transform .2s;
+}
+.au-nav a:hover { background: rgba(255,255,255,.18); transform: translateY(-1px); }
+.au-nav a.active { background: var(--wheat); color: var(--forest-950); border-color: var(--wheat); }
+.au-nav a:focus-visible { outline: 3px solid var(--wheat); outline-offset: 2px; }
+
+/* ---------- Flash ---------- */
+.au-flash-wrap { display: flex; flex-direction: column; gap: 6px; }
+.au-flash {
+  display: flex; align-items: center; gap: 10px; padding: 9px 14px; border-radius: 10px;
+  font-size: .84rem; font-weight: 500;
+  background: var(--success-bg); color: var(--success);
+  border: 1px solid var(--border); border-left: 4px solid var(--green-light);
+}
+.au-flash.error { background: var(--error-bg); color: var(--error); border-color: #f5c6c3; border-left-color: var(--error); }
+
+/* ---------- Stats ---------- */
+.au-stats { display: grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap: 10px; }
+.au-stat {
+  --accent: var(--green-mid);
+  position: relative; overflow: hidden;
+  display: flex; align-items: center; justify-content: space-between; gap: 10px;
+  padding: 12px 16px; background: var(--white); border: 1px solid var(--border); border-radius: 14px;
+}
+.au-stat::after {
+  content: ''; position: absolute; left: 0; bottom: 0; width: 100%; height: 3px; background: var(--accent);
+  transform: scaleX(0); transform-origin: left; animation: au-bar 1s cubic-bezier(.16,1,.3,1) .3s forwards;
+}
+@keyframes au-bar { to { transform: scaleX(1); } }
+.au-stat-label { font-size: .72rem; font-weight: 600; color: var(--gray); }
+.au-stat-value { margin-top: 2px; font-size: 1.7rem; font-weight: 700; line-height: 1.05; color: var(--accent); font-variant-numeric: tabular-nums; letter-spacing: -.5px; }
+.au-stat-icon {
+  width: 38px; height: 38px; border-radius: 11px; display: grid; place-items: center; font-size: 18px; flex-shrink: 0;
+  background: color-mix(in srgb, var(--accent) 13%, white);
+}
+.au-stat.s1 { --accent: #2f7d4f; }
+.au-stat.s2 { --accent: #7a5ea8; }
+.au-stat.s3 { --accent: #c98a1a; }
+.au-stat.s4 { --accent: #3b82a0; }
+
+/* ---------- Table card ---------- */
+.au-card {
+  display: flex; flex-direction: column; flex: 1; min-width: 0;
+  background: var(--white); border: 1px solid var(--border); border-radius: 14px; overflow: hidden;
+}
+.au-toolbar { display: flex; align-items: center; gap: 8px; padding: 10px 12px; border-bottom: 1px solid var(--green-pale); background: var(--green-xpale); }
+.au-toolbar form { flex: 1; display: flex; flex-direction: row; gap: 6px; }
+.au-in {
+  flex: 1; width: 100%; padding: 8px 12px; border: 1.5px solid var(--border); border-radius: 9px;
+  font-family: inherit; font-size: .84rem; color: var(--text); background: #fff;
+  transition: border-color .2s, box-shadow .2s;
+}
+.au-in:focus { outline: none; border-color: var(--green-mid); box-shadow: 0 0 0 3px var(--green-pale); }
+.au-btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  padding: 8px 18px; border: none; border-radius: 9px; cursor: pointer;
+  font-family: inherit; font-weight: 700; font-size: .8rem; color: #fff; background: var(--green-mid);
+  transition: background .2s, transform .2s;
+}
+.au-btn:hover { background: var(--green-deep); transform: translateY(-1px); }
+.au-btn:focus-visible { outline: 3px solid var(--wheat); outline-offset: 2px; }
+.au-clear {
+  display: inline-flex; align-items: center; padding: 8px 14px; border-radius: 9px;
+  border: 1px solid var(--border); background: #fff; color: var(--gray);
+  font-size: .8rem; font-weight: 600; text-decoration: none;
+}
+.au-clear:hover { color: var(--error); border-color: #f5c6c3; }
+.au-count { font-size: .74rem; font-weight: 700; color: var(--green-mid); padding: 5px 11px; border-radius: 99px; background: var(--green-pale); white-space: nowrap; }
+
+.au-scroll { overflow: auto; max-height: calc(100vh - 250px); min-height: 320px; }
+.au-table { width: 100%; border-collapse: collapse; font-size: .84rem; }
+.au-table thead th {
+  position: sticky; top: 0; z-index: 2; padding: 9px 14px; text-align: left; white-space: nowrap;
+  font-size: .72rem; font-weight: 700; color: var(--green-deep);
+  background: var(--green-pale); border-bottom: 1px solid var(--border);
+}
+.au-table td { padding: 8px 14px; border-bottom: 1px solid var(--green-pale); vertical-align: middle; }
+.au-table tbody tr { transition: background .15s; }
+.au-table tbody tr:hover { background: var(--green-xpale); }
+.au-c { text-align: center !important; }
+
+.au-user { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.au-avatar {
+  width: 34px; height: 34px; border-radius: 50%; flex-shrink: 0; display: grid; place-items: center;
+  font-size: .9rem; font-weight: 700; color: #fff;
+  background: linear-gradient(135deg, var(--green-mid), var(--green-light));
+}
+.au-name { font-weight: 600; color: var(--green-deep); line-height: 1.2; }
+.au-mail { font-size: .72rem; color: var(--gray); line-height: 1.25; word-break: break-all; }
+.au-muted { color: var(--gray); font-size: .8rem; white-space: nowrap; }
+
+.au-role { display: inline-block; padding: 2px 10px; border-radius: 99px; font-size: .68rem; font-weight: 700; }
+.au-role.admin { background: #f3e5f5; color: #6a1b9a; }
+.au-role.farmer { background: #e1f3e4; color: #1f6b3a; }
+
+.au-act-chips { display: inline-flex; gap: 5px; }
+.au-chip { display: inline-block; padding: 2px 9px; border-radius: 99px; font-size: .72rem; font-weight: 700; font-variant-numeric: tabular-nums; }
+.au-chip.det { background: var(--green-pale); color: var(--green-mid); }
+.au-chip.rec { background: var(--wheat-soft); color: #8a5a00; }
+
+.au-actions { display: inline-flex; gap: 5px; align-items: center; }
+.au-ibtn {
+  display: inline-block; padding: 5px 12px; border: none; border-radius: 7px; cursor: pointer;
+  font-family: inherit; font-size: .74rem; font-weight: 700; text-decoration: none;
+  transition: transform .15s, background .15s;
+}
+.au-ibtn:hover { transform: translateY(-1px); }
+.au-ibtn.view { background: var(--green-pale); color: var(--green-mid); }
+.au-ibtn.view:hover { background: var(--green-mid); color: #fff; }
+.au-ibtn.del { background: #fdecea; color: #b71c1c; }
+.au-ibtn.del:hover { background: #f9d3cf; }
+
+.au-empty { text-align: center; padding: 50px 10px !important; color: var(--gray); font-weight: 600; }
+.au-empty span { display: block; font-size: 34px; margin-bottom: 6px; }
+
+@media (max-width: 1180px) { .au-stats { grid-template-columns: repeat(2, minmax(0,1fr)); } .au-scroll { max-height: none; } }
+@media (max-width: 700px) { .au-page { padding: 8px; } .au-head { padding: 12px 14px; } .au-toolbar { flex-wrap: wrap; } }
+@media (prefers-reduced-motion: reduce) { .au-stat::after { transform: none; animation: none; } }
+</style>
+
+<div class="au-page">
+
+  <!-- ================= HEADER + NAV ================= -->
+  <!-- ================= HEADER + ADMIN NAV ================= -->
+  <header class="am-head">
+    <div>
+      <h1>🛒 Market prices manager</h1>
+      <p>Upload Agmarknet CSVs, edit prices and manage the market data farmers see.</p>
+    </div>
+    <nav class="am-nav" aria-label="Admin sections">
+      <a href="{{ url_for('admin_dashboard') }}">📊 Dashboard</a>
+      <a href="{{ url_for('admin_users') }}">👥 Users</a>
+      <a href="{{ url_for('admin_detections') }}">🔬 Detections</a>
+      <a href="{{ url_for('admin_messages') }}">✉️ Messages</a>
+      <a href="{{ url_for('admin_market') }}" class="active" aria-current="page">🛒 Market</a>
+    </nav>
+  </header>
+
+  <!-- ================= FLASH ================= -->
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      <div class="au-flash-wrap">
+        {% for cat, msg in messages %}
+          <div class="au-flash {{ 'error' if cat=='error' else '' }}">
+            <span>{{ '⚠️' if cat=='error' else '✅' }}</span><span>{{ msg }}</span>
+          </div>
+        {% endfor %}
+      </div>
+    {% endif %}
+  {% endwith %}
+
+  <!-- ================= STATS (based on rows shown) ================= -->
+  <section class="au-stats">
+    <div class="au-stat s1">
+      <div><div class="au-stat-label">Users shown</div><div class="au-stat-value">{{ users|length }}</div></div>
+      <span class="au-stat-icon">👥</span>
+    </div>
+    <div class="au-stat s2">
+      <div><div class="au-stat-label">Admins</div><div class="au-stat-value">{{ users|selectattr('role', 'equalto', 'admin')|list|length }}</div></div>
+      <span class="au-stat-icon">🛡️</span>
+    </div>
+    <div class="au-stat s3">
+      <div><div class="au-stat-label">Detections</div><div class="au-stat-value">{{ users|sum(attribute='detection_count') or 0 }}</div></div>
+      <span class="au-stat-icon">🔬</span>
+    </div>
+    <div class="au-stat s4">
+      <div><div class="au-stat-label">Recommendations</div><div class="au-stat-value">{{ users|sum(attribute='rec_count') or 0 }}</div></div>
+      <span class="au-stat-icon">🌾</span>
+    </div>
+  </section>
+
+  <!-- ================= TABLE ================= -->
+  <section class="au-card">
+    <div class="au-toolbar">
+      <form method="GET">
+        <input class="au-in" type="text" name="q" value="{{ search }}" placeholder="Search username, email, location…">
+        <button type="submit" class="au-btn">🔍 Search</button>
+        {% if search %}<a class="au-clear" href="{{ url_for('admin_users') }}">✕ Clear</a>{% endif %}
+      </form>
+      <span class="au-count">{{ users|length }} users</span>
+    </div>
+
+    <div class="au-scroll">
+      <table class="au-table">
+        <thead>
+          <tr>
+            <th>User</th>
+            <th>Location</th>
+            <th class="au-c">Role</th>
+            <th class="au-c">Activity</th>
+            <th>Joined</th>
+            <th class="au-c">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for u in users %}
+          <tr>
+            <td>
+              <div class="au-user">
+                <div class="au-avatar">{{ u.username[0]|upper }}</div>
+                <div>
+                  <div class="au-name">{{ u.username }}</div>
+                  <div class="au-mail">{{ u.email }}</div>
+                </div>
+              </div>
+            </td>
+            <td>{{ u.location or '—' }}</td>
+            <td class="au-c">
+              {% if u.role == 'admin' %}<span class="au-role admin">ADMIN</span>
+              {% else %}<span class="au-role farmer">FARMER</span>{% endif %}
+            </td>
+            <td class="au-c">
+              <span class="au-act-chips">
+                <span class="au-chip det" title="Detections">🔬 {{ u.detection_count }}</span>
+                <span class="au-chip rec" title="Recommendations">🌾 {{ u.rec_count }}</span>
+              </span>
+            </td>
+            <td class="au-muted">{{ u.created_at.strftime('%d %b %Y') if u.created_at else '—' }}</td>
+            <td class="au-c" style="white-space:nowrap;">
+              <span class="au-actions">
+                <a class="au-ibtn view" href="{{ url_for('admin_user_detail', user_id=u.id) }}">View</a>
+                {% if u.id != session.user_id %}
+                <form method="POST" action="{{ url_for('admin_user_delete', user_id=u.id) }}"
+                      style="display:inline;"
+                      onsubmit="return confirm('Delete {{ u.username }} permanently?');">
+                  <button type="submit" class="au-ibtn del">Delete</button>
+                </form>
+                {% endif %}
+              </span>
+            </td>
+          </tr>
+          {% endfor %}
+          {% if not users %}
+            <tr><td colspan="6" class="au-empty"><span>👥</span>No users found.</td></tr>
+          {% endif %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+</div>
+{% endblock %}

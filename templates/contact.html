@@ -1,0 +1,188 @@
+{% extends "base.html" %}
+{% block title %}Contact · AgriVision AI{% endblock %}
+{% block content %}
+
+<div style="width:100%;max-width:1100px;margin:26px auto;padding:0 24px;box-sizing:border-box;">
+
+  <!-- HERO -->
+  <div style="background:linear-gradient(135deg,#1b5e20 0%,#2e7d32 50%,#43a047 100%);
+              padding:32px 38px;border-radius:18px;color:#fff;position:relative;
+              overflow:hidden;box-shadow:0 8px 24px rgba(46,125,50,0.22);">
+
+    <div style="position:absolute;top:-60px;right:-60px;width:200px;height:200px;
+                background:rgba(255,255,255,0.07);border-radius:50%;"></div>
+
+    <div style="position:relative;z-index:1;">
+      <div style="display:inline-block;padding:5px 14px;background:rgba(255,255,255,0.2);
+                  border-radius:20px;font-size:12px;font-weight:600;
+                  letter-spacing:1px;margin-bottom:14px;">
+        ✉️ <span data-lang="en">CONTACT</span><span data-lang="ml">ബന്ധപ്പെടുക</span>
+      </div>
+      <h1 style="margin:0;font-size:30px;">
+        <span data-lang="en">Get in Touch</span>
+        <span data-lang="ml">ഞങ്ങളെ ബന്ധപ്പെടുക</span>
+      </h1>
+      <p style="margin:10px 0 0;opacity:0.95;font-size:15px;line-height:1.6;max-width:520px;">
+        <span data-lang="en">Questions, feedback, or bug reports — we read every message.</span>
+        <span data-lang="ml">ചോദ്യങ്ങളോ നിർദ്ദേശങ്ങളോ — എല്ലാ സന്ദേശവും ഞങ്ങൾ വായിക്കും.</span>
+      </p>
+    </div>
+  </div>
+
+  <!-- CONTACT INFO CARDS -->
+  <div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));
+              gap:16px;margin-top:22px;">
+
+    <div style="background:#fff;padding:22px;border-radius:14px;
+                box-shadow:0 2px 12px rgba(0,0,0,0.06);text-align:center;
+                border-top:4px solid #2e7d32;">
+      <div style="font-size:32px;margin-bottom:8px;">📧</div>
+      <div style="font-weight:700;color:#1b5e20;font-size:14px;margin-bottom:4px;">
+        <span data-lang="en">Email</span><span data-lang="ml">ഇമെയിൽ</span>
+      </div>
+      <div style="color:#666;font-size:13px;">
+        support@agrivision.ai
+      </div>
+    </div>
+
+    <div style="background:#fff;padding:22px;border-radius:14px;
+                box-shadow:0 2px 12px rgba(0,0,0,0.06);text-align:center;
+                border-top:4px solid #43a047;">
+      <div style="font-size:32px;margin-bottom:8px;">📞</div>
+      <div style="font-weight:700;color:#1b5e20;font-size:14px;margin-bottom:4px;">
+        <span data-lang="en">Phone</span><span data-lang="ml">ഫോൺ</span>
+      </div>
+      <div style="color:#666;font-size:13px;">
+        +91 12345 67890
+      </div>
+    </div>
+
+    <div style="background:#fff;padding:22px;border-radius:14px;
+                box-shadow:0 2px 12px rgba(0,0,0,0.06);text-align:center;
+                border-top:4px solid #1976d2;">
+      <div style="font-size:32px;margin-bottom:8px;">📍</div>
+      <div style="font-weight:700;color:#1b5e20;font-size:14px;margin-bottom:4px;">
+        <span data-lang="en">Location</span><span data-lang="ml">സ്ഥലം</span>
+      </div>
+      <div style="color:#666;font-size:13px;">
+        Kochi, Kerala, India
+      </div>
+    </div>
+
+  </div>
+
+  <!-- MESSAGE FORM -->
+  <div style="background:#fff;padding:32px;border-radius:16px;
+              box-shadow:0 2px 12px rgba(0,0,0,0.06);margin-top:22px;">
+
+    <h2 style="color:#1b5e20;margin:0 0 6px;font-size:20px;
+               display:flex;align-items:center;gap:10px;">
+      ✍️ <span data-lang="en">Send a Message</span>
+      <span data-lang="ml">സന്ദേശം അയയ്ക്കുക</span>
+    </h2>
+    <p style="color:#888;font-size:13px;margin:0 0 20px;">
+      <span data-lang="en">Fields marked * are required.</span>
+      <span data-lang="ml">* രേഖപ്പെടുത്തിയവ നിർബന്ധമാണ്.</span>
+    </p>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        {% for category, msg in messages %}
+          <div style="padding:13px 16px;margin-bottom:14px;border-radius:10px;
+               display:flex;align-items:center;gap:10px;font-size:14px;
+               background:{{ '#fdecea' if category=='error' else '#e8f5e9' }};
+               color:{{ '#b71c1c' if category=='error' else '#1b5e20' }};
+               border-left:4px solid {{ '#ef5350' if category=='error' else '#66bb6a' }};">
+            <span style="font-size:18px;">{{ '⚠️' if category=='error' else '✅' }}</span>
+            <span>{{ msg }}</span>
+          </div>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
+
+    <form method="POST">
+
+      <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;">
+
+        <div>
+          <label style="display:block;font-size:12px;color:#666;
+                        font-weight:700;margin-bottom:6px;">
+            <span data-lang="en">Your Name *</span>
+            <span data-lang="ml">നിങ്ങളുടെ പേര് *</span>
+          </label>
+          <input type="text" name="name" required
+                 value="{{ user.username if user else '' }}"
+                 placeholder="e.g., Arjun"
+                 style="width:100%;padding:12px 14px;border:1px solid #ddd;
+                        border-radius:10px;font-size:14px;box-sizing:border-box;
+                        outline:none;background:#fafafa;">
+        </div>
+
+        <div>
+          <label style="display:block;font-size:12px;color:#666;
+                        font-weight:700;margin-bottom:6px;">
+            <span data-lang="en">Email *</span>
+            <span data-lang="ml">ഇമെയിൽ *</span>
+          </label>
+          <input type="email" name="email" required
+                 value="{{ user.email if user else '' }}"
+                 placeholder="you@example.com"
+                 style="width:100%;padding:12px 14px;border:1px solid #ddd;
+                        border-radius:10px;font-size:14px;box-sizing:border-box;
+                        outline:none;background:#fafafa;">
+        </div>
+
+      </div>
+
+      <div style="margin-top:16px;">
+        <label style="display:block;font-size:12px;color:#666;
+                      font-weight:700;margin-bottom:6px;">
+          <span data-lang="en">Subject</span>
+          <span data-lang="ml">വിഷയം</span>
+        </label>
+        <input type="text" name="subject"
+               placeholder="e.g., Feedback on crop recommendations"
+               style="width:100%;padding:12px 14px;border:1px solid #ddd;
+                      border-radius:10px;font-size:14px;box-sizing:border-box;
+                      outline:none;background:#fafafa;">
+      </div>
+
+      <div style="margin-top:16px;">
+        <label style="display:block;font-size:12px;color:#666;
+                      font-weight:700;margin-bottom:6px;">
+          <span data-lang="en">Message *</span>
+          <span data-lang="ml">സന്ദേശം *</span>
+        </label>
+        <textarea name="message" rows="6" required
+                  placeholder="Tell us what's on your mind (at least 10 characters)..."
+                  style="width:100%;padding:14px;border:1px solid #ddd;
+                         border-radius:10px;font-size:14px;box-sizing:border-box;
+                         outline:none;background:#fafafa;font-family:inherit;
+                         line-height:1.6;resize:vertical;"></textarea>
+      </div>
+
+      <button type="submit"
+              style="width:100%;padding:14px;background:#2e7d32;color:#fff;
+                     border:none;border-radius:10px;font-size:15px;font-weight:700;
+                     cursor:pointer;margin-top:20px;
+                     display:flex;align-items:center;justify-content:center;gap:8px;">
+        ✉️ <span data-lang="en">Send Message</span>
+        <span data-lang="ml">സന്ദേശം അയയ്ക്കുക</span>
+      </button>
+
+    </form>
+  </div>
+
+  <!-- BACK BUTTON -->
+  <div style="margin-top:20px;">
+    <a href="{{ url_for('dashboard') if session.get('user_id') else url_for('index') }}"
+       style="padding:11px 20px;background:#fff;color:#2e7d32;
+              border:2px solid #a5d6a7;text-decoration:none;
+              border-radius:10px;font-weight:600;font-size:13px;
+              display:inline-flex;align-items:center;gap:8px;">
+      ← <span data-lang="en">Back</span><span data-lang="ml">തിരികെ</span>
+    </a>
+  </div>
+
+</div>
+{% endblock %}

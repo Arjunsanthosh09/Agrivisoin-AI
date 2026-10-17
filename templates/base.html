@@ -6,12 +6,34 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;800&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  <script>
+    // Sync server-side language preference with localStorage on first load
+    (function () {
+      const serverLang = "{{ session.get('preferred_language', 'en') }}";
+      if (!localStorage.getItem('agrivision_lang') && serverLang) {
+        localStorage.setItem('agrivision_lang', serverLang);
+      }
+    })();
+  </script>
 </head>
 <body>
 
 <nav>
   <a href="{{ url_for('index') }}" class="logo">🌿 Agri<span>Vision</span> AI</a>
   <div class="nav-right">
+
+    <!-- Language Toggle -->
+    <!-- Language Toggle -->
+<div style="display:inline-flex;border:2px solid #1b5e20;border-radius:20px;
+            overflow:hidden;margin-right:12px;vertical-align:middle;">
+  <button type="button" class="lang-btn" data-lang="en"
+          style="padding:6px 16px;border:none;background:#1b5e20;
+                 color:#fff;font-weight:700;cursor:pointer;font-size:13px;">EN</button>
+  <button type="button" class="lang-btn" data-lang="ml"
+          style="padding:6px 16px;border:none;background:transparent;
+                 color:#1b5e20;font-weight:700;cursor:pointer;font-size:13px;">ML</button>
+</div>
+
     <a href="{{ url_for('index') }}">Home</a>
     {% if session.get('user_id') %}
       <a href="{{ url_for('dashboard') }}">Dashboard</a>
@@ -26,6 +48,9 @@
 <div class="auth-wrapper">
   {% block content %}{% endblock %}
 </div>
+
+<!-- Multilingual support script -->
+<script src="{{ url_for('static', filename='js/multilingual.js') }}"></script>
 
 </body>
 </html>

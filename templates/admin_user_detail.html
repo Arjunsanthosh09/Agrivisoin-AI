@@ -1,0 +1,212 @@
+{% extends "base.html" %}
+{% block title %}{{ u.username }} · Admin{% endblock %}
+{% block content %}
+
+<style>
+/* =========================================================
+   AgriVision AI · Admin User Detail
+   Theme variables from your main stylesheet. Prefix: "ud-"
+   Layout: [ profile card | stats + details ]
+   ========================================================= */
+.ud-page {
+  width: 100%; max-width: none;
+  flex: 1 1 100%; align-self: stretch; grid-column: 1 / -1; min-width: 0;
+  margin: 0; padding: 12px 14px 14px;
+  display: flex; flex-direction: column; gap: 10px;
+}
+
+/* ---------- Header ---------- */
+.ud-head {
+  position: relative; overflow: hidden; isolation: isolate;
+  display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap;
+  padding: 14px 20px; border-radius: 14px; color: var(--cream);
+  background:
+    radial-gradient(circle at 10% 20%, rgba(111,207,122,.20), transparent 45%),
+    radial-gradient(circle at 92% 90%, rgba(227,168,63,.16), transparent 40%),
+    linear-gradient(135deg, var(--forest-950) 0%, var(--forest-900) 50%, var(--forest-800) 100%);
+  box-shadow: 0 14px 30px -18px rgba(10,29,19,.6);
+}
+.ud-head::before {
+  content: ''; position: absolute; inset: 0; z-index: -1;
+  background-image:
+    linear-gradient(rgba(255,255,255,.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,.04) 1px, transparent 1px);
+  background-size: 30px 30px;
+  mask-image: radial-gradient(circle at 70% 50%, #000, transparent 75%);
+}
+.ud-head h1 { margin: 0; font-family: 'Playfair Display', serif; font-weight: 600; font-size: 1.35rem; line-height: 1.2; }
+.ud-head p { margin: 3px 0 0; font-size: .78rem; color: rgba(250,248,242,.68); }
+.ud-nav { display: flex; gap: 6px; flex-wrap: wrap; }
+.ud-nav a {
+  display: inline-flex; align-items: center; gap: 6px; padding: 7px 14px; border-radius: 9px;
+  font-size: .78rem; font-weight: 600; text-decoration: none; color: var(--cream);
+  background: rgba(255,255,255,.09); border: 1px solid rgba(255,255,255,.18);
+  transition: background .2s, transform .2s;
+}
+.ud-nav a:hover { background: rgba(255,255,255,.18); transform: translateY(-1px); }
+.ud-nav a.active { background: var(--wheat); color: var(--forest-950); border-color: var(--wheat); }
+.ud-nav a:focus-visible { outline: 3px solid var(--wheat); outline-offset: 2px; }
+
+/* ---------- Main grid ---------- */
+.ud-main { display: grid; grid-template-columns: 320px minmax(0, 1fr); gap: 10px; align-items: stretch; flex: 1; }
+.ud-right { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+
+.ud-card {
+  background: var(--white); border: 1px solid var(--border); border-radius: 14px; padding: 16px 18px;
+}
+.ud-card h3 {
+  margin: 0 0 12px; display: flex; align-items: center; gap: 8px;
+  font-family: 'Playfair Display', serif; font-size: 1rem; font-weight: 600; color: var(--green-deep);
+}
+.ud-card h3::after { content: ''; flex: 1; height: 1px; background: linear-gradient(90deg, var(--border), transparent); }
+
+/* ---------- Profile card ---------- */
+.ud-profile { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 4px; padding: 26px 18px 18px; }
+.ud-avatar {
+  position: relative; width: 88px; height: 88px; border-radius: 50%; display: grid; place-items: center;
+  font-size: 2.2rem; font-weight: 700; color: #fff; margin-bottom: 8px;
+  background: linear-gradient(135deg, var(--green-mid), var(--green-light));
+  box-shadow: 0 14px 26px -14px rgba(18,53,36,.6);
+}
+.ud-avatar::after {
+  content: ''; position: absolute; inset: -6px; border-radius: 50%;
+  border: 2px solid var(--green-light); opacity: 0; animation: ud-ring 3s ease-out infinite;
+}
+@keyframes ud-ring { 0% { transform: scale(.85); opacity: 0; } 25% { opacity: .8; } 100% { transform: scale(1.1); opacity: 0; } }
+.ud-name { font-family: 'Playfair Display', serif; font-size: 1.35rem; font-weight: 600; color: var(--green-deep); word-break: break-word; }
+.ud-mail { font-size: .82rem; color: var(--gray); word-break: break-all; }
+.ud-role { display: inline-block; margin-top: 8px; padding: 3px 12px; border-radius: 99px; font-size: .7rem; font-weight: 700; letter-spacing: .6px; }
+.ud-role.admin { background: #f3e5f5; color: #6a1b9a; }
+.ud-role.farmer { background: #e1f3e4; color: #1f6b3a; }
+
+.ud-side-actions { width: 100%; margin-top: 16px; padding-top: 14px; border-top: 1px solid var(--green-pale); display: flex; flex-direction: column; gap: 8px; }
+.ud-btn {
+  display: flex; align-items: center; justify-content: center; gap: 6px; width: 100%;
+  padding: 10px 14px; border-radius: 10px; cursor: pointer;
+  font-family: inherit; font-weight: 700; font-size: .82rem; text-decoration: none;
+  transition: transform .2s, background .2s, box-shadow .2s;
+}
+.ud-btn:hover { transform: translateY(-1px); }
+.ud-btn:focus-visible { outline: 3px solid var(--wheat); outline-offset: 2px; }
+.ud-btn.back { background: var(--green-pale); color: var(--green-mid); border: 1px solid var(--border); }
+.ud-btn.back:hover { background: var(--green-mid); color: #fff; }
+.ud-btn.danger { background: #fdecea; color: #b71c1c; border: 1px solid #ef9a9a; }
+.ud-btn.danger:hover { background: #b71c1c; color: #fff; }
+.ud-side-actions form { display: block; width: 100%; }
+
+/* ---------- Stat cards ---------- */
+.ud-stats { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 10px; }
+.ud-stat {
+  --accent: var(--green-mid);
+  position: relative; overflow: hidden;
+  display: flex; align-items: center; justify-content: space-between; gap: 10px;
+  padding: 16px 20px; background: var(--white); border: 1px solid var(--border); border-radius: 14px;
+  transition: transform .3s cubic-bezier(.16,1,.3,1), box-shadow .3s;
+}
+.ud-stat:hover { transform: translateY(-3px); box-shadow: 0 16px 28px -20px rgba(18,53,36,.4); }
+.ud-stat::after {
+  content: ''; position: absolute; left: 0; bottom: 0; width: 100%; height: 3px; background: var(--accent);
+  transform: scaleX(0); transform-origin: left; animation: ud-bar 1s cubic-bezier(.16,1,.3,1) .3s forwards;
+}
+@keyframes ud-bar { to { transform: scaleX(1); } }
+.ud-stat-label { font-size: .75rem; font-weight: 600; color: var(--gray); }
+.ud-stat-value { margin-top: 3px; font-size: 2.2rem; font-weight: 700; line-height: 1; color: var(--accent); font-variant-numeric: tabular-nums; letter-spacing: -1px; }
+.ud-stat-icon {
+  width: 46px; height: 46px; border-radius: 13px; display: grid; place-items: center; font-size: 22px; flex-shrink: 0;
+  background: color-mix(in srgb, var(--accent) 13%, white);
+}
+.ud-stat.s1 { --accent: #2f7d4f; }
+.ud-stat.s2 { --accent: #c98a1a; }
+.ud-stat.s3 { --accent: #3b82a0; }
+
+/* ---------- Details grid ---------- */
+.ud-details { flex: 1; }
+.ud-facts { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 8px; }
+.ud-fact { padding: 12px 14px; border-radius: 12px; background: var(--green-xpale); border: 1px solid var(--green-pale); transition: background .2s, transform .2s; }
+.ud-fact:hover { background: var(--green-pale); transform: translateY(-2px); }
+.ud-fact small { display: block; font-size: .72rem; font-weight: 600; color: var(--gray); }
+.ud-fact b { display: block; margin-top: 4px; font-size: .92rem; color: var(--green-deep); word-break: break-word; }
+
+/* ---------- Responsive ---------- */
+@media (max-width: 980px) { .ud-main { grid-template-columns: 1fr; } }
+@media (max-width: 600px) {
+  .ud-page { padding: 8px; }
+  .ud-head { padding: 12px 14px; }
+  .ud-stats { grid-template-columns: 1fr; }
+}
+@media (prefers-reduced-motion: reduce) { .ud-stat::after { transform: none; animation: none; } .ud-avatar::after { animation: none; } }
+</style>
+
+<div class="ud-page">
+
+  <!-- ================= HEADER + NAV ================= -->
+  <header class="ud-head">
+    <div>
+      <h1>👤 User details</h1>
+      <p>Account overview and activity for {{ u.username }}.</p>
+    </div>
+    <nav class="ud-nav" aria-label="Admin sections">
+      <a href="{{ url_for('admin_dashboard') }}">📊 Dashboard</a>
+      <a href="{{ url_for('admin_users') }}" class="active" aria-current="page">👥 Users</a>
+      <a href="{{ url_for('admin_detections') }}">🔬 Detections</a>
+      <a href="{{ url_for('admin_messages') }}">✉️ Messages</a>
+      <a href="{{ url_for('admin_market') }}">🛒 Market</a>
+    </nav>
+  </header>
+
+  <!-- ================= MAIN ================= -->
+  <section class="ud-main">
+
+    <!-- Profile -->
+    <div class="ud-card ud-profile">
+      <div class="ud-avatar">{{ u.username[0]|upper }}</div>
+      <div class="ud-name">{{ u.username }}</div>
+      <div class="ud-mail">{{ u.email }}</div>
+      <span class="ud-role {{ 'admin' if u.role == 'admin' else 'farmer' }}">{{ u.role|upper }}</span>
+
+      <div class="ud-side-actions">
+        <a class="ud-btn back" href="{{ url_for('admin_users') }}">← Back to users</a>
+        {% if u.id != session.user_id %}
+        <form method="POST" action="{{ url_for('admin_user_delete', user_id=u.id) }}"
+              onsubmit="return confirm('Delete this user permanently? All their data will be lost.');">
+          <button type="submit" class="ud-btn danger">🗑️ Delete user</button>
+        </form>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Stats + details -->
+    <div class="ud-right">
+
+      <div class="ud-stats">
+        <div class="ud-stat s1">
+          <div><div class="ud-stat-label">Detections</div><div class="ud-stat-value">{{ u.detection_count }}</div></div>
+          <span class="ud-stat-icon">🔬</span>
+        </div>
+        <div class="ud-stat s2">
+          <div><div class="ud-stat-label">Recommendations</div><div class="ud-stat-value">{{ u.rec_count }}</div></div>
+          <span class="ud-stat-icon">🌾</span>
+        </div>
+        <div class="ud-stat s3">
+          <div><div class="ud-stat-label">Chats</div><div class="ud-stat-value">{{ u.chat_count }}</div></div>
+          <span class="ud-stat-icon">💬</span>
+        </div>
+      </div>
+
+      <div class="ud-card ud-details">
+        <h3>📋 Account details</h3>
+        <div class="ud-facts">
+          <div class="ud-fact"><small>🛡️ Role</small><b>{{ u.role|upper }}</b></div>
+          <div class="ud-fact"><small>📍 Location</small><b>{{ u.location or '—' }}</b></div>
+          <div class="ud-fact"><small>🌱 Experience</small><b>{{ u.farming_experience or 0 }} years</b></div>
+          <div class="ud-fact"><small>🗣️ Language</small><b>{{ 'മലയാളം' if u.preferred_language == 'ml' else 'English' }}</b></div>
+          <div class="ud-fact"><small>🗓️ Member since</small><b>{{ u.created_at.strftime('%d %b %Y, %H:%M') if u.created_at else '—' }}</b></div>
+          <div class="ud-fact"><small>🕒 Last login</small><b>{{ u.last_login.strftime('%d %b %Y, %H:%M') if u.last_login else 'Never' }}</b></div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+</div>
+{% endblock %}

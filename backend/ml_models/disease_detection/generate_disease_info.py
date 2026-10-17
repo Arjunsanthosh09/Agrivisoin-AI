@@ -1,0 +1,952 @@
+"""
+Generates a bilingual (English + Malayalam) disease_info.json for all PlantVillage classes.
+Run: python backend/ml_models/disease_detection/generate_disease_info.py
+"""
+import os
+import json
+
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
+CLASS_INDICES_PATH = os.path.join(BASE_DIR, 'backend', 'ml_models', 'disease_detection', 'class_indices.json')
+OUTPUT_PATH = os.path.join(BASE_DIR, 'backend', 'ml_models', 'disease_detection', 'disease_info.json')
+
+
+# ============================================================
+# Templates (bilingual)
+# ============================================================
+def healthy_template(crop):
+    return {
+        "display_name_en": f"{crop} – Healthy",
+        "display_name_ml": f"{crop} – ആരോഗ്യകരമായ",
+        "crop_en": crop, "crop_ml": crop,
+        "disease_en": "Healthy", "disease_ml": "ആരോഗ്യകരമായ",
+        "type_en": "None", "type_ml": "ഒന്നുമില്ല",
+        "severity_en": "None", "severity_ml": "ഒന്നുമില്ല",
+        "urgency_en": "No action needed", "urgency_ml": "നടപടി ആവശ്യമില്ല",
+        "symptoms_en": "No disease detected. Leaf shows normal color, texture, and structure.",
+        "symptoms_ml": "രോഗം കണ്ടെത്തിയിട്ടില്ല. ഇലയ്ക്ക് സാധാരണ നിറവും ഘടനയും ഉണ്ട്.",
+        "causes_en": "Good farming practices and favorable conditions.",
+        "causes_ml": "നല്ല കൃഷിരീതികളും അനുകൂല സാഹചര്യങ്ങളും.",
+        "favorable_conditions_en": "—", "favorable_conditions_ml": "—",
+        "immediate_actions_en": ["Continue current practices.", "Monitor plants weekly."],
+        "immediate_actions_ml": ["നിലവിലെ രീതികൾ തുടരുക.", "ആഴ്ചതോറും ചെടികൾ നിരീക്ഷിക്കുക."],
+        "natural_home_remedies": [],
+        "organic_products_en": ["Optional: Compost tea spray monthly"],
+        "organic_products_ml": ["ഓപ്ഷണൽ: മാസംതോറും കമ്പോസ്റ്റ് ടീ സ്പ്രേ"],
+        "chemical_treatments": {
+            "recommended_en": ["Not required"], "recommended_ml": ["ആവശ്യമില്ല"],
+            "dosage_en": "—", "dosage_ml": "—",
+            "frequency_en": "—", "frequency_ml": "—",
+            "precautions_en": "—", "precautions_ml": "—"
+        },
+        "preventive_measures_en": [
+            "Maintain proper spacing between plants.",
+            "Water at the base, avoid wetting leaves.",
+            "Rotate crops every season."
+        ],
+        "preventive_measures_ml": [
+            "ചെടികൾക്കിടയിൽ ശരിയായ അകലം പാലിക്കുക.",
+            "വേരിൽ നനയ്ക്കുക, ഇലകൾ നനയ്ക്കരുത്.",
+            "ഓരോ സീസണിലും വിളകൾ മാറ്റി കൃഷി ചെയ്യുക."
+        ],
+        "companion_plants_en": [], "companion_plants_ml": [],
+        "when_to_seek_help_en": "No issues detected.",
+        "when_to_seek_help_ml": "പ്രശ്നങ്ങളൊന്നും കണ്ടെത്തിയിട്ടില്ല."
+    }
+
+
+def generic_template(crop, disease):
+    d = disease.replace("_", " ")
+    return {
+        "display_name_en": f"{crop} – {d}",
+        "display_name_ml": f"{crop} – {d}",
+        "crop_en": crop, "crop_ml": crop,
+        "disease_en": d, "disease_ml": d,
+        "type_en": "Fungal", "type_ml": "ഫംഗസ്",
+        "severity_en": "Moderate", "severity_ml": "മിതമായ",
+        "urgency_en": "Act within 3-5 days",
+        "urgency_ml": "3-5 ദിവസത്തിനുള്ളിൽ നടപടി സ്വീകരിക്കുക",
+        "symptoms_en": f"Characteristic lesions, spots, or discoloration typical of {d}.",
+        "symptoms_ml": f"{d} ന്റെ സവിശേഷമായ പാടുകളും നിറവ്യത്യാസവും ഇലകളിൽ കാണുന്നു.",
+        "causes_en": f"Pathogen causing {d}; favored by humid/wet conditions.",
+        "causes_ml": f"{d} ഉണ്ടാക്കുന്ന രോഗാണു; ഈർപ്പമുള്ള കാലാവസ്ഥയിൽ വളരുന്നു.",
+        "favorable_conditions_en": "Warm, humid weather with poor air circulation.",
+        "favorable_conditions_ml": "ചൂടും ഈർപ്പവും കൂടിയ കാലാവസ്ഥ, വായുസഞ്ചാരം കുറവ്.",
+        "immediate_actions_en": [
+            "Remove and destroy visibly infected leaves (do not compost).",
+            "Improve air circulation by pruning densely packed areas.",
+            "Avoid overhead watering; water at base."
+        ],
+        "immediate_actions_ml": [
+            "രോഗബാധിതമായ ഇലകൾ നീക്കം ചെയ്ത് നശിപ്പിക്കുക (കമ്പോസ്റ്റ് ചെയ്യരുത്).",
+            "തിങ്ങിനിറഞ്ഞ ഭാഗങ്ങൾ വെട്ടിമാറ്റി വായുസഞ്ചാരം മെച്ചപ്പെടുത്തുക.",
+            "ഇലകളിൽ വെള്ളം ഒഴിക്കരുത്; വേരിൽ നനയ്ക്കുക."
+        ],
+        "natural_home_remedies": [
+            {
+                "name_en": "Neem Oil Spray", "name_ml": "വേപ്പെണ്ണ സ്പ്രേ",
+                "ingredients_en": "5 ml neem oil + 1 L water + few drops liquid soap",
+                "ingredients_ml": "5 മില്ലി വേപ്പെണ്ണ + 1 ലിറ്റർ വെള്ളം + കുറച്ച് സോപ്പ്",
+                "method_en": "Spray both sides of leaves every 7 days in the evening.",
+                "method_ml": "ആഴ്ചതോറും വൈകുന്നേരം ഇലകളുടെ ഇരുവശത്തും സ്പ്രേ ചെയ്യുക.",
+                "effectiveness_en": "High", "effectiveness_ml": "ഉയർന്നത്"
+            },
+            {
+                "name_en": "Baking Soda Spray", "name_ml": "ബേക്കിംഗ് സോഡ സ്പ്രേ",
+                "ingredients_en": "1 tsp baking soda + 1 L water + 3 drops dish soap",
+                "ingredients_ml": "1 ടീസ്പൂൺ ബേക്കിംഗ് സോഡ + 1 ലിറ്റർ വെള്ളം + 3 തുള്ളി സോപ്പ്",
+                "method_en": "Spray weekly.",
+                "method_ml": "ആഴ്ചതോറും സ്പ്രേ ചെയ്യുക.",
+                "effectiveness_en": "Medium", "effectiveness_ml": "ഇടത്തരം"
+            }
+        ],
+        "organic_products_en": [
+            "Copper oxychloride 50% WP (2.5 g/L)",
+            "Trichoderma viride soil drench"
+        ],
+        "organic_products_ml": [
+            "കോപ്പർ ഓക്സിക്ലോറൈഡ് 50% WP (2.5 ഗ്രാം/ലിറ്റർ)",
+            "ട്രൈക്കോഡെർമ വിരിഡെ മണ്ണിൽ ചേർക്കുക"
+        ],
+        "chemical_treatments": {
+            "recommended_en": ["Consult local extension for approved fungicide"],
+            "recommended_ml": ["അനുവദനീയമായ കുമിൾനാശിനിക്കായി പ്രാദേശിക കൃഷി ഓഫീസറെ സമീപിക്കുക"],
+            "dosage_en": "As per label", "dosage_ml": "ലേബൽ പ്രകാരം",
+            "frequency_en": "Every 10-14 days", "frequency_ml": "10-14 ദിവസത്തിലൊരിക്കൽ",
+            "precautions_en": "Follow label. Wear protective gear.",
+            "precautions_ml": "ലേബൽ പാലിക്കുക. സുരക്ഷാ ഉപകരണങ്ങൾ ധരിക്കുക."
+        },
+        "preventive_measures_en": [
+            "Use certified disease-free seeds.",
+            "Rotate crops every 2-3 seasons.",
+            "Maintain proper plant spacing."
+        ],
+        "preventive_measures_ml": [
+            "സാക്ഷ്യപ്പെടുത്തിയ രോഗരഹിത വിത്തുകൾ ഉപയോഗിക്കുക.",
+            "2-3 സീസണിലൊരിക്കൽ വിളകൾ മാറ്റി കൃഷി ചെയ്യുക.",
+            "ചെടികൾക്കിടയിൽ ശരിയായ അകലം പാലിക്കുക."
+        ],
+        "companion_plants_en": ["Marigold"], "companion_plants_ml": ["ചെണ്ടുമല്ലി"],
+        "when_to_seek_help_en": "If spread continues after 2 weeks of treatment, contact your local agricultural officer.",
+        "when_to_seek_help_ml": "2 ആഴ്ച ചികിത്സയ്ക്ക് ശേഷവും രോഗം പടരുകയാണെങ്കിൽ പ്രാദേശിക കൃഷി ഓഫീസറെ ബന്ധപ്പെടുക."
+    }
+
+
+# ============================================================
+# CURATED — Full bilingual entries for common diseases
+# ============================================================
+CURATED = {
+
+    # ---------- GRAPE ----------
+    "Grape___Black_rot": {
+        "type_en": "Fungal", "type_ml": "ഫംഗസ്",
+        "severity_en": "High", "severity_ml": "ഉയർന്നത്",
+        "urgency_en": "Act within 2-3 days",
+        "urgency_ml": "2-3 ദിവസത്തിനുള്ളിൽ നടപടി സ്വീകരിക്കുക",
+        "symptoms_en": "Small brown spots on leaves; berries turn black and shrivel into hard mummies.",
+        "symptoms_ml": "ഇലകളിൽ ചെറിയ തവിട്ട് പാടുകൾ; മുന്തിരിപ്പഴങ്ങൾ കറുത്ത് ഉണങ്ങി കട്ടിയാകുന്നു.",
+        "causes_en": "Fungus Guignardia bidwellii. Spreads in warm (20-27°C), humid weather.",
+        "causes_ml": "ഗിഗ്നാർഡിയ ബിഡ്‌വെല്ലി എന്ന ഫംഗസ്. ചൂടും ഈർപ്പവുമുള്ള (20-27°C) കാലാവസ്ഥയിൽ പടരുന്നു.",
+        "favorable_conditions_en": "Wet springs, poor air circulation, overhead watering.",
+        "favorable_conditions_ml": "നനഞ്ഞ വസന്തകാലം, വായുസഞ്ചാരക്കുറവ്, മുകളിൽ നിന്ന് നനയ്ക്കൽ.",
+        "immediate_actions_en": [
+            "Remove and destroy all infected leaves and mummified berries (do NOT compost).",
+            "Prune for better air circulation — remove 20-30% of inner foliage.",
+            "Stop overhead watering; water at the base only.",
+            "Sanitize pruning tools with 70% alcohol between plants."
+        ],
+        "immediate_actions_ml": [
+            "രോഗബാധിതമായ ഇലകളും ഉണങ്ങിയ പഴങ്ങളും നീക്കം ചെയ്ത് നശിപ്പിക്കുക (കമ്പോസ്റ്റ് ചെയ്യരുത്).",
+            "വായുസഞ്ചാരത്തിനായി വെട്ടിമാറ്റുക — അകത്തെ 20-30% ഇലകൾ നീക്കുക.",
+            "ഇലകളിൽ വെള്ളം ഒഴിക്കുന്നത് നിർത്തുക; വേരിൽ മാത്രം നനയ്ക്കുക.",
+            "ചെടികൾക്കിടയിൽ കത്രിക 70% ആൽക്കഹോൾ കൊണ്ട് അണുവിമുക്തമാക്കുക."
+        ],
+        "natural_home_remedies": [
+            {"name_en": "Neem Oil Spray", "name_ml": "വേപ്പെണ്ണ സ്പ്രേ",
+             "ingredients_en": "5 ml neem oil + 1 L water + 2-3 drops liquid soap",
+             "ingredients_ml": "5 മില്ലി വേപ്പെണ്ണ + 1 ലിറ്റർ വെള്ളം + 2-3 തുള്ളി സോപ്പ്",
+             "method_en": "Spray both sides of leaves in evening, every 7 days for 3 weeks.",
+             "method_ml": "വൈകുന്നേരം ഇലകളുടെ ഇരുവശത്തും സ്പ്രേ ചെയ്യുക, 3 ആഴ്ചത്തേക്ക് ഓരോ 7 ദിവസവും.",
+             "effectiveness_en": "High", "effectiveness_ml": "ഉയർന്നത്"},
+            {"name_en": "Baking Soda + Soap Spray", "name_ml": "ബേക്കിംഗ് സോഡ + സോപ്പ് സ്പ്രേ",
+             "ingredients_en": "1 tsp baking soda + 1 L water + 3 drops dish soap",
+             "ingredients_ml": "1 ടീസ്പൂൺ ബേക്കിംഗ് സോഡ + 1 ലിറ്റർ വെള്ളം + 3 തുള്ളി സോപ്പ്",
+             "method_en": "Spray weekly. Raises leaf pH, inhibiting fungal growth.",
+             "method_ml": "ആഴ്ചതോറും സ്പ്രേ ചെയ്യുക. ഇലയുടെ pH ഉയർത്തി ഫംഗസ് വളർച്ച തടയുന്നു.",
+             "effectiveness_en": "Medium", "effectiveness_ml": "ഇടത്തരം"},
+            {"name_en": "Garlic-Chili Extract", "name_ml": "വെളുത്തുള്ളി-മുളക് സത്ത്",
+             "ingredients_en": "4 garlic cloves + 2 green chilies blended with 1 L water, strained",
+             "ingredients_ml": "4 വെളുത്തുള്ളി + 2 പച്ചമുളക് 1 ലിറ്റർ വെള്ളത്തിൽ അരച്ച് അരിച്ചെടുക്കുക",
+             "method_en": "Spray every 5-7 days. Natural antifungal + pest repellent.",
+             "method_ml": "ഓരോ 5-7 ദിവസവും സ്പ്രേ ചെയ്യുക. സ്വാഭാവിക കുമിൾനാശിനിയും കീടനാശിനിയും.",
+             "effectiveness_en": "Medium", "effectiveness_ml": "ഇടത്തരം"}
+        ],
+        "organic_products_en": [
+            "Copper oxychloride 50% WP (2.5 g/L)",
+            "Bordeaux mixture (1%)",
+            "Trichoderma viride — soil drench (5 g/L)",
+            "Bacillus subtilis bio-fungicide"
+        ],
+        "organic_products_ml": [
+            "കോപ്പർ ഓക്സിക്ലോറൈഡ് 50% WP (2.5 ഗ്രാം/ലിറ്റർ)",
+            "ബോർഡോ മിശ്രിതം (1%)",
+            "ട്രൈക്കോഡെർമ വിരിഡെ — മണ്ണിൽ ചേർക്കുക (5 ഗ്രാം/ലിറ്റർ)",
+            "ബാസിലസ് സബ്‌റ്റിലിസ് ജൈവ കുമിൾനാശിനി"
+        ],
+        "chemical_treatments": {
+            "recommended_en": ["Myclobutanil 10% WP", "Mancozeb 75% WP"],
+            "recommended_ml": ["മൈക്ലോബ്യൂട്ടാനിൽ 10% WP", "മാൻകോസെബ് 75% WP"],
+            "dosage_en": "2 g per liter of water", "dosage_ml": "1 ലിറ്റർ വെള്ളത്തിൽ 2 ഗ്രാം",
+            "frequency_en": "Every 10-14 days, max 3 applications per season",
+            "frequency_ml": "ഓരോ 10-14 ദിവസവും, ഒരു സീസണിൽ പരമാവധി 3 തവണ",
+            "precautions_en": "Wear gloves and mask. Do not spray before rain. Wait 7 days before harvest.",
+            "precautions_ml": "കൈയുറയും മാസ്കും ധരിക്കുക. മഴയ്ക്ക് മുൻപ് സ്പ്രേ ചെയ്യരുത്. വിളവെടുപ്പിന് 7 ദിവസം മുൻപ് നിർത്തുക."
+        },
+        "preventive_measures_en": [
+            "Plant resistant varieties (e.g., 'Concord', 'Niagara').",
+            "Prune vines every winter to improve airflow.",
+            "Rake and burn all fallen leaves in autumn.",
+            "Apply dormant copper spray at bud break."
+        ],
+        "preventive_measures_ml": [
+            "പ്രതിരോധശേഷിയുള്ള ഇനങ്ങൾ നടുക (ഉദാ: 'കോൺകോർഡ്', 'നയാഗ്ര').",
+            "വായുസഞ്ചാരത്തിനായി എല്ലാ ശൈത്യകാലത്തും വള്ളികൾ വെട്ടുക.",
+            "ശരത്കാലത്ത് കൊഴിഞ്ഞ ഇലകൾ കൂട്ടി കത്തിക്കുക.",
+            "മൊട്ട് വരുന്ന സമയത്ത് കോപ്പർ സ്പ്രേ ചെയ്യുക."
+        ],
+        "companion_plants_en": ["Marigold", "Basil", "Chives"],
+        "companion_plants_ml": ["ചെണ്ടുമല്ലി", "തുളസി", "ചൈവ്സ്"],
+        "when_to_seek_help_en": "If more than 50% of vine is affected, contact your local agricultural extension officer.",
+        "when_to_seek_help_ml": "വള്ളികളിൽ 50%-ൽ കൂടുതൽ ബാധിതമായാൽ പ്രാദേശിക കൃഷി ഓഫീസറെ ബന്ധപ്പെടുക."
+    },
+
+    # ---------- TOMATO ----------
+    "Tomato___Early_blight": {
+        "type_en": "Fungal", "type_ml": "ഫംഗസ്",
+        "severity_en": "Moderate", "severity_ml": "മിതമായ",
+        "urgency_en": "Act within 2-3 days",
+        "urgency_ml": "2-3 ദിവസത്തിനുള്ളിൽ നടപടി സ്വീകരിക്കുക",
+        "symptoms_en": "Dark brown spots with concentric rings (target-like) on older leaves; yellow halo around spots.",
+        "symptoms_ml": "പഴയ ഇലകളിൽ കേന്ദ്രീകൃത വളയങ്ങളോടു കൂടിയ കടും തവിട്ട് പാടുകൾ; പാടുകൾക്ക് ചുറ്റും മഞ്ഞ വളയം.",
+        "causes_en": "Fungus Alternaria solani. Favored by warm (24-29°C), humid weather.",
+        "causes_ml": "ആൾട്ടർനേരിയ സോളാനി എന്ന ഫംഗസ്. ചൂടും ഈർപ്പവും (24-29°C) അനുകൂലം.",
+        "favorable_conditions_en": "Warm, humid weather; overhead watering; stressed plants.",
+        "favorable_conditions_ml": "ചൂടും ഈർപ്പവും; മുകളിൽ നിന്ന് നനയ്ക്കൽ; സമ്മർദ്ദത്തിലുള്ള ചെടികൾ.",
+        "immediate_actions_en": [
+            "Remove and destroy all infected lower leaves immediately.",
+            "Stake plants to improve airflow.",
+            "Mulch around base to prevent soil splash.",
+            "Water at base only, never overhead."
+        ],
+        "immediate_actions_ml": [
+            "രോഗബാധിതമായ താഴത്തെ ഇലകൾ ഉടനടി നീക്കം ചെയ്ത് നശിപ്പിക്കുക.",
+            "വായുസഞ്ചാരത്തിനായി ചെടികൾ കെട്ടി ഉയർത്തുക.",
+            "മണ്ണ് തെറിക്കുന്നത് തടയാൻ ചുവട്ടിൽ മൾച്ച് ഇടുക.",
+            "വേരിൽ മാത്രം നനയ്ക്കുക, ഇലകളിൽ ഒരിക്കലും വെള്ളം ഒഴിക്കരുത്."
+        ],
+        "natural_home_remedies": [
+            {"name_en": "Neem Oil Spray", "name_ml": "വേപ്പെണ്ണ സ്പ്രേ",
+             "ingredients_en": "5 ml neem oil + 1 L water + few drops liquid soap",
+             "ingredients_ml": "5 മില്ലി വേപ്പെണ്ണ + 1 ലിറ്റർ വെള്ളം + കുറച്ച് സോപ്പ്",
+             "method_en": "Spray weekly on both leaf surfaces in the evening.",
+             "method_ml": "ആഴ്ചതോറും വൈകുന്നേരം ഇലകളുടെ ഇരുവശത്തും സ്പ്രേ ചെയ്യുക.",
+             "effectiveness_en": "High", "effectiveness_ml": "ഉയർന്നത്"},
+            {"name_en": "Compost Tea", "name_ml": "കമ്പോസ്റ്റ് ടീ",
+             "ingredients_en": "1 part mature compost + 5 parts water, steep 3 days, strain",
+             "ingredients_ml": "1 ഭാഗം കമ്പോസ്റ്റ് + 5 ഭാഗം വെള്ളം, 3 ദിവസം കുതിർത്ത് അരിക്കുക",
+             "method_en": "Spray on leaves weekly. Boosts beneficial microbes.",
+             "method_ml": "ആഴ്ചതോറും ഇലകളിൽ സ്പ്രേ ചെയ്യുക. ഗുണകരമായ സൂക്ഷ്മാണുക്കളെ വളർത്തുന്നു.",
+             "effectiveness_en": "Medium", "effectiveness_ml": "ഇടത്തരം"},
+            {"name_en": "Baking Soda Spray", "name_ml": "ബേക്കിംഗ് സോഡ സ്പ്രേ",
+             "ingredients_en": "1 tsp baking soda + 1 L water + 3 drops soap",
+             "ingredients_ml": "1 ടീസ്പൂൺ ബേക്കിംഗ് സോഡ + 1 ലിറ്റർ വെള്ളം + 3 തുള്ളി സോപ്പ്",
+             "method_en": "Weekly spray to raise leaf pH.",
+             "method_ml": "ഇലയുടെ pH ഉയർത്താൻ ആഴ്ചതോറും സ്പ്രേ ചെയ്യുക.",
+             "effectiveness_en": "Medium", "effectiveness_ml": "ഇടത്തരം"}
+        ],
+        "organic_products_en": [
+            "Copper oxychloride 50% WP (2.5 g/L)",
+            "Trichoderma viride soil drench",
+            "Bacillus subtilis bio-fungicide"
+        ],
+        "organic_products_ml": [
+            "കോപ്പർ ഓക്സിക്ലോറൈഡ് 50% WP (2.5 ഗ്രാം/ലിറ്റർ)",
+            "ട്രൈക്കോഡെർമ വിരിഡെ മണ്ണിൽ ചേർക്കുക",
+            "ബാസിലസ് സബ്‌റ്റിലിസ് ജൈവ കുമിൾനാശിനി"
+        ],
+        "chemical_treatments": {
+            "recommended_en": ["Chlorothalonil 75% WP", "Mancozeb 75% WP"],
+            "recommended_ml": ["ക്ലോറോത്തലോണിൽ 75% WP", "മാൻകോസെബ് 75% WP"],
+            "dosage_en": "2 g per liter of water", "dosage_ml": "1 ലിറ്റർ വെള്ളത്തിൽ 2 ഗ്രാം",
+            "frequency_en": "Every 7-10 days, 3-4 applications",
+            "frequency_ml": "ഓരോ 7-10 ദിവസവും, 3-4 തവണ",
+            "precautions_en": "Wear gloves and mask. 7-day pre-harvest interval. Do not spray in strong wind.",
+            "precautions_ml": "കൈയുറയും മാസ്കും ധരിക്കുക. വിളവെടുപ്പിന് 7 ദിവസം മുൻപ് നിർത്തുക. കാറ്റുള്ളപ്പോൾ സ്പ്രേ ചെയ്യരുത്."
+        },
+        "preventive_measures_en": [
+            "Rotate crops — do not plant tomato in same spot for 2 years.",
+            "Use drip irrigation instead of sprinklers.",
+            "Space plants 45-60 cm apart for airflow.",
+            "Remove plant debris after harvest."
+        ],
+        "preventive_measures_ml": [
+            "വിള മാറ്റി കൃഷി ചെയ്യുക — 2 വർഷം അതേ സ്ഥലത്ത് തക്കാളി നടരുത്.",
+            "സ്പ്രിംഗ്ലറിനു പകരം ഡ്രിപ്പ് ഇറിഗേഷൻ ഉപയോഗിക്കുക.",
+            "വായുസഞ്ചാരത്തിനായി ചെടികൾ 45-60 സെന്റീമീറ്റർ അകലത്തിൽ നടുക.",
+            "വിളവെടുപ്പിന് ശേഷം ചെടിയുടെ അവശിഷ്ടങ്ങൾ നീക്കം ചെയ്യുക."
+        ],
+        "companion_plants_en": ["Marigold", "Basil", "Onion", "Garlic"],
+        "companion_plants_ml": ["ചെണ്ടുമല്ലി", "തുളസി", "സവാള", "വെളുത്തുള്ളി"],
+        "when_to_seek_help_en": "If spots appear on fruit or affect >50% of plant, consult local extension officer.",
+        "when_to_seek_help_ml": "പഴങ്ങളിൽ പാടുകൾ കാണുകയോ ചെടിയുടെ 50%-ൽ കൂടുതൽ ബാധിക്കുകയോ ചെയ്താൽ പ്രാദേശിക കൃഷി ഓഫീസറെ സമീപിക്കുക."
+    },
+
+    "Tomato___Late_blight": {
+        "type_en": "Fungal", "type_ml": "ഫംഗസ്",
+        "severity_en": "Severe", "severity_ml": "ഗുരുതരം",
+        "urgency_en": "Act IMMEDIATELY — spreads within hours",
+        "urgency_ml": "ഉടനടി നടപടി സ്വീകരിക്കുക — മണിക്കൂറുകൾക്കുള്ളിൽ പടരും",
+        "symptoms_en": "Water-soaked gray-green spots turning brown; white fuzzy mold on leaf undersides; rapid collapse.",
+        "symptoms_ml": "വെള്ളത്തിൽ കുതിർന്ന ചാര-പച്ച പാടുകൾ തവിട്ടുനിറമാകുന്നു; ഇലയുടെ അടിവശത്ത് വെള്ള പൂപ്പൽ; ചെടി വേഗം വാടുന്നു.",
+        "causes_en": "Phytophthora infestans. Cool (15-22°C), wet, humid weather.",
+        "causes_ml": "ഫൈറ്റോപ്ത്തോറ ഇൻഫെസ്റ്റൻസ്. തണുപ്പും (15-22°C) ഈർപ്പവുമുള്ള കാലാവസ്ഥ.",
+        "favorable_conditions_en": "Cool, wet weather; high humidity; overcrowded plants.",
+        "favorable_conditions_ml": "തണുപ്പും നനവും; ഉയർന്ന ഈർപ്പം; കൂട്ടമായി നട്ട ചെടികൾ.",
+        "immediate_actions_en": [
+            "Uproot and BURN severely infected plants immediately.",
+            "Harvest any healthy fruit right away.",
+            "Do NOT compost infected material.",
+            "Wash hands and tools after handling."
+        ],
+        "immediate_actions_ml": [
+            "ഗുരുതരമായി ബാധിച്ച ചെടികൾ ഉടനടി പിഴുതെടുത്ത് കത്തിക്കുക.",
+            "ആരോഗ്യകരമായ പഴങ്ങൾ ഉടനടി വിളവെടുക്കുക.",
+            "രോഗബാധിത വസ്തുക്കൾ കമ്പോസ്റ്റ് ചെയ്യരുത്.",
+            "കൈകളും ഉപകരണങ്ങളും കഴുകുക."
+        ],
+        "natural_home_remedies": [
+            {"name_en": "Copper Soap Spray", "name_ml": "കോപ്പർ സോപ്പ് സ്പ്രേ",
+             "ingredients_en": "1 tsp copper sulfate + 1 L water + few drops soap",
+             "ingredients_ml": "1 ടീസ്പൂൺ കോപ്പർ സൾഫേറ്റ് + 1 ലിറ്റർ വെള്ളം + കുറച്ച് സോപ്പ്",
+             "method_en": "Spray every 5-7 days. Best used preventively.",
+             "method_ml": "ഓരോ 5-7 ദിവസവും സ്പ്രേ ചെയ്യുക. പ്രതിരോധത്തിന് ഉത്തമം.",
+             "effectiveness_en": "Medium (preventive)", "effectiveness_ml": "ഇടത്തരം (പ്രതിരോധത്തിന്)"},
+            {"name_en": "Horsetail Tea", "name_ml": "ഹോഴ്സ്‌ടെയിൽ ടീ",
+             "ingredients_en": "100 g dried horsetail + 1 L water, boil 30 min, cool, dilute 1:5",
+             "ingredients_ml": "100 ഗ്രാം ഉണങ്ങിയ ഹോഴ്സ്‌ടെയിൽ + 1 ലിറ്റർ വെള്ളം, 30 മിനിറ്റ് തിളപ്പിച്ച് തണുപ്പിച്ച് 1:5 നിൽ നേർപ്പിക്കുക",
+             "method_en": "Spray weekly. Silica strengthens leaf tissue.",
+             "method_ml": "ആഴ്ചതോറും സ്പ്രേ ചെയ്യുക. സിലിക്ക ഇലകളെ ബലപ്പെടുത്തുന്നു.",
+             "effectiveness_en": "Medium", "effectiveness_ml": "ഇടത്തരം"}
+        ],
+        "organic_products_en": ["Copper hydroxide (2 g/L)", "Bordeaux mixture (1%)"],
+        "organic_products_ml": ["കോപ്പർ ഹൈഡ്രോക്സൈഡ് (2 ഗ്രാം/ലിറ്റർ)", "ബോർഡോ മിശ്രിതം (1%)"],
+        "chemical_treatments": {
+            "recommended_en": ["Mancozeb 75% WP", "Metalaxyl 8% + Mancozeb 64% WP"],
+            "recommended_ml": ["മാൻകോസെബ് 75% WP", "മെറ്റലാക്സിൽ 8% + മാൻകോസെബ് 64% WP"],
+            "dosage_en": "As per label — usually 2-2.5 g/L",
+            "dosage_ml": "ലേബൽ പ്രകാരം — സാധാരണയായി 2-2.5 ഗ്രാം/ലിറ്റർ",
+            "frequency_en": "Every 5-7 days during wet weather",
+            "frequency_ml": "നനഞ്ഞ കാലാവസ്ഥയിൽ ഓരോ 5-7 ദിവസവും",
+            "precautions_en": "High-risk chemical. Wear full protective gear. Observe 7-10 day pre-harvest interval.",
+            "precautions_ml": "അപകടകരമായ രാസവസ്തു. പൂർണ്ണ സുരക്ഷാ ഉപകരണങ്ങൾ ധരിക്കുക. വിളവെടുപ്പിന് 7-10 ദിവസം മുൻപ് നിർത്തുക."
+        },
+        "preventive_measures_en": [
+            "Plant resistant varieties.",
+            "Apply preventive copper spray before rainy season.",
+            "Ensure good drainage.",
+            "Space plants generously.",
+            "Grow in raised beds or under cover."
+        ],
+        "preventive_measures_ml": [
+            "പ്രതിരോധശേഷിയുള്ള ഇനങ്ങൾ നടുക.",
+            "മഴക്കാലത്തിന് മുൻപ് കോപ്പർ സ്പ്രേ ചെയ്യുക.",
+            "നല്ല ഡ്രെയിനേജ് ഉറപ്പാക്കുക.",
+            "ചെടികൾക്കിടയിൽ മതിയായ അകലം നൽകുക.",
+            "ഉയർന്ന തട്ടുകളിലോ മൂടിയ സ്ഥലത്തോ കൃഷി ചെയ്യുക."
+        ],
+        "companion_plants_en": ["Marigold", "Basil"],
+        "companion_plants_ml": ["ചെണ്ടുമല്ലി", "തുളസി"],
+        "when_to_seek_help_en": "Late blight spreads fast — contact agricultural extension IMMEDIATELY if detected.",
+        "when_to_seek_help_ml": "വൈകി വരുന്ന വാട്ടം വേഗം പടരും — കണ്ടെത്തിയാൽ ഉടനടി കൃഷി ഓഫീസറെ ബന്ധപ്പെടുക."
+    },
+
+    "Tomato___Bacterial_spot": {
+        "type_en": "Bacterial", "type_ml": "ബാക്ടീരിയൽ",
+        "severity_en": "Moderate", "severity_ml": "മിതമായ",
+        "urgency_en": "Act within 3-5 days",
+        "urgency_ml": "3-5 ദിവസത്തിനുള്ളിൽ നടപടി സ്വീകരിക്കുക",
+        "symptoms_en": "Small water-soaked spots on leaves and fruit; spots turn dark brown with yellow halos.",
+        "symptoms_ml": "ഇലകളിലും പഴങ്ങളിലും ചെറിയ വെള്ളപ്പാടുകൾ; പാടുകൾ കടും തവിട്ടുനിറവും മഞ്ഞ വളയവുമായി മാറുന്നു.",
+        "causes_en": "Xanthomonas bacteria. Spreads via rain splash and contaminated seed.",
+        "causes_ml": "സാന്തോമോണസ് ബാക്ടീരിയ. മഴത്തുള്ളികളിലൂടെയും മലിനമായ വിത്തിലൂടെയും പടരുന്നു.",
+        "favorable_conditions_en": "Warm (24-30°C), humid weather; heavy rain.",
+        "favorable_conditions_ml": "ചൂടും ഈർപ്പവും (24-30°C); കനത്ത മഴ.",
+        "immediate_actions_en": [
+            "Remove infected leaves and fruit.",
+            "Avoid working with plants when wet.",
+            "Disinfect tools between plants."
+        ],
+        "immediate_actions_ml": [
+            "രോഗബാധിതമായ ഇലകളും പഴങ്ങളും നീക്കം ചെയ്യുക.",
+            "ചെടികൾ നനഞ്ഞിരിക്കുമ്പോൾ കൈകാര്യം ചെയ്യരുത്.",
+            "ചെടികൾക്കിടയിൽ ഉപകരണങ്ങൾ അണുവിമുക്തമാക്കുക."
+        ],
+        "natural_home_remedies": [
+            {"name_en": "Copper Soap Spray", "name_ml": "കോപ്പർ സോപ്പ് സ്പ്രേ",
+             "ingredients_en": "Copper sulfate + water + soap",
+             "ingredients_ml": "കോപ്പർ സൾഫേറ്റ് + വെള്ളം + സോപ്പ്",
+             "method_en": "Spray weekly. Best as preventive.",
+             "method_ml": "ആഴ്ചതോറും സ്പ്രേ ചെയ്യുക. പ്രതിരോധത്തിന് ഉത്തമം.",
+             "effectiveness_en": "Medium", "effectiveness_ml": "ഇടത്തരം"}
+        ],
+        "organic_products_en": ["Copper hydroxide", "Bacillus subtilis bio-fungicide"],
+        "organic_products_ml": ["കോപ്പർ ഹൈഡ്രോക്സൈഡ്", "ബാസിലസ് സബ്‌റ്റിലിസ് ജൈവ കുമിൾനാശിനി"],
+        "chemical_treatments": {
+            "recommended_en": ["Copper hydroxide + Mancozeb", "Streptocycline (agricultural)"],
+            "recommended_ml": ["കോപ്പർ ഹൈഡ്രോക്സൈഡ് + മാൻകോസെബ്", "സ്ട്രെപ്റ്റോസൈക്ലിൻ (കാർഷികം)"],
+            "dosage_en": "As per label", "dosage_ml": "ലേബൽ പ്രകാരം",
+            "frequency_en": "Every 7-10 days", "frequency_ml": "ഓരോ 7-10 ദിവസവും",
+            "precautions_en": "Follow pre-harvest interval.",
+            "precautions_ml": "വിളവെടുപ്പിന് മുൻപുള്ള ഇടവേള പാലിക്കുക."
+        },
+        "preventive_measures_en": [
+            "Use certified disease-free seed.",
+            "Crop rotation — 2 years without tomato/pepper.",
+            "Avoid overhead watering.",
+            "Do not work with plants when wet."
+        ],
+        "preventive_measures_ml": [
+            "സാക്ഷ്യപ്പെടുത്തിയ രോഗരഹിത വിത്തുകൾ ഉപയോഗിക്കുക.",
+            "വിള മാറ്റി കൃഷി — 2 വർഷം തക്കാളി/മുളക് നടരുത്.",
+            "ഇലകളിൽ വെള്ളം ഒഴിക്കരുത്.",
+            "ചെടികൾ നനഞ്ഞിരിക്കുമ്പോൾ കൈകാര്യം ചെയ്യരുത്."
+        ],
+        "companion_plants_en": ["Marigold", "Basil"],
+        "companion_plants_ml": ["ചെണ്ടുമല്ലി", "തുളസി"],
+        "when_to_seek_help_en": "If fruit infection is widespread, contact extension officer.",
+        "when_to_seek_help_ml": "പഴങ്ങളിൽ വ്യാപകമായി ബാധിച്ചാൽ കൃഷി ഓഫീസറെ സമീപിക്കുക."
+    },
+
+    # ---------- POTATO ----------
+    "Potato___Early_blight": {
+        "type_en": "Fungal", "type_ml": "ഫംഗസ്",
+        "severity_en": "Moderate", "severity_ml": "മിതമായ",
+        "urgency_en": "Act within 3-5 days",
+        "urgency_ml": "3-5 ദിവസത്തിനുള്ളിൽ നടപടി സ്വീകരിക്കുക",
+        "symptoms_en": "Brown-black spots with target-like rings on older leaves; leaves may drop.",
+        "symptoms_ml": "പഴയ ഇലകളിൽ ലക്ഷ്യചിഹ്നം പോലുള്ള വളയങ്ങളോടു കൂടിയ തവിട്ട്-കറുത്ത പാടുകൾ; ഇലകൾ കൊഴിഞ്ഞുപോകാം.",
+        "causes_en": "Alternaria solani. Warm humid weather; stressed plants.",
+        "causes_ml": "ആൾട്ടർനേരിയ സോളാനി. ചൂടും ഈർപ്പവും; സമ്മർദ്ദത്തിലുള്ള ചെടികൾ.",
+        "favorable_conditions_en": "Warm, humid weather; poor nutrition.",
+        "favorable_conditions_ml": "ചൂടും ഈർപ്പവും; പോഷകക്കുറവ്.",
+        "immediate_actions_en": [
+            "Remove infected lower leaves.",
+            "Ensure proper plant spacing.",
+            "Water at base only."
+        ],
+        "immediate_actions_ml": [
+            "രോഗബാധിതമായ താഴത്തെ ഇലകൾ നീക്കുക.",
+            "ചെടികൾക്കിടയിൽ ശരിയായ അകലം ഉറപ്പാക്കുക.",
+            "വേരിൽ മാത്രം നനയ്ക്കുക."
+        ],
+        "natural_home_remedies": [
+            {"name_en": "Neem Oil Spray", "name_ml": "വേപ്പെണ്ണ സ്പ്രേ",
+             "ingredients_en": "5 ml neem oil + 1 L water + soap",
+             "ingredients_ml": "5 മില്ലി വേപ്പെണ്ണ + 1 ലിറ്റർ വെള്ളം + സോപ്പ്",
+             "method_en": "Weekly evening spray.",
+             "method_ml": "ആഴ്ചതോറും വൈകുന്നേരം സ്പ്രേ ചെയ്യുക.",
+             "effectiveness_en": "High", "effectiveness_ml": "ഉയർന്നത്"},
+            {"name_en": "Compost Tea", "name_ml": "കമ്പോസ്റ്റ് ടീ",
+             "ingredients_en": "Compost + water, steep 3 days",
+             "ingredients_ml": "കമ്പോസ്റ്റ് + വെള്ളം, 3 ദിവസം കുതിർക്കുക",
+             "method_en": "Weekly foliar spray.",
+             "method_ml": "ആഴ്ചതോറും ഇലകളിൽ സ്പ്രേ ചെയ്യുക.",
+             "effectiveness_en": "Medium", "effectiveness_ml": "ഇടത്തരം"}
+        ],
+        "organic_products_en": ["Copper oxychloride 50% WP (2.5 g/L)", "Trichoderma viride soil drench"],
+        "organic_products_ml": ["കോപ്പർ ഓക്സിക്ലോറൈഡ് 50% WP (2.5 ഗ്രാം/ലിറ്റർ)", "ട്രൈക്കോഡെർമ വിരിഡെ മണ്ണിൽ ചേർക്കുക"],
+        "chemical_treatments": {
+            "recommended_en": ["Chlorothalonil 75% WP", "Mancozeb 75% WP"],
+            "recommended_ml": ["ക്ലോറോത്തലോണിൽ 75% WP", "മാൻകോസെബ് 75% WP"],
+            "dosage_en": "2 g/L", "dosage_ml": "2 ഗ്രാം/ലിറ്റർ",
+            "frequency_en": "Every 7-10 days", "frequency_ml": "ഓരോ 7-10 ദിവസവും",
+            "precautions_en": "Follow label. 7-day pre-harvest interval.",
+            "precautions_ml": "ലേബൽ പാലിക്കുക. വിളവെടുപ്പിന് 7 ദിവസം മുൻപ് നിർത്തുക."
+        },
+        "preventive_measures_en": [
+            "Crop rotation — avoid potatoes in same plot for 2 years.",
+            "Adequate nitrogen and potassium.",
+            "Remove plant debris after harvest."
+        ],
+        "preventive_measures_ml": [
+            "വിള മാറ്റി കൃഷി — 2 വർഷം അതേ സ്ഥലത്ത് ഉരുളക്കിഴങ്ങ് നടരുത്.",
+            "മതിയായ നൈട്രജനും പൊട്ടാസ്യവും നൽകുക.",
+            "വിളവെടുപ്പിന് ശേഷം ചെടിയുടെ അവശിഷ്ടങ്ങൾ നീക്കുക."
+        ],
+        "companion_plants_en": ["Beans", "Marigold", "Horseradish"],
+        "companion_plants_ml": ["ബീൻസ്", "ചെണ്ടുമല്ലി", "ഹോഴ്സ്‌റാഡിഷ്"],
+        "when_to_seek_help_en": "If infection spreads to tubers, contact local extension officer.",
+        "when_to_seek_help_ml": "കിഴങ്ങുകളിലേക്ക് രോഗം പടർന്നാൽ പ്രാദേശിക കൃഷി ഓഫീസറെ സമീപിക്കുക."
+    },
+
+    "Potato___Late_blight": {
+        "type_en": "Fungal", "type_ml": "ഫംഗസ്",
+        "severity_en": "Severe", "severity_ml": "ഗുരുതരം",
+        "urgency_en": "Act IMMEDIATELY", "urgency_ml": "ഉടനടി നടപടി സ്വീകരിക്കുക",
+        "symptoms_en": "Dark water-soaked lesions; white sporulation on leaf undersides; rapid collapse.",
+        "symptoms_ml": "വെള്ളത്തിൽ കുതിർന്ന കറുത്ത പാടുകൾ; ഇലയുടെ അടിവശത്ത് വെള്ള സ്പോറുലേഷൻ; ചെടി വേഗം വാടുന്നു.",
+        "causes_en": "Phytophthora infestans. Cool, wet conditions.",
+        "causes_ml": "ഫൈറ്റോപ്ത്തോറ ഇൻഫെസ്റ്റൻസ്. തണുപ്പും നനവുമുള്ള സാഹചര്യങ്ങൾ.",
+        "favorable_conditions_en": "Cool (15-22°C), wet, humid weather.",
+        "favorable_conditions_ml": "തണുപ്പും (15-22°C) നനവും ഈർപ്പവുമുള്ള കാലാവസ്ഥ.",
+        "immediate_actions_en": [
+            "Cut and destroy all infected foliage immediately.",
+            "Harvest tubers at least 2 weeks after vine kill.",
+            "Do NOT compost infected material."
+        ],
+        "immediate_actions_ml": [
+            "ബാധിതമായ എല്ലാ ഇലകളും ഉടനടി വെട്ടി നശിപ്പിക്കുക.",
+            "വള്ളി നശിച്ചതിന് ശേഷം കുറഞ്ഞത് 2 ആഴ്ച കഴിഞ്ഞ് കിഴങ്ങുകൾ വിളവെടുക്കുക.",
+            "രോഗബാധിത വസ്തുക്കൾ കമ്പോസ്റ്റ് ചെയ്യരുത്."
+        ],
+        "natural_home_remedies": [
+            {"name_en": "Copper Spray", "name_ml": "കോപ്പർ സ്പ്രേ",
+             "ingredients_en": "Copper sulfate + water + soap",
+             "ingredients_ml": "കോപ്പർ സൾഫേറ്റ് + വെള്ളം + സോപ്പ്",
+             "method_en": "Preventive spray every 7 days.",
+             "method_ml": "പ്രതിരോധത്തിനായി ഓരോ 7 ദിവസവും സ്പ്രേ ചെയ്യുക.",
+             "effectiveness_en": "Medium", "effectiveness_ml": "ഇടത്തരം"}
+        ],
+        "organic_products_en": ["Copper hydroxide (2 g/L)", "Bordeaux mixture (1%)"],
+        "organic_products_ml": ["കോപ്പർ ഹൈഡ്രോക്സൈഡ് (2 ഗ്രാം/ലിറ്റർ)", "ബോർഡോ മിശ്രിതം (1%)"],
+        "chemical_treatments": {
+            "recommended_en": ["Mancozeb 75% WP", "Metalaxyl + Mancozeb"],
+            "recommended_ml": ["മാൻകോസെബ് 75% WP", "മെറ്റലാക്സിൽ + മാൻകോസെബ്"],
+            "dosage_en": "As per label", "dosage_ml": "ലേബൽ പ്രകാരം",
+            "frequency_en": "Every 5-7 days in wet weather",
+            "frequency_ml": "നനഞ്ഞ കാലാവസ്ഥയിൽ ഓരോ 5-7 ദിവസവും",
+            "precautions_en": "Full protective gear. Observe pre-harvest interval.",
+            "precautions_ml": "പൂർണ്ണ സുരക്ഷാ ഉപകരണങ്ങൾ. വിളവെടുപ്പിന് മുൻപുള്ള ഇടവേള പാലിക്കുക."
+        },
+        "preventive_measures_en": [
+            "Plant certified disease-free seed tubers.",
+            "Hill soil around plants for drainage.",
+            "Apply preventive copper spray at onset of wet season."
+        ],
+        "preventive_measures_ml": [
+            "സാക്ഷ്യപ്പെടുത്തിയ രോഗരഹിത വിത്ത് കിഴങ്ങുകൾ നടുക.",
+            "ഡ്രെയിനേജിനായി ചെടികൾക്ക് ചുറ്റും മണ്ണ് കൂട്ടുക.",
+            "മഴക്കാലം തുടങ്ങുമ്പോൾ പ്രതിരോധ കോപ്പർ സ്പ്രേ ചെയ്യുക."
+        ],
+        "companion_plants_en": ["Beans", "Marigold"],
+        "companion_plants_ml": ["ബീൻസ്", "ചെണ്ടുമല്ലി"],
+        "when_to_seek_help_en": "Contact extension officer immediately — spreads within hours.",
+        "when_to_seek_help_ml": "ഉടനടി കൃഷി ഓഫീസറെ ബന്ധപ്പെടുക — മണിക്കൂറുകൾക്കുള്ളിൽ പടരും."
+    },
+
+    # ---------- APPLE ----------
+    "Apple___Apple_scab": {
+        "type_en": "Fungal", "type_ml": "ഫംഗസ്",
+        "severity_en": "Moderate", "severity_ml": "മിതമായ",
+        "urgency_en": "Act within 3-5 days", "urgency_ml": "3-5 ദിവസത്തിനുള്ളിൽ നടപടി സ്വീകരിക്കുക",
+        "symptoms_en": "Olive-green to black velvety spots on leaves; scabby lesions on fruit.",
+        "symptoms_ml": "ഇലകളിൽ ഒലിവ്-പച്ച മുതൽ കറുപ്പുവരെയുള്ള വെൽവെറ്റ് പാടുകൾ; പഴങ്ങളിൽ പൊറ്റ പോലുള്ള പാടുകൾ.",
+        "causes_en": "Venturia inaequalis. Wet spring weather.",
+        "causes_ml": "വെന്റൂറിയ ഇനെക്വാലിസ്. നനഞ്ഞ വസന്തകാല കാലാവസ്ഥ.",
+        "favorable_conditions_en": "Wet spring, moderate temperature (17-24°C).",
+        "favorable_conditions_ml": "നനഞ്ഞ വസന്തകാലം, മിതമായ താപനില (17-24°C).",
+        "immediate_actions_en": [
+            "Rake and destroy fallen leaves around tree.",
+            "Prune for airflow.",
+            "Apply preventive fungicide spray."
+        ],
+        "immediate_actions_ml": [
+            "മരത്തിന് ചുറ്റുമുള്ള കൊഴിഞ്ഞ ഇലകൾ കൂട്ടി നശിപ്പിക്കുക.",
+            "വായുസഞ്ചാരത്തിനായി വെട്ടിമാറ്റുക.",
+            "പ്രതിരോധ കുമിൾനാശിനി സ്പ്രേ ചെയ്യുക."
+        ],
+        "natural_home_remedies": [
+            {"name_en": "Sulfur Spray", "name_ml": "സൾഫർ സ്പ്രേ",
+             "ingredients_en": "Wettable sulfur powder as per label",
+             "ingredients_ml": "ലേബൽ പ്രകാരം നനയ്ക്കാവുന്ന സൾഫർ പൗഡർ",
+             "method_en": "Spray every 7-10 days from bud break.",
+             "method_ml": "മൊട്ട് വരുന്നത് മുതൽ ഓരോ 7-10 ദിവസവും സ്പ്രേ ചെയ്യുക.",
+             "effectiveness_en": "High", "effectiveness_ml": "ഉയർന്നത്"},
+            {"name_en": "Neem Oil Spray", "name_ml": "വേപ്പെണ്ണ സ്പ്രേ",
+             "ingredients_en": "5 ml neem oil + 1 L water + soap",
+             "ingredients_ml": "5 മില്ലി വേപ്പെണ്ണ + 1 ലിറ്റർ വെള്ളം + സോപ്പ്",
+             "method_en": "Weekly sprays during spring.",
+             "method_ml": "വസന്തകാലത്ത് ആഴ്ചതോറും സ്പ്രേ ചെയ്യുക.",
+             "effectiveness_en": "Medium", "effectiveness_ml": "ഇടത്തരം"}
+        ],
+        "organic_products_en": ["Sulfur, lime-sulfur sprays", "Copper oxychloride"],
+        "organic_products_ml": ["സൾഫർ, ലൈം-സൾഫർ സ്പ്രേ", "കോപ്പർ ഓക്സിക്ലോറൈഡ്"],
+        "chemical_treatments": {
+            "recommended_en": ["Myclobutanil 10% WP", "Captan 50% WP"],
+            "recommended_ml": ["മൈക്ലോബ്യൂട്ടാനിൽ 10% WP", "ക്യാപ്റ്റാൻ 50% WP"],
+            "dosage_en": "As per label", "dosage_ml": "ലേബൽ പ്രകാരം",
+            "frequency_en": "Every 7-10 days in spring",
+            "frequency_ml": "വസന്തകാലത്ത് ഓരോ 7-10 ദിവസവും",
+            "precautions_en": "Do not spray during bloom. Follow pre-harvest intervals.",
+            "precautions_ml": "പൂക്കുന്ന സമയത്ത് സ്പ്രേ ചെയ്യരുത്. വിളവെടുപ്പിന് മുൻപുള്ള ഇടവേള പാലിക്കുക."
+        },
+        "preventive_measures_en": [
+            "Plant scab-resistant varieties.",
+            "Rake and burn fallen leaves every autumn.",
+            "Prune annually for airflow."
+        ],
+        "preventive_measures_ml": [
+            "സ്കാബ് പ്രതിരോധശേഷിയുള്ള ഇനങ്ങൾ നടുക.",
+            "എല്ലാ ശരത്കാലത്തും കൊഴിഞ്ഞ ഇലകൾ കൂട്ടി കത്തിക്കുക.",
+            "വായുസഞ്ചാരത്തിനായി വർഷംതോറും വെട്ടുക."
+        ],
+        "companion_plants_en": ["Chives", "Garlic", "Nasturtium"],
+        "companion_plants_ml": ["ചൈവ്സ്", "വെളുത്തുള്ളി", "നാസ്റ്റർഷ്യം"],
+        "when_to_seek_help_en": "If fruit infection is heavy, consult local orchard extension.",
+        "when_to_seek_help_ml": "പഴങ്ങളിൽ കനത്ത ബാധയുണ്ടെങ്കിൽ പ്രാദേശിക കൃഷി ഓഫീസറെ സമീപിക്കുക."
+    },
+
+    "Apple___Black_rot": {
+        "type_en": "Fungal", "type_ml": "ഫംഗസ്",
+        "severity_en": "High", "severity_ml": "ഉയർന്നത്",
+        "urgency_en": "Act within 2-3 days", "urgency_ml": "2-3 ദിവസത്തിനുള്ളിൽ നടപടി സ്വീകരിക്കുക",
+        "symptoms_en": "Purple spots on leaves; brown rotting fruit with concentric rings; fruit mummies.",
+        "symptoms_ml": "ഇലകളിൽ ധൂമ്രനിറത്തിലുള്ള പാടുകൾ; വളയങ്ങളോടു കൂടിയ തവിട്ട് ചീഞ്ഞ പഴങ്ങൾ; ഉണങ്ങിയ പഴങ്ങൾ.",
+        "causes_en": "Botryosphaeria obtusa. Warm, wet conditions.",
+        "causes_ml": "ബോട്രിയോസ്ഫേരിയ ഒബ്ട്യൂസ. ചൂടും നനവുമുള്ള സാഹചര്യങ്ങൾ.",
+        "favorable_conditions_en": "Warm, humid weather; wounded fruit.",
+        "favorable_conditions_ml": "ചൂടും ഈർപ്പവും; കേടുപാടുകൾ സംഭവിച്ച പഴങ്ങൾ.",
+        "immediate_actions_en": [
+            "Remove and destroy mummified fruit from tree and ground.",
+            "Prune dead wood.",
+            "Disinfect pruning tools between cuts."
+        ],
+        "immediate_actions_ml": [
+            "മരത്തിൽ നിന്നും നിലത്തു നിന്നും ഉണങ്ങിയ പഴങ്ങൾ നീക്കം ചെയ്ത് നശിപ്പിക്കുക.",
+            "ഉണങ്ങിയ മരക്കമ്പുകൾ വെട്ടിമാറ്റുക.",
+            "വെട്ടുമ്പോൾ ഉപകരണങ്ങൾ അണുവിമുക്തമാക്കുക."
+        ],
+        "natural_home_remedies": [
+            {"name_en": "Copper Spray", "name_ml": "കോപ്പർ സ്പ്രേ",
+             "ingredients_en": "Copper oxychloride as per label",
+             "ingredients_ml": "ലേബൽ പ്രകാരം കോപ്പർ ഓക്സിക്ലോറൈഡ്",
+             "method_en": "Spray at bud break and every 10 days.",
+             "method_ml": "മൊട്ട് വരുമ്പോഴും ഓരോ 10 ദിവസവും സ്പ്രേ ചെയ്യുക.",
+             "effectiveness_en": "High", "effectiveness_ml": "ഉയർന്നത്"}
+        ],
+        "organic_products_en": ["Copper oxychloride", "Bordeaux mixture"],
+        "organic_products_ml": ["കോപ്പർ ഓക്സിക്ലോറൈഡ്", "ബോർഡോ മിശ്രിതം"],
+        "chemical_treatments": {
+            "recommended_en": ["Captan 50% WP", "Thiophanate-methyl 70% WP"],
+            "recommended_ml": ["ക്യാപ്റ്റാൻ 50% WP", "തയോഫാനേറ്റ്-മെഥിൽ 70% WP"],
+            "dosage_en": "As per label", "dosage_ml": "ലേബൽ പ്രകാരം",
+            "frequency_en": "Every 10-14 days", "frequency_ml": "ഓരോ 10-14 ദിവസവും",
+            "precautions_en": "Follow pre-harvest interval. Wear protective gear.",
+            "precautions_ml": "വിളവെടുപ്പിന് മുൻപുള്ള ഇടവേള പാലിക്കുക. സുരക്ഷാ ഉപകരണങ്ങൾ ധരിക്കുക."
+        },
+        "preventive_measures_en": [
+            "Remove all mummified fruit yearly.",
+            "Prune for airflow.",
+            "Avoid fruit injury during harvest."
+        ],
+        "preventive_measures_ml": [
+            "എല്ലാ വർഷവും ഉണങ്ങിയ പഴങ്ങൾ നീക്കം ചെയ്യുക.",
+            "വായുസഞ്ചാരത്തിനായി വെട്ടുക.",
+            "വിളവെടുപ്പിനിടെ പഴങ്ങൾക്ക് കേടുപാടുകൾ ഒഴിവാക്കുക."
+        ],
+        "companion_plants_en": ["Chives", "Garlic"],
+        "companion_plants_ml": ["ചൈവ്സ്", "വെളുത്തുള്ളി"],
+        "when_to_seek_help_en": "If fruit loss exceeds 30%, contact local extension officer.",
+        "when_to_seek_help_ml": "30%-ൽ കൂടുതൽ പഴനഷ്ടം ഉണ്ടായാൽ പ്രാദേശിക കൃഷി ഓഫീസറെ ബന്ധപ്പെടുക."
+    },
+
+    # ---------- CORN ----------
+    "Corn_(maize)___Common_rust_": {
+        "type_en": "Fungal", "type_ml": "ഫംഗസ്",
+        "severity_en": "Moderate", "severity_ml": "മിതമായ",
+        "urgency_en": "Act within 3-5 days", "urgency_ml": "3-5 ദിവസത്തിനുള്ളിൽ നടപടി സ്വീകരിക്കുക",
+        "symptoms_en": "Cinnamon-brown powdery pustules on both leaf surfaces.",
+        "symptoms_ml": "ഇലയുടെ ഇരുവശത്തും കറുവപ്പട്ട-തവിട്ട് പൊടി പോലുള്ള പൊട്ടുകൾ.",
+        "causes_en": "Puccinia sorghi. Cool, moist weather.",
+        "causes_ml": "പുസീനിയ സോർഗി. തണുപ്പും ഈർപ്പവുമുള്ള കാലാവസ്ഥ.",
+        "favorable_conditions_en": "Cool (16-23°C), moist weather.",
+        "favorable_conditions_ml": "തണുപ്പും (16-23°C) ഈർപ്പവുമുള്ള കാലാവസ്ഥ.",
+        "immediate_actions_en": [
+            "Remove heavily infected lower leaves.",
+            "Ensure proper spacing."
+        ],
+        "immediate_actions_ml": [
+            "കഠിനമായി ബാധിച്ച താഴത്തെ ഇലകൾ നീക്കുക.",
+            "ശരിയായ അകലം ഉറപ്പാക്കുക."
+        ],
+        "natural_home_remedies": [
+            {"name_en": "Sulfur Dust", "name_ml": "സൾഫർ പൊടി",
+             "ingredients_en": "Wettable sulfur powder",
+             "ingredients_ml": "നനയ്ക്കാവുന്ന സൾഫർ പൗഡർ",
+             "method_en": "Dust leaves early morning.",
+             "method_ml": "അതിരാവിലെ ഇലകളിൽ പൊടി വിതറുക.",
+             "effectiveness_en": "High", "effectiveness_ml": "ഉയർന്നത്"}
+        ],
+        "organic_products_en": ["Sulfur-based fungicides", "Copper spray"],
+        "organic_products_ml": ["സൾഫർ അധിഷ്ഠിത കുമിൾനാശിനികൾ", "കോപ്പർ സ്പ്രേ"],
+        "chemical_treatments": {
+            "recommended_en": ["Propiconazole 25% EC", "Azoxystrobin 23% SC"],
+            "recommended_ml": ["പ്രൊപ്പിക്കൊണസോൾ 25% EC", "അസോക്സിസ്ട്രോബിൻ 23% SC"],
+            "dosage_en": "As per label", "dosage_ml": "ലേബൽ പ്രകാരം",
+            "frequency_en": "Every 10-14 days if severe",
+            "frequency_ml": "കഠിനമാണെങ്കിൽ ഓരോ 10-14 ദിവസവും",
+            "precautions_en": "Observe pre-harvest interval.",
+            "precautions_ml": "വിളവെടുപ്പിന് മുൻപുള്ള ഇടവേള പാലിക്കുക."
+        },
+        "preventive_measures_en": [
+            "Plant resistant hybrids.",
+            "Early planting to avoid rust peak.",
+            "Balanced fertilization (avoid excess nitrogen)."
+        ],
+        "preventive_measures_ml": [
+            "പ്രതിരോധശേഷിയുള്ള സങ്കരയിനങ്ങൾ നടുക.",
+            "തുരുമ്പ് കൂടുന്നതിന് മുൻപ് നേരത്തെ നടുക.",
+            "സമതുലിതമായ വളപ്രയോഗം (അധിക നൈട്രജൻ ഒഴിവാക്കുക)."
+        ],
+        "companion_plants_en": ["Beans", "Squash", "Peas"],
+        "companion_plants_ml": ["ബീൻസ്", "സ്ക്വാഷ്", "പട്ടാണി"],
+        "when_to_seek_help_en": "If pustules cover most leaves, consult local extension.",
+        "when_to_seek_help_ml": "മിക്ക ഇലകളിലും പൊട്ടുകൾ ഉണ്ടെങ്കിൽ പ്രാദേശിക കൃഷി ഓഫീസറെ സമീപിക്കുക."
+    },
+
+    # ---------- WHEAT ----------
+    "Wheat___Yellow_rust": {
+        "type_en": "Fungal", "type_ml": "ഫംഗസ്",
+        "severity_en": "High", "severity_ml": "ഉയർന്നത്",
+        "urgency_en": "Act within 2-3 days", "urgency_ml": "2-3 ദിവസത്തിനുള്ളിൽ നടപടി സ്വീകരിക്കുക",
+        "symptoms_en": "Yellow-orange streaks of pustules on leaves.",
+        "symptoms_ml": "ഇലകളിൽ മഞ്ഞ-ഓറഞ്ച് നിറത്തിലുള്ള പൊട്ടുകളുടെ വരകൾ.",
+        "causes_en": "Puccinia striiformis. Cool, moist conditions.",
+        "causes_ml": "പുസീനിയ സ്ട്രൈഫോർമിസ്. തണുപ്പും ഈർപ്പവുമുള്ള സാഹചര്യങ്ങൾ.",
+        "favorable_conditions_en": "Cool (10-15°C), moist weather.",
+        "favorable_conditions_ml": "തണുപ്പും (10-15°C) ഈർപ്പവുമുള്ള കാലാവസ്ഥ.",
+        "immediate_actions_en": ["Apply fungicide immediately if detected early."],
+        "immediate_actions_ml": ["നേരത്തെ കണ്ടെത്തിയാൽ ഉടനടി കുമിൾനാശിനി പ്രയോഗിക്കുക."],
+        "natural_home_remedies": [],
+        "organic_products_en": ["Limited organic options — focus on resistant varieties"],
+        "organic_products_ml": ["പരിമിതമായ ജൈവ ഓപ്ഷനുകൾ — പ്രതിരോധശേഷിയുള്ള ഇനങ്ങളിൽ ശ്രദ്ധ കേന്ദ്രീകരിക്കുക"],
+        "chemical_treatments": {
+            "recommended_en": ["Propiconazole 25% EC", "Tebuconazole 25.9% EC"],
+            "recommended_ml": ["പ്രൊപ്പിക്കൊണസോൾ 25% EC", "ടെബുകൊണസോൾ 25.9% EC"],
+            "dosage_en": "As per label", "dosage_ml": "ലേബൽ പ്രകാരം",
+            "frequency_en": "Apply within 48 hours of detection",
+            "frequency_ml": "കണ്ടെത്തിയതിന് 48 മണിക്കൂറിനുള്ളിൽ പ്രയോഗിക്കുക",
+            "precautions_en": "Follow pre-harvest interval strictly.",
+            "precautions_ml": "വിളവെടുപ്പിന് മുൻപുള്ള ഇടവേള കർശനമായി പാലിക്കുക."
+        },
+        "preventive_measures_en": [
+            "Plant resistant cultivars.",
+            "Timely sowing (avoid late sowing).",
+            "Avoid excess nitrogen."
+        ],
+        "preventive_measures_ml": [
+            "പ്രതിരോധശേഷിയുള്ള ഇനങ്ങൾ നടുക.",
+            "കൃത്യസമയത്ത് വിതയ്ക്കുക (വൈകി വിതയ്ക്കൽ ഒഴിവാക്കുക).",
+            "അധിക നൈട്രജൻ ഒഴിവാക്കുക."
+        ],
+        "companion_plants_en": [], "companion_plants_ml": [],
+        "when_to_seek_help_en": "Yellow rust spreads rapidly — notify local agriculture officer IMMEDIATELY.",
+        "when_to_seek_help_ml": "മഞ്ഞ തുരുമ്പ് വേഗം പടരും — ഉടനടി പ്രാദേശിക കൃഷി ഓഫീസറെ അറിയിക്കുക."
+    },
+
+    # ---------- PEPPER ----------
+    "Pepper,_bell___Bacterial_spot": {
+        "type_en": "Bacterial", "type_ml": "ബാക്ടീരിയൽ",
+        "severity_en": "Moderate", "severity_ml": "മിതമായ",
+        "urgency_en": "Act within 3-5 days", "urgency_ml": "3-5 ദിവസത്തിനുള്ളിൽ നടപടി സ്വീകരിക്കുക",
+        "symptoms_en": "Water-soaked spots on leaves; dark brown lesions on fruit.",
+        "symptoms_ml": "ഇലകളിൽ വെള്ളപ്പാടുകൾ; പഴങ്ങളിൽ കടും തവിട്ട് പാടുകൾ.",
+        "causes_en": "Xanthomonas bacteria. Spread by rain splash, contaminated seed.",
+        "causes_ml": "സാന്തോമോണസ് ബാക്ടീരിയ. മഴത്തുള്ളികളിലൂടെയും മലിനമായ വിത്തിലൂടെയും പടരുന്നു.",
+        "favorable_conditions_en": "Warm, humid weather.",
+        "favorable_conditions_ml": "ചൂടും ഈർപ്പവുമുള്ള കാലാവസ്ഥ.",
+        "immediate_actions_en": ["Remove infected leaves and fruit.", "Avoid overhead watering."],
+        "immediate_actions_ml": ["രോഗബാധിതമായ ഇലകളും പഴങ്ങളും നീക്കുക.", "ഇലകളിൽ വെള്ളം ഒഴിക്കരുത്."],
+        "natural_home_remedies": [
+            {"name_en": "Copper Soap Spray", "name_ml": "കോപ്പർ സോപ്പ് സ്പ്രേ",
+             "ingredients_en": "Copper sulfate + water + soap",
+             "ingredients_ml": "കോപ്പർ സൾഫേറ്റ് + വെള്ളം + സോപ്പ്",
+             "method_en": "Weekly preventive spray.",
+             "method_ml": "ആഴ്ചതോറും പ്രതിരോധ സ്പ്രേ.",
+             "effectiveness_en": "Medium", "effectiveness_ml": "ഇടത്തരം"}
+        ],
+        "organic_products_en": ["Copper hydroxide", "Bacillus subtilis bio-fungicide"],
+        "organic_products_ml": ["കോപ്പർ ഹൈഡ്രോക്സൈഡ്", "ബാസിലസ് സബ്‌റ്റിലിസ് ജൈവ കുമിൾനാശിനി"],
+        "chemical_treatments": {
+            "recommended_en": ["Copper hydroxide + Mancozeb"],
+            "recommended_ml": ["കോപ്പർ ഹൈഡ്രോക്സൈഡ് + മാൻകോസെബ്"],
+            "dosage_en": "As per label", "dosage_ml": "ലേബൽ പ്രകാരം",
+            "frequency_en": "Every 7-10 days", "frequency_ml": "ഓരോ 7-10 ദിവസവും",
+            "precautions_en": "Follow label.", "precautions_ml": "ലേബൽ പാലിക്കുക."
+        },
+        "preventive_measures_en": ["Use certified seed.", "Crop rotation.", "Avoid overhead watering."],
+        "preventive_measures_ml": ["സാക്ഷ്യപ്പെടുത്തിയ വിത്ത് ഉപയോഗിക്കുക.", "വിള മാറ്റി കൃഷി.", "ഇലകളിൽ വെള്ളം ഒഴിക്കരുത്."],
+        "companion_plants_en": ["Basil", "Marigold"],
+        "companion_plants_ml": ["തുളസി", "ചെണ്ടുമല്ലി"],
+        "when_to_seek_help_en": "If widespread, consult extension officer.",
+        "when_to_seek_help_ml": "വ്യാപകമായാൽ കൃഷി ഓഫീസറെ സമീപിക്കുക."
+    },
+
+    # ---------- CHERRY ----------
+    "Cherry_(including_sour)___Powdery_mildew": {
+        "type_en": "Fungal", "type_ml": "ഫംഗസ്",
+        "severity_en": "Moderate", "severity_ml": "മിതമായ",
+        "urgency_en": "Act within 3-5 days", "urgency_ml": "3-5 ദിവസത്തിനുള്ളിൽ നടപടി സ്വീകരിക്കുക",
+        "symptoms_en": "White powdery coating on leaves, shoots, and fruit.",
+        "symptoms_ml": "ഇലകളിലും തളിരുകളിലും പഴങ്ങളിലും വെളുത്ത പൊടി പോലുള്ള പൂശൽ.",
+        "causes_en": "Podosphaera fungus. Warm days, cool nights.",
+        "causes_ml": "പോഡോസ്ഫേര ഫംഗസ്. ചൂടുള്ള പകലും തണുത്ത രാത്രിയും.",
+        "favorable_conditions_en": "Warm days, cool nights, high humidity.",
+        "favorable_conditions_ml": "ചൂടുള്ള പകൽ, തണുത്ത രാത്രി, ഉയർന്ന ഈർപ്പം.",
+        "immediate_actions_en": ["Remove infected shoots.", "Improve air circulation.", "Apply sulfur spray."],
+        "immediate_actions_ml": ["രോഗബാധിത തളിരുകൾ നീക്കുക.", "വായുസഞ്ചാരം മെച്ചപ്പെടുത്തുക.", "സൾഫർ സ്പ്രേ ചെയ്യുക."],
+        "natural_home_remedies": [
+            {"name_en": "Milk Spray", "name_ml": "പാൽ സ്പ്രേ",
+             "ingredients_en": "1 part milk + 9 parts water",
+             "ingredients_ml": "1 ഭാഗം പാൽ + 9 ഭാഗം വെള്ളം",
+             "method_en": "Spray weekly. Effective against powdery mildew.",
+             "method_ml": "ആഴ്ചതോറും സ്പ്രേ ചെയ്യുക. പൗഡറി പൂപ്പലിനെതിരെ ഫലപ്രദം.",
+             "effectiveness_en": "High", "effectiveness_ml": "ഉയർന്നത്"},
+            {"name_en": "Baking Soda Spray", "name_ml": "ബേക്കിംഗ് സോഡ സ്പ്രേ",
+             "ingredients_en": "1 tsp baking soda + 1 L water + 3 drops soap",
+             "ingredients_ml": "1 ടീസ്പൂൺ ബേക്കിംഗ് സോഡ + 1 ലിറ്റർ വെള്ളം + 3 തുള്ളി സോപ്പ്",
+             "method_en": "Weekly spray.",
+             "method_ml": "ആഴ്ചതോറും സ്പ്രേ ചെയ്യുക.",
+             "effectiveness_en": "High", "effectiveness_ml": "ഉയർന്നത്"}
+        ],
+        "organic_products_en": ["Sulfur", "Potassium bicarbonate"],
+        "organic_products_ml": ["സൾഫർ", "പൊട്ടാസ്യം ബൈകാർബണേറ്റ്"],
+        "chemical_treatments": {
+            "recommended_en": ["Myclobutanil", "Trifloxystrobin"],
+            "recommended_ml": ["മൈക്ലോബ്യൂട്ടാനിൽ", "ട്രൈഫ്ലോക്സിസ്ട്രോബിൻ"],
+            "dosage_en": "As per label", "dosage_ml": "ലേബൽ പ്രകാരം",
+            "frequency_en": "Every 10-14 days", "frequency_ml": "ഓരോ 10-14 ദിവസവും",
+            "precautions_en": "Do not apply sulfur above 30°C.",
+            "precautions_ml": "30°C-ൽ കൂടുതൽ താപനിലയിൽ സൾഫർ പ്രയോഗിക്കരുത്."
+        },
+        "preventive_measures_en": ["Plant in sunny locations.", "Prune for airflow.", "Avoid excess nitrogen."],
+        "preventive_measures_ml": ["വെയിലുള്ള സ്ഥലങ്ങളിൽ നടുക.", "വായുസഞ്ചാരത്തിനായി വെട്ടുക.", "അധിക നൈട്രജൻ ഒഴിവാക്കുക."],
+        "companion_plants_en": ["Garlic", "Chives"],
+        "companion_plants_ml": ["വെളുത്തുള്ളി", "ചൈവ്സ്"],
+        "when_to_seek_help_en": "If infection persists, consult extension officer.",
+        "when_to_seek_help_ml": "രോഗം തുടരുകയാണെങ്കിൽ കൃഷി ഓഫീസറെ സമീപിക്കുക."
+    },
+
+    # ---------- STRAWBERRY ----------
+    "Strawberry___Leaf_scorch": {
+        "type_en": "Fungal", "type_ml": "ഫംഗസ്",
+        "severity_en": "Moderate", "severity_ml": "മിതമായ",
+        "urgency_en": "Act within 3-5 days", "urgency_ml": "3-5 ദിവസത്തിനുള്ളിൽ നടപടി സ്വീകരിക്കുക",
+        "symptoms_en": "Purple to brown spots on leaves; leaves appear scorched.",
+        "symptoms_ml": "ഇലകളിൽ ധൂമ്രം മുതൽ തവിട്ടുവരെയുള്ള പാടുകൾ; ഇലകൾ കരിഞ്ഞതുപോലെ കാണപ്പെടുന്നു.",
+        "causes_en": "Diplocarpon earlianum. Wet weather.",
+        "causes_ml": "ഡിപ്ലോകാർപ്പൺ ഏർലിയാനം. നനഞ്ഞ കാലാവസ്ഥ.",
+        "favorable_conditions_en": "Wet, humid weather.",
+        "favorable_conditions_ml": "നനവും ഈർപ്പവുമുള്ള കാലാവസ്ഥ.",
+        "immediate_actions_en": ["Remove infected leaves.", "Improve drainage.", "Reduce plant density."],
+        "immediate_actions_ml": ["രോഗബാധിത ഇലകൾ നീക്കുക.", "ഡ്രെയിനേജ് മെച്ചപ്പെടുത്തുക.", "ചെടികളുടെ എണ്ണം കുറയ്ക്കുക."],
+        "natural_home_remedies": [
+            {"name_en": "Neem Oil Spray", "name_ml": "വേപ്പെണ്ണ സ്പ്രേ",
+             "ingredients_en": "5 ml neem oil + 1 L water + soap",
+             "ingredients_ml": "5 മില്ലി വേപ്പെണ്ണ + 1 ലിറ്റർ വെള്ളം + സോപ്പ്",
+             "method_en": "Weekly spray.",
+             "method_ml": "ആഴ്ചതോറും സ്പ്രേ ചെയ്യുക.",
+             "effectiveness_en": "Medium", "effectiveness_ml": "ഇടത്തരം"}
+        ],
+        "organic_products_en": ["Copper spray"],
+        "organic_products_ml": ["കോപ്പർ സ്പ്രേ"],
+        "chemical_treatments": {
+            "recommended_en": ["Captan 50% WP"],
+            "recommended_ml": ["ക്യാപ്റ്റാൻ 50% WP"],
+            "dosage_en": "As per label", "dosage_ml": "ലേബൽ പ്രകാരം",
+            "frequency_en": "Every 10-14 days", "frequency_ml": "ഓരോ 10-14 ദിവസവും",
+            "precautions_en": "Follow label.", "precautions_ml": "ലേബൽ പാലിക്കുക."
+        },
+        "preventive_measures_en": ["Plant resistant varieties.", "Remove old leaves after harvest.", "Ensure good drainage."],
+        "preventive_measures_ml": ["പ്രതിരോധശേഷിയുള്ള ഇനങ്ങൾ നടുക.", "വിളവെടുപ്പിന് ശേഷം പഴയ ഇലകൾ നീക്കുക.", "നല്ല ഡ്രെയിനേജ് ഉറപ്പാക്കുക."],
+        "companion_plants_en": ["Borage", "Lettuce"],
+        "companion_plants_ml": ["ബോറേജ്", "ലെറ്റൂസ്"],
+        "when_to_seek_help_en": "If persistent, consult extension officer.",
+        "when_to_seek_help_ml": "തുടരുന്നുവെങ്കിൽ കൃഷി ഓഫീസറെ സമീപിക്കുക."
+    },
+
+    # ---------- ORANGE ----------
+    "Orange___Haunglongbing_(Citrus_greening)": {
+        "type_en": "Bacterial", "type_ml": "ബാക്ടീരിയൽ",
+        "severity_en": "Severe", "severity_ml": "ഗുരുതരം",
+        "urgency_en": "Act IMMEDIATELY — no cure exists",
+        "urgency_ml": "ഉടനടി നടപടി സ്വീകരിക്കുക — ചികിത്സയില്ല",
+        "symptoms_en": "Blotchy mottling of leaves; yellow shoots; misshapen green fruit.",
+        "symptoms_ml": "ഇലകളിൽ പുള്ളിപ്പാടുകൾ; മഞ്ഞ തളിരുകൾ; വികൃതമായ പച്ച പഴങ്ങൾ.",
+        "causes_en": "Candidatus Liberibacter bacteria, spread by Asian citrus psyllid.",
+        "causes_ml": "കാൻഡിഡാറ്റസ് ലിബെറിബാക്ടർ ബാക്ടീരിയ, ഏഷ്യൻ സിട്രസ് സൈലിഡ് പ്രാണിയിലൂടെ പടരുന്നു.",
+        "favorable_conditions_en": "Presence of psyllid vector.",
+        "favorable_conditions_ml": "സൈലിഡ് പ്രാണിയുടെ സാന്നിധ്യം.",
+        "immediate_actions_en": [
+            "Remove and destroy infected trees IMMEDIATELY (no cure).",
+            "Control psyllid population with approved insecticide.",
+            "Report to local agricultural authority."
+        ],
+        "immediate_actions_ml": [
+            "രോഗബാധിത മരങ്ങൾ ഉടനടി നീക്കി നശിപ്പിക്കുക (ചികിത്സയില്ല).",
+            "അനുവദനീയമായ കീടനാശിനി ഉപയോഗിച്ച് സൈലിഡ് എണ്ണം നിയന്ത്രിക്കുക.",
+            "പ്രാദേശിക കൃഷി അധികൃതരെ അറിയിക്കുക."
+        ],
+        "natural_home_remedies": [],
+        "organic_products_en": ["Neem oil for psyllid control", "Insecticidal soap"],
+        "organic_products_ml": ["സൈലിഡ് നിയന്ത്രണത്തിന് വേപ്പെണ്ണ", "കീടനാശിനി സോപ്പ്"],
+        "chemical_treatments": {
+            "recommended_en": ["Imidacloprid (for psyllid)", "Thiamethoxam"],
+            "recommended_ml": ["ഇമിഡാക്ലോപ്രിഡ് (സൈലിഡിനായി)", "തയാമെത്തോക്സം"],
+            "dosage_en": "As per label", "dosage_ml": "ലേബൽ പ്രകാരം",
+            "frequency_en": "As per extension recommendation",
+            "frequency_ml": "കൃഷി ഓഫീസ് നിർദ്ദേശം അനുസരിച്ച്",
+            "precautions_en": "Note: No cure for citrus greening — only vector control.",
+            "precautions_ml": "ശ്രദ്ധിക്കുക: സിട്രസ് ഗ്രീനിംഗിന് ചികിത്സയില്ല — വാഹക പ്രാണി നിയന്ത്രണം മാത്രം."
+        },
+        "preventive_measures_en": [
+            "Use certified disease-free nursery stock.",
+            "Monitor and control psyllids.",
+            "Remove wild citrus hosts nearby."
+        ],
+        "preventive_measures_ml": [
+            "സാക്ഷ്യപ്പെടുത്തിയ രോഗരഹിത നഴ്സറി ചെടികൾ ഉപയോഗിക്കുക.",
+            "സൈലിഡുകളെ നിരീക്ഷിച്ച് നിയന്ത്രിക്കുക.",
+            "സമീപത്തുള്ള കാട്ട് നാരകങ്ങൾ നീക്കുക."
+        ],
+        "companion_plants_en": [], "companion_plants_ml": [],
+        "when_to_seek_help_en": "Report to local agricultural department IMMEDIATELY.",
+        "when_to_seek_help_ml": "ഉടനടി പ്രാദേശിക കൃഷി വകുപ്പിനെ അറിയിക്കുക."
+    },
+}
+
+
+def main():
+    with open(CLASS_INDICES_PATH, encoding='utf-8') as f:
+        class_indices = json.load(f)
+
+    info = {}
+    for class_name in class_indices.keys():
+        parts = class_name.split("___")
+        crop = parts[0].replace("_", " ").replace("(including sour)", "(Sour)").replace("(maize)", "(Maize)")
+        disease = parts[1] if len(parts) > 1 else "Unknown"
+        is_healthy = "healthy" in disease.lower()
+
+        entry = healthy_template(crop) if is_healthy else generic_template(crop, disease)
+        curated = CURATED.get(class_name, {})
+        entry.update(curated)
+        info[class_name] = entry
+
+    with open(OUTPUT_PATH, "w", encoding="utf-8") as f:
+        json.dump(info, f, indent=2, ensure_ascii=False)
+
+    print(f"[OK] Generated bilingual disease_info.json with {len(info)} entries")
+    print(f"     -> {OUTPUT_PATH}")
+
+
+if __name__ == "__main__":
+    main()
